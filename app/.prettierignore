@@ -1,0 +1,5 @@
+out
+dist
+release
+node_modules
+src/renderer/src/api/schema.d.ts

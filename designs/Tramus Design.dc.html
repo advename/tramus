@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>body{margin:0;background:oklch(0.26 0.006 70);} a{color:oklch(0.87 0.05 82);} a:hover{color:oklch(0.95 0.03 85);}</style>
+</helmet>
+<div style="padding:96px;display:flex;flex-direction:column;gap:140px;font-family:'IBM Plex Sans',system-ui,sans-serif;color:oklch(0.94 0.01 85);width:max-content;">
+
+<div style="display:flex;flex-direction:column;gap:14px;max-width:1100px;">
+  <div style="display:flex;align-items:center;gap:16px;"><div style="width:56px;height:56px;border-radius:14px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);display:grid;place-items:center;font-weight:600;font-size:28px;">T</div><span style="font-size:56px;font-weight:600;letter-spacing:-.02em;">Tramus</span></div>
+  <div style="font-size:22px;color:oklch(0.78 0.012 80);text-wrap:pretty;">Hi-fi design for the desktop app. Dark theme by default, light theme for workspace and results. Every workspace artboard is interactive: click a step, scrub or drag trial handles, press Space, I, O, [ ], Ctrl+Z.</div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:18px;"><a href="#s1">1 Start &amp; Library</a><a href="#s2">2 Video workspace</a><a href="#s3">3 Light theme</a><a href="#s4">4 Minimum size</a><a href="#s5">5 Batch</a><a href="#s6">6 Settings</a><a href="#s7">7 States</a><a href="#s8">8 Components</a><a href="#s9">9 Tokens</a></div>
+</div>
+
+<section id="s1" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 1</span><span style="font-size:44px;font-weight:600;">Start and Library</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">1a</span><span style="font-weight:600;">First launch</span><span style="color:oklch(0.7 0.012 80);">Recent folders</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="start" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">1b</span><span style="font-weight:600;">Library · table</span><span style="color:oklch(0.7 0.012 80);">3 selected → Apply template, Track, Export</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="library" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">1c</span><span style="font-weight:600;">Library · grid</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="libraryGrid" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s2" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 2</span><span style="font-size:44px;font-weight:600;">Video workspace · dark</span><span style="font-size:20px;color:oklch(0.76 0.012 80);max-width:1100px;text-wrap:pretty;">Top bar with steps, video canvas, inspector on the right, timeline across the bottom in every step. Red is used only for the trail, amber only for flags and warnings.</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2a</span><span style="font-weight:600;">Setup</span><span style="color:oklch(0.7 0.012 80);">Center selected · tooltip with shortcut</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="setup" tooltip="{{ true }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2b</span><span style="font-weight:600;">Setup · What the tracker sees</span><span style="color:oklch(0.7 0.012 80);">Sliders update the image live</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="setup" view="tracker" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2c</span><span style="font-weight:600;">Tracking</span><span style="color:oklch(0.7 0.012 80);">Progress in place · setup locked</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="tracking" t="{{ 197 }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2d</span><span style="font-weight:600;">Review &amp; correct · Flags</span><span style="color:oklch(0.7 0.012 80);">Playhead on a flag · range selected for Fill in between</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="review" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2e</span><span style="font-weight:600;">Review · Edit history</span><span style="color:oklch(0.7 0.012 80);">Every correction is traceable</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="review" review-tab="history" t="{{ 212.5 }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2f</span><span style="font-weight:600;">Results · Summary</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="results" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">2g</span><span style="font-weight:600;">Results · Events</span><span style="color:oklch(0.7 0.012 80);">Sortable, filterable · video and clock time</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="results" results-view="events" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s3" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 3</span><span style="font-size:44px;font-weight:600;">Light theme</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">3a</span><span style="font-weight:600;">Setup · light</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.95 0.006 85);--panel:oklch(0.985 0.004 85);--raised:oklch(0.935 0.007 85);--hover:oklch(0.91 0.008 85);--line:oklch(0.88 0.008 80);--line2:oklch(0.8 0.01 80);--tx:oklch(0.22 0.01 70);--tx2:oklch(0.43 0.012 70);--tx3:oklch(0.52 0.01 70);--pri:oklch(0.32 0.025 60);--onpri:oklch(0.97 0.01 85);--pris:oklch(0.32 0.025 60 / 0.08);--warn:oklch(0.55 0.13 65);--warns:oklch(0.8 0.15 75 / 0.22);--err:oklch(0.52 0.19 25);--ok:oklch(0.5 0.11 155);--canvas:oklch(0.9 0.006 85);--dim:oklch(0.97 0.004 85 / 0.72);color-scheme:light;"><dc-import name="Workspace" step="setup" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">3b</span><span style="font-weight:600;">Review · light</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.95 0.006 85);--panel:oklch(0.985 0.004 85);--raised:oklch(0.935 0.007 85);--hover:oklch(0.91 0.008 85);--line:oklch(0.88 0.008 80);--line2:oklch(0.8 0.01 80);--tx:oklch(0.22 0.01 70);--tx2:oklch(0.43 0.012 70);--tx3:oklch(0.52 0.01 70);--pri:oklch(0.32 0.025 60);--onpri:oklch(0.97 0.01 85);--pris:oklch(0.32 0.025 60 / 0.08);--warn:oklch(0.55 0.13 65);--warns:oklch(0.8 0.15 75 / 0.22);--err:oklch(0.52 0.19 25);--ok:oklch(0.5 0.11 155);--canvas:oklch(0.9 0.006 85);--dim:oklch(0.97 0.004 85 / 0.72);color-scheme:light;"><dc-import name="Workspace" step="review" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">3c</span><span style="font-weight:600;">Results · light</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.95 0.006 85);--panel:oklch(0.985 0.004 85);--raised:oklch(0.935 0.007 85);--hover:oklch(0.91 0.008 85);--line:oklch(0.88 0.008 80);--line2:oklch(0.8 0.01 80);--tx:oklch(0.22 0.01 70);--tx2:oklch(0.43 0.012 70);--tx3:oklch(0.52 0.01 70);--pri:oklch(0.32 0.025 60);--onpri:oklch(0.97 0.01 85);--pris:oklch(0.32 0.025 60 / 0.08);--warn:oklch(0.55 0.13 65);--warns:oklch(0.8 0.15 75 / 0.22);--err:oklch(0.52 0.19 25);--ok:oklch(0.5 0.11 155);--canvas:oklch(0.9 0.006 85);--dim:oklch(0.97 0.004 85 / 0.72);color-scheme:light;"><dc-import name="Workspace" step="results" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s4" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 4</span><span style="font-size:44px;font-weight:600;">Minimum window · 1000 × 1000</span><span style="font-size:20px;color:oklch(0.76 0.012 80);max-width:1100px;text-wrap:pretty;">The inspector keeps a fixed 312 px width and the canvas absorbs the loss. Breadcrumb and recording time truncate first, then the transport row wraps into two lines. The extra height goes to the video.</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">4a</span><span style="font-weight:600;">Setup at 1000 × 1000</span></div>
+      <div style="width:1000px;height:1000px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="setup" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">4b</span><span style="font-weight:600;">Review at 1000 × 1000</span></div>
+      <div style="width:1000px;height:1000px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Workspace" step="review" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">4c</span><span style="font-weight:600;">Library at 1000 × 1000</span></div>
+      <div style="width:1000px;height:1000px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="library" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s5" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 5</span><span style="font-size:44px;font-weight:600;">Batch</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">5a</span><span style="font-weight:600;">1 · Choose</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="batchChoose" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">5b</span><span style="font-weight:600;">2 · Check</span><span style="color:oklch(0.7 0.012 80);">Nudge, per-video start/end, warnings</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="batchCheck" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">5c</span><span style="font-weight:600;">3 · Run</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="batchRun" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">5d</span><span style="font-weight:600;">4 · Finish</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="batchFinish" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s6" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 6</span><span style="font-size:44px;font-weight:600;">Settings</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">6a</span><span style="font-weight:600;">Settings</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;"><dc-import name="Screens" screen="settings" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></div></div>
+  </div>
+</section>
+
+<section id="s7" style="display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 7</span><span style="font-size:44px;font-weight:600;">States</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:64px;max-width:4700px;">
+    <sc-for list="{{ states }}" as="s" hint-placeholder-count="10">
+      <div style="display:flex;flex-direction:column;gap:14px;"><div style="display:flex;gap:12px;align-items:baseline;font-size:20px;"><span style="font-family:'IBM Plex Mono';padding:2px 10px;border-radius:6px;background:oklch(0.87 0.05 82);color:oklch(0.2 0.01 70);font-weight:500;">{{ s.id }}</span><span style="font-weight:600;">{{ s.title }}</span><span style="color:oklch(0.7 0.012 80);">{{ s.note }}</span></div>
+        <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);--bg:oklch(0.165 0.005 70);--panel:oklch(0.2 0.006 70);--raised:oklch(0.245 0.007 70);--hover:oklch(0.28 0.008 70);--line:oklch(0.3 0.007 70);--line2:oklch(0.37 0.008 70);--tx:oklch(0.94 0.01 85);--tx2:oklch(0.76 0.012 80);--tx3:oklch(0.63 0.01 75);--pri:oklch(0.87 0.05 82);--onpri:oklch(0.2 0.01 70);--pris:oklch(0.87 0.05 82 / 0.13);--warn:oklch(0.8 0.15 75);--warns:oklch(0.8 0.15 75 / 0.15);--err:oklch(0.7 0.18 25);--ok:oklch(0.77 0.12 155);--canvas:oklch(0.13 0.004 70);--dim:oklch(0.12 0.004 70 / 0.62);color-scheme:dark;">
+          <sc-if value="{{ s.isScreen }}"><dc-import name="Screens" screen="{{ s.screen }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></sc-if>
+          <sc-if value="{{ s.isWs }}"><dc-import name="Workspace" step="{{ s.step }}" state="{{ s.state }}" t="{{ s.t }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import></sc-if>
+        </div></div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="s8" style="display:flex;flex-direction:column;gap:32px;width:1440px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 8</span><span style="font-size:44px;font-weight:600;">Component inventory</span><span style="font-size:20px;color:oklch(0.76 0.012 80);">MUI v7 / MUI X, all restyled through the theme. “Custom” marks where nothing in MUI fits.</span></div>
+  <div style="border-radius:12px;overflow:hidden;background:oklch(0.2 0.006 70);border:1px solid oklch(0.3 0.007 70);">
+    <div style="display:grid;grid-template-columns:300px 380px minmax(0,1fr);gap:24px;padding:14px 24px;font-size:15px;color:oklch(0.63 0.01 75);border-bottom:1px solid oklch(0.3 0.007 70);"><span>Element</span><span>MUI component</span><span>Notes</span></div>
+    <sc-for list="{{ inventory }}" as="r" hint-placeholder-count="12">
+      <div style="display:grid;grid-template-columns:300px 380px minmax(0,1fr);gap:24px;padding:12px 24px;font-size:17px;border-bottom:1px solid oklch(0.3 0.007 70);align-items:baseline;">
+        <span style="font-weight:500;">{{ r.el }}</span>
+        <span style="font-family:'IBM Plex Mono';font-size:15px;color:{{ r.fg }};">{{ r.mui }}</span>
+        <span style="color:oklch(0.76 0.012 80);font-size:16px;text-wrap:pretty;">{{ r.note }}</span>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="s9" style="display:flex;flex-direction:column;gap:32px;width:1440px;">
+  <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.7 0.012 80);">Section 9</span><span style="font-size:44px;font-weight:600;">Design tokens → MUI theme</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <sc-for list="{{ themes }}" as="th" hint-placeholder-count="2">
+      <div style="border-radius:12px;padding:24px;background:{{ th.bg }};color:{{ th.fg }};border:1px solid {{ th.bd }};display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:22px;font-weight:600;">{{ th.name }}</span>
+        <sc-for list="{{ th.rows }}" as="r">
+          <div style="display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;">
+            <span style="width:44px;height:30px;border-radius:6px;background:{{ r.v }};box-shadow:inset 0 0 0 1px {{ th.bd }};"></span>
+            <span style="font-family:'IBM Plex Mono';font-size:15px;">{{ r.k }}</span>
+            <span style="font-family:'IBM Plex Mono';font-size:13px;opacity:.7;">{{ r.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+  <div style="border-radius:12px;padding:24px;background:oklch(0.2 0.006 70);border:1px solid oklch(0.3 0.007 70);display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;"><span style="font-size:22px;font-weight:600;">Zone palette · palette.zones[0–7]</span><span style="font-size:16px;color:oklch(0.76 0.012 80);">Outline 1.5 px (2.5 px selected) + fill at 12% (30% when the mouse is in it). No red, no amber. The top row is the colour; the bottom row is the same colour in grayscale, so lightness steps stay distinct on grayscale video and for colour-blind users.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:12px;">
+      <sc-for list="{{ zonePal }}" as="z" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="height:64px;border-radius:8px;background:url(assets/frame.png) center/cover;position:relative;overflow:hidden;"><div style="position:absolute;inset:10px;border:2px solid {{ z.c }};background:{{ z.f }};border-radius:3px;"></div></div>
+          <div style="height:24px;border-radius:6px;background:{{ z.c }};filter:grayscale(1);"></div>
+          <span style="font-weight:500;font-size:16px;">{{ z.name }}</span>
+          <span style="font-family:'IBM Plex Mono';font-size:12px;color:oklch(0.7 0.012 80);">{{ z.c }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:16px;"><span style="display:flex;align-items:center;gap:8px;"><span style="width:28px;height:4px;background:oklch(0.64 0.23 27);"></span>trail · oklch(0.64 0.23 27) · reserved</span><span style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;transform:rotate(45deg);background:oklch(0.8 0.15 75);"></span>warning / flag · oklch(0.8 0.15 75)</span><span style="display:flex;align-items:center;gap:8px;"><span style="width:28px;height:4px;background:oklch(0.8 0.15 150);"></span>tracker detection · oklch(0.8 0.15 150)</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <div style="border-radius:12px;padding:24px;background:oklch(0.2 0.006 70);border:1px solid oklch(0.3 0.007 70);display:flex;flex-direction:column;gap:12px;">
+      <span style="font-size:22px;font-weight:600;">Typography · IBM Plex Sans / Plex Mono</span>
+      <sc-for list="{{ type }}" as="t" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:130px minmax(0,1fr) 170px;gap:14px;align-items:baseline;border-bottom:1px solid oklch(0.3 0.007 70);padding-bottom:10px;"><span style="font-family:'IBM Plex Mono';font-size:14px;color:oklch(0.7 0.012 80);">{{ t.k }}</span><span style="font-family:{{ t.ff }};font-size:{{ t.fs }};font-weight:{{ t.fw }};letter-spacing:{{ t.ls }};text-transform:{{ t.tt }};">{{ t.sample }}</span><span style="font-family:'IBM Plex Mono';font-size:13px;color:oklch(0.7 0.012 80);text-align:right;">{{ t.spec }}</span></div></sc-for>
+      <span style="font-size:15px;color:oklch(0.76 0.012 80);text-wrap:pretty;">All numbers use font-variant-numeric: tabular-nums. Times (mm:ss.mmm) always use Plex Mono, so digits don’t shift during playback.</span>
+    </div>
+    <div style="border-radius:12px;padding:24px;background:oklch(0.2 0.006 70);border:1px solid oklch(0.3 0.007 70);display:flex;flex-direction:column;gap:12px;">
+      <span style="font-size:22px;font-weight:600;">Spacing, shape, density</span>
+      <sc-for list="{{ shape }}" as="t" hint-placeholder-count="10"><div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;border-bottom:1px solid oklch(0.3 0.007 70);padding-bottom:10px;font-size:16px;"><span style="font-family:'IBM Plex Mono';font-size:14px;color:oklch(0.87 0.05 82);">{{ t.k }}</span><span style="color:oklch(0.85 0.01 80);">{{ t.v }}</span></div></sc-for>
+    </div>
+  </div>
+  <div style="border-radius:12px;padding:24px;background:oklch(0.16 0.005 70);border:1px solid oklch(0.3 0.007 70);display:flex;flex-direction:column;gap:12px;">
+    <span style="font-size:22px;font-weight:600;">theme.ts (excerpt)</span>
+    <pre style="margin:0;font-family:'IBM Plex Mono';font-size:14px;line-height:1.55;color:oklch(0.85 0.01 80);white-space:pre-wrap;">{{ code }}</pre>
+  </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const W=(id,title,note,step,state,t)=>({id,title,note,isWs:true,isScreen:false,step,state,t});
+    const S=(id,title,note,screen)=>({id,title,note,isWs:false,isScreen:true,screen});
+    const states=[
+      S('7a','Empty folder','No supported video files','libraryEmpty'),
+      W('7b','Video without a setup','Arena and zones not drawn yet','setup','noSetup',5),
+      W('7c','Saved analysis found on open','Snackbar confirms what was restored','review','loaded',134.36),
+      W('7d','Unsaved changes when leaving','Dialog on navigating to Library','review','unsaved',134.36),
+      W('7e','Tracking failed','Error in place, setup unchanged','tracking','failed',128.6),
+      W('7f','Tracking cancelled','','tracking','cancelled',128.6),
+      W('7g','Video file changed since analysis','Amber warning, re-track or keep','review','changed',134.36),
+      W('7h','Many flags','46 flags · points back to detection settings','review','manyFlags',134.36),
+      W('7i','No flags','','review','noFlags',212.5),
+      W('7j','Zone edited after tracking','Results updated without re-tracking','results','resultsUpdated',134.36)];
+    const I=(el,mui,note)=>({el,mui,note,fg:mui==='custom'?'oklch(0.8 0.15 75)':'oklch(0.87 0.05 82)'});
+    const inventory=[
+      I('App shell / left navigation','Drawer (permanent, mini 52 px) + List + ListItemButton','Icon-only rail; label and shortcut in Tooltip (placement right).'),
+      I('Top bar','AppBar (position static, elevation 0) + Toolbar (dense)','48 px high; background.paper, bottom divider.'),
+      I('Breadcrumb','Breadcrumbs + Link + Typography','Folder segment links back to Library; both segments truncate with noWrap.'),
+      I('Workflow steps','Stepper nonLinear + StepButton','Restyled as a segmented control; StepIcon shows number or check.'),
+      I('Save state + Save','Typography + Button (outlined, small) + Tooltip','Tooltip “Save · Ctrl+S”. Dot uses success / warning colour.'),
+      I('Recording start (read-only)','Typography + Tooltip','Read from the video file; never editable.'),
+      I('Video canvas','custom','<video> + <canvas>/SVG overlay layer: arena, zones, labels, handles, trail, heatmap, body outline.'),
+      I('Canvas tools','ToggleButtonGroup (vertical, exclusive, small)','Floating over the canvas; Select V, Arena A, Rectangle R, Ellipse E, Polygon G, Pan H.'),
+      I('Zoom in / out / fit','IconButton + Tooltip','Ctrl+=, Ctrl+−, Ctrl+0.'),
+      I('Video / What the tracker sees','ToggleButtonGroup (exclusive)','Shortcut B toggles.'),
+      I('Review overlays','ToggleButton (independent) + Select','Trail, Heatmap, Body outline, Current zone; trail length 5–30 s.'),
+      I('Inspector panel','Box (Paper, square) + Divider','Fixed 312 px; content switches with the step; scrolls independently.'),
+      I('Inspector tabs (Review)','Tabs + Tab + Badge','Flags tab shows the unresolved count in a warning Badge.'),
+      I('Zone list','List + ListItemButton + InputBase + IconButton','Drag handle for reorder (dnd-kit); visibility, lock, delete.'),
+      I('Zone colour picker','ToggleButtonGroup of swatches','8 fixed swatches from palette.zones.'),
+      I('Zone geometry fields','TextField (small, type number)','Values in video pixels.'),
+      I('Brightness, contrast, sensitivity, size, threshold','Slider (small) + Typography value','Value shown right-aligned in mono.'),
+      I('Mouse darker / lighter','ToggleButtonGroup (exclusive, fullWidth)',''),
+      I('Primary actions (Track, Results, Export)','Button (contained)','Primary is the warm ivory; shortcut as an inline kbd chip.'),
+      I('Timeline: transport','IconButton + Button + Menu (speed)','Play Space, frame ←/→, speed 0.25×–16×.'),
+      I('Timeline: tracks, trial handles, playhead','custom','Ruler, filmstrip, zone lanes, flag lane, corrections lane, range selection (Shift+drag), zoom.'),
+      I('Set start / end, Lock duration','Button (outlined, small) + ToggleButton','I / O; lock keeps the trial length fixed.'),
+      I('Flag list','List + ListItemButton + Chip','Status Chip: Unresolved (warning), Fixed (success), Accepted (default).'),
+      I('Flag filters','Chip (clickable, outlined / filled)',''),
+      I('Flag banner on canvas','Paper + Button','Accept (A) and Set position (P).'),
+      I('Range popover','Popper + ButtonGroup','Fill in between (F), Mouse not visible (N).'),
+      I('Edit history','List + ListItem + ListItemAvatar','Newest first; included in exports.'),
+      I('Results: Summary / Events','ToggleButtonGroup (exclusive)',''),
+      I('Summary table','Table (size small)','Total row equals the trial length.'),
+      I('Summary chart','MUI X BarChart (layout horizontal)','Bar colours from palette.zones; No zone uses divider colour.'),
+      I('Events table','MUI X DataGrid (density compact)','Sortable columns and a zone quick-filter; two-line time cells via renderCell.'),
+      I('Library table','MUI X DataGrid (checkboxSelection)','Custom cells for thumbnail, status, flags.'),
+      I('Library grid','Grid2 + Card + CardMedia + CardContent',''),
+      I('Table / grid toggle','ToggleButtonGroup',''),
+      I('Selection bar','Toolbar + Button','Appears when 1+ rows are selected.'),
+      I('Status chip','Chip (small, outlined) + custom dot icon','New · Set up · Tracked · Reviewed · Exported.'),
+      I('Tracking progress','Paper + LinearProgress (determinate)','Percentage, elapsed, remaining, fps; Cancel (Esc).'),
+      I('Tracking failed / cancelled','Alert (outlined) + Button',''),
+      I('File changed warning','Alert (severity warning) + AlertTitle',''),
+      I('Loaded analysis / Results updated','Snackbar + SnackbarContent',''),
+      I('Unsaved changes','Dialog + DialogTitle + DialogContent + DialogActions',''),
+      I('Batch steps','Stepper (horizontal)',''),
+      I('Batch check card','Card + Checkbox + custom mini trim bar','Overlay nudge is custom (drag on the thumbnail).'),
+      I('Batch queue','List + LinearProgress + IconButton','Per-item cancel.'),
+      I('Settings','Paper + List + ToggleButtonGroup + Select',''),
+      I('Tooltips','Tooltip (enterDelay 500)','Every frequent action lists its shortcut.')];
+    const themes=[{name:'Dark (default)',bg:'oklch(0.165 0.005 70)',fg:'oklch(0.94 0.01 85)',bd:'oklch(0.3 0.007 70)',rows:[
+      ['background.default','oklch(0.165 0.005 70)'],['background.paper','oklch(0.2 0.006 70)'],['action.selected (raised)','oklch(0.245 0.007 70)'],['action.hover','oklch(0.28 0.008 70)'],['divider','oklch(0.3 0.007 70)'],['divider strong (inputs)','oklch(0.37 0.008 70)'],
+      ['text.primary','oklch(0.94 0.01 85)'],['text.secondary','oklch(0.76 0.012 80)'],['text.disabled / tertiary','oklch(0.63 0.01 75)'],['primary.main','oklch(0.87 0.05 82)'],['primary.contrastText','oklch(0.2 0.01 70)'],['secondary.main','oklch(0.76 0.012 80)'],
+      ['warning.main','oklch(0.8 0.15 75)'],['error.main','oklch(0.7 0.18 25)'],['success.main','oklch(0.77 0.12 155)'],['canvas (video backdrop)','oklch(0.13 0.004 70)']]},
+     {name:'Light',bg:'oklch(0.985 0.004 85)',fg:'oklch(0.22 0.01 70)',bd:'oklch(0.88 0.008 80)',rows:[
+      ['background.default','oklch(0.95 0.006 85)'],['background.paper','oklch(0.985 0.004 85)'],['action.selected (raised)','oklch(0.935 0.007 85)'],['action.hover','oklch(0.91 0.008 85)'],['divider','oklch(0.88 0.008 80)'],['divider strong (inputs)','oklch(0.8 0.01 80)'],
+      ['text.primary','oklch(0.22 0.01 70)'],['text.secondary','oklch(0.43 0.012 70)'],['text.disabled / tertiary','oklch(0.52 0.01 70)'],['primary.main','oklch(0.32 0.025 60)'],['primary.contrastText','oklch(0.97 0.01 85)'],['secondary.main','oklch(0.43 0.012 70)'],
+      ['warning.main','oklch(0.55 0.13 65)'],['error.main','oklch(0.52 0.19 25)'],['success.main','oklch(0.5 0.11 155)'],['canvas (video backdrop)','oklch(0.9 0.006 85)']]}].map(t=>({...t,rows:t.rows.map(([k,v])=>({k,v}))}));
+    const PAL=[[0.8,0.12,235,'Sky'],[0.77,0.13,172,'Teal'],[0.7,0.17,300,'Violet'],[0.88,0.17,122,'Lime'],[0.75,0.15,350,'Orchid'],[0.63,0.16,262,'Blue'],[0.92,0.05,205,'Ice'],[0.65,0.12,148,'Green']];
+    const zonePal=PAL.map(p=>({name:p[3],c:`oklch(${p[0]} ${p[1]} ${p[2]})`,f:`oklch(${p[0]} ${p[1]} ${p[2]} / 0.18)`}));
+    const T=(k,sample,fs,fw,spec,mono,upper)=>({k,sample,fs,fw,spec,ff:mono?"'IBM Plex Mono'":"'IBM Plex Sans'",ls:upper?'.06em':'0',tt:upper?'uppercase':'none'});
+    const type=[T('h5','Save changes before leaving?','16px',600,'16 / 24 · 600'),T('h6','Review & correct','15px',600,'15 / 22 · 600'),T('subtitle2','Left chamber','13px',500,'13 / 18 · 500'),T('body2','Draw the arena outline','13px',400,'13 / 18 · 400'),T('caption','Share of the body inside','11.5px',400,'11.5 / 16 · 400'),T('overline','Detection','11px',600,'11 / 16 · 600 · +6%',false,true),T('mono.time','02:14.360','16px',500,'16 · 500 · Mono',true),T('mono.body','05:05.000','12px',400,'12 · 400 · Mono',true)];
+    const shape=[{k:'spacing',v:'4 px base (theme.spacing(1) = 4). Panels pad 14 px, cards 12–16 px.'},{k:'shape.borderRadius',v:'6 px: buttons, inputs, toggles'},{k:'radius · cards / popovers',v:'8–10 px; dialogs 12 px; chips 999 px'},{k:'MuiButton size small',v:'height 28 px, px 10, font 12.5 / 500; contained 32–36 px'},{k:'MuiIconButton',v:'28 × 28 (tools 32 × 30); icon 18–20 px'},{k:'MuiListItemButton dense',v:'height 32 px'},{k:'MuiTableRow / DataGrid',v:'40 px (events), 52 px (library with thumbnails)'},{k:'MuiSlider size small',v:'track 4 px, thumb 14 px'},{k:'Top bar / inspector / rail',v:'48 px / 312 px / 52 px'},{k:'elevation',v:'Flat surfaces with 1 px dividers; shadows only on floating layers (menus, dialogs, canvas cards)'},{k:'breakpoints',v:'Desktop only; layout tested 1000 × 1000 → 2560 × 1440'}];
+    const code=`const zones = ['oklch(0.8 0.12 235)','oklch(0.77 0.13 172)','oklch(0.7 0.17 300)','oklch(0.88 0.17 122)',
+               'oklch(0.75 0.15 350)','oklch(0.63 0.16 262)','oklch(0.92 0.05 205)','oklch(0.65 0.12 148)'];
+
+export const darkTheme = createTheme({
+  cssVariables: true,
+  palette: {
+    mode: 'dark',
+    primary:   { main: 'oklch(0.87 0.05 82)', contrastText: 'oklch(0.2 0.01 70)' },
+    secondary: { main: 'oklch(0.76 0.012 80)' },
+    warning:   { main: 'oklch(0.8 0.15 75)' },   // flags + warnings only
+    error:     { main: 'oklch(0.7 0.18 25)' },
+    success:   { main: 'oklch(0.77 0.12 155)' },
+    background:{ default: 'oklch(0.165 0.005 70)', paper: 'oklch(0.2 0.006 70)' },
+    text:      { primary: 'oklch(0.94 0.01 85)', secondary: 'oklch(0.76 0.012 80)', disabled: 'oklch(0.63 0.01 75)' },
+    divider:   'oklch(0.3 0.007 70)',
+    trail:     'oklch(0.64 0.23 27)',             // reserved: movement trail
+    zones,
+  },
+  spacing: 4,
+  shape: { borderRadius: 6 },
+  typography: {
+    fontFamily: '"IBM Plex Sans", system-ui, sans-serif', fontSize: 13,
+    h5: { fontSize: 16, fontWeight: 600 }, h6: { fontSize: 15, fontWeight: 600 },
+    body2: { fontSize: 13 }, caption: { fontSize: 11.5 },
+    overline: { fontSize: 11, fontWeight: 600, letterSpacing: '.06em' },
+    mono: { fontFamily: '"IBM Plex Mono", monospace', fontVariantNumeric: 'tabular-nums' },
+  },
+  components: {
+    MuiButton:     { defaultProps: { size: 'small', disableElevation: true }, styleOverrides: { root: { textTransform: 'none', height: 28 } } },
+    MuiIconButton: { defaultProps: { size: 'small' } },
+    MuiTooltip:    { defaultProps: { enterDelay: 500, arrow: false } },
+    MuiList:       { defaultProps: { dense: true } },
+    MuiSlider:     { defaultProps: { size: 'small' } },
+    MuiDataGrid:   { defaultProps: { density: 'compact' } },
+    MuiPaper:      { defaultProps: { elevation: 0 } },
+  },
+});
+// lightTheme: same structure, values from the Light column.`;
+    return{states,inventory,themes,zonePal,type,shape,code};
+  }
+}
+</script>
+</body>
+</html>

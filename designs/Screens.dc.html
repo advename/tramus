@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+</helmet>
+<div style="position:relative;width:100%;height:100%;display:grid;grid-template-columns:52px minmax(0,1fr);background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.4;overflow:hidden;">
+<nav style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;background:var(--panel);border-right:1px solid var(--line);">
+  <div title="Tramus" style="width:28px;height:28px;border-radius:7px;background:var(--pri);color:var(--onpri);display:grid;place-items:center;font-weight:600;font-size:14px;margin-bottom:12px;">T</div>
+  <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3"><button title="{{ n.title }}" style="width:38px;height:38px;border:none;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">{{ n.icon }}</span></button></sc-for>
+  <div style="flex:1;"></div>
+  <button title="Settings · Ctrl+," style="width:38px;height:38px;border:none;border-radius:8px;background:{{ setBg }};color:{{ setFg }};display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">settings</span></button>
+</nav>
+<main style="display:flex;flex-direction:column;min-width:0;min-height:0;">
+
+<sc-if value="{{ isStart }}">
+  <div style="flex:1;display:grid;place-items:center;padding:32px;overflow:auto;">
+    <div style="width:min(560px,100%);display:flex;flex-direction:column;gap:28px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="width:44px;height:44px;border-radius:11px;background:var(--pri);color:var(--onpri);display:grid;place-items:center;font-weight:600;font-size:22px;">T</div>
+        <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;">Tramus</div>
+        <div style="color:var(--tx2);font-size:14px;text-wrap:pretty;">Open a folder of top-down videos to set up zones, track the mouse and measure time in each zone.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button title="Open folder · Ctrl+O" style="height:38px;padding:0 16px;display:flex;align-items:center;gap:8px;border:none;border-radius:7px;background:var(--pri);color:var(--onpri);font:inherit;font-size:14px;font-weight:600;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">folder_open</span>Open folder…<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid oklch(0.2 0.01 70 / 0.3);font-weight:500;">Ctrl+O</span></button>
+        <span style="color:var(--tx3);font-size:12.5px;">or drop a folder anywhere in this window</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);padding:0 10px 6px;">Recent folders</span>
+        <sc-for list="{{ recents }}" as="r" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer;" style-hover="background:var(--hover);">
+            <span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;color:var(--tx2);">folder</span>
+            <div style="display:flex;flex-direction:column;min-width:0;"><span style="font-weight:500;">{{ r.name }}</span><span style="font-size:11.5px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.path }}</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;font-size:11.5px;color:var(--tx3);white-space:nowrap;"><span>{{ r.meta }}</span><span>{{ r.when }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isLib }}">
+  <header style="display:flex;align-items:center;gap:14px;padding:0 16px;height:60px;border-bottom:1px solid var(--line);background:var(--panel);flex:none;min-width:0;">
+    <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+      <span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ folderName }}</span>
+      <span style="font-size:11.5px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ folderPath }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);width:220px;min-width:120px;flex:0 1 220px;color:var(--tx3);"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">search</span><span style="font-size:12.5px;white-space:nowrap;overflow:hidden;">Search videos</span><span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid var(--line2);">Ctrl+F</span></div>
+    <button style="height:30px;padding:0 8px 0 10px;display:flex;align-items:center;gap:4px;border:1px solid var(--line2);border-radius:7px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;">Status: All<span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--tx3);">expand_more</span></button>
+    <div style="display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--bg);">
+      <button title="Table · Ctrl+Shift+1" style="width:30px;height:24px;border:none;border-radius:5px;background:{{ tbBg }};color:{{ tbFg }};display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">table_rows</span></button>
+      <button title="Grid · Ctrl+Shift+2" style="width:30px;height:24px;border:none;border-radius:5px;background:{{ grBg }};color:{{ grFg }};display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">grid_view</span></button>
+    </div>
+    <button title="Open folder · Ctrl+O" style="height:30px;padding:0 12px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:7px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">folder_open</span>Open folder…</button>
+  </header>
+  <sc-if value="{{ hasSelection }}">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--raised);border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none;">
+      <span style="font-weight:600;margin-right:6px;">3 selected</span>
+      <button style="height:28px;padding:0 12px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">bookmarks</span>Apply template…</button>
+      <button title="Track · Ctrl+T" style="height:28px;padding:0 12px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">play_circle</span>Track</button>
+      <button style="height:28px;padding:0 12px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">download</span>Export results</button>
+      <div style="flex:1;"></div>
+      <button title="Clear selection · Esc" style="height:28px;padding:0 10px;border:none;border-radius:6px;background:transparent;color:var(--tx2);font:inherit;font-size:12.5px;cursor:pointer;">Clear selection</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isTable }}">
+    <div style="flex:1;overflow:auto;min-height:0;">
+      <div style="display:grid;grid-template-columns:36px 64px minmax(160px,1.6fr) 96px minmax(130px,1fr) 118px 70px 36px;gap:12px;align-items:center;padding:0 16px;height:34px;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:1;min-width:760px;">
+        <input type="checkbox" style="accent-color:var(--pri);margin:0;"><span></span><span style="color:var(--tx);display:flex;align-items:center;gap:2px;">Name<span style="font-family:'Material Symbols Outlined';font-size:14px;line-height:1;">arrow_upward</span></span><span style="text-align:right;">Duration</span><span>Recorded</span><span>Status</span><span style="text-align:right;">Flags</span><span></span>
+      </div>
+      <sc-for list="{{ videos }}" as="v" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:36px 64px minmax(160px,1.6fr) 96px minmax(130px,1fr) 118px 70px 36px;gap:12px;align-items:center;padding:0 16px;height:52px;border-bottom:1px solid var(--line);background:{{ v.bg }};cursor:pointer;min-width:760px;" style-hover="background:var(--hover);">
+          <input type="checkbox" checked="{{ v.sel }}" style="accent-color:var(--pri);margin:0;">
+          <div style="width:52px;height:44px;border-radius:4px;background:#000 url(assets/frame.png) center/cover;"></div>
+          <div style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span><sc-if value="{{ v.changed }}"><span title="File changed since it was analysed" style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:var(--warn);">warning</span></sc-if></div>
+          <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;">{{ v.dur }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);white-space:nowrap;">{{ v.rec }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:11px;border:1px solid {{ v.sbd }};background:{{ v.sbg }};color:{{ v.sfg }};font-size:11.5px;font-weight:500;justify-self:start;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{ v.dot }};"></span>{{ v.status }}</span>
+          <div style="display:flex;justify-content:flex-end;"><sc-if value="{{ v.hasFlags }}"><span style="display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;background:var(--warns);color:var(--warn);font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;"><span style="width:6px;height:6px;transform:rotate(45deg);background:oklch(0.8 0.15 75);"></span>{{ v.flags }}</span></sc-if><sc-if value="{{ v.noFlags }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx3);">{{ v.flagsTxt }}</span></sc-if></div>
+          <button title="More" style="width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--tx3);display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;">more_vert</span></button>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isGrid }}">
+    <div style="flex:1;overflow:auto;min-height:0;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;align-content:start;">
+      <sc-for list="{{ videos }}" as="v" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;cursor:pointer;" style-hover="border-color:var(--line2);">
+          <div style="position:relative;aspect-ratio:746/635;background:#000 url(assets/frame.png) center/cover;">
+            <sc-if value="{{ v.hasFlags }}"><span style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;background:oklch(0.8 0.15 75);color:oklch(0.22 0.03 70);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;">{{ v.flags }} flags</span></sc-if>
+            <span style="position:absolute;left:8px;bottom:8px;padding:1px 6px;border-radius:4px;background:oklch(0.15 0.005 70 / 0.8);color:oklch(0.96 0.01 85);font-family:'IBM Plex Mono',monospace;font-size:11px;">{{ v.dur }}</span>
+          </div>
+          <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span><sc-if value="{{ v.changed }}"><span title="File changed since it was analysed" style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:var(--warn);">warning</span></sc-if></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx3);white-space:nowrap;">{{ v.recShort }}</span><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:11px;border:1px solid {{ v.sbd }};background:{{ v.sbg }};color:{{ v.sfg }};font-size:11.5px;font-weight:500;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{ v.dot }};"></span>{{ v.status }}</span></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmpty }}">
+    <div style="flex:1;display:grid;place-items:center;padding:32px;">
+      <div style="width:min(420px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">
+        <span style="font-family:'Material Symbols Outlined';font-size:36px;line-height:1;color:var(--tx3);">video_file</span>
+        <span style="font-size:16px;font-weight:600;">No videos in this folder</span>
+        <span style="color:var(--tx2);text-wrap:pretty;">Tramus looks for .mp4, .avi, .mov and .mkv files directly in the folder. Subfolders aren’t searched.</span>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center;">
+          <button style="height:32px;padding:0 14px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">folder_open</span>Open another folder</button>
+          <button style="height:32px;padding:0 14px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-weight:500;cursor:pointer;">Show in file manager</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ isBatch }}">
+  <header style="display:flex;align-items:center;gap:16px;padding:0 16px;height:60px;border-bottom:1px solid var(--line);background:var(--panel);flex:none;min-width:0;">
+    <div style="display:flex;flex-direction:column;min-width:0;flex:1 1 0;"><span style="font-size:15px;font-weight:600;">Batch</span><span style="font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cohort-B/2026-09-25</span></div>
+    <div style="display:flex;align-items:center;gap:6px;flex:none;">
+      <sc-for list="{{ bsteps }}" as="b" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:{{ b.cbg }};color:{{ b.cfg }};border:1px solid {{ b.cbd }};font-size:11px;font-weight:600;"><sc-if value="{{ b.showNum }}">{{ b.num }}</sc-if><sc-if value="{{ b.done }}"><span style="font-family:'Material Symbols Outlined';font-size:14px;line-height:1;">check</span></sc-if></span><span style="font-weight:500;color:{{ b.fg }};">{{ b.label }}</span><sc-if value="{{ b.line }}"><span style="width:28px;height:1px;background:var(--line2);margin:0 4px;"></span></sc-if></div>
+      </sc-for>
+    </div>
+    <div style="flex:1 1 0;"></div>
+  </header>
+
+  <sc-if value="{{ isChoose }}">
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);">
+      <div style="display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);">
+        <div style="display:flex;align-items:center;gap:8px;padding:14px 16px 10px;flex-wrap:wrap;"><span style="font-weight:600;">Videos</span><span style="color:var(--tx3);font-size:12px;">7 of 12 selected</span><div style="flex:1;"></div>
+          <button style="height:26px;padding:0 10px;border:1px solid var(--pri);border-radius:13px;background:var(--pris);color:var(--tx);font:inherit;font-size:12px;cursor:pointer;">Not tracked yet</button>
+          <button style="height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:13px;background:transparent;color:var(--tx);font:inherit;font-size:12px;cursor:pointer;">All</button></div>
+        <div style="flex:1;overflow:auto;min-height:0;">
+          <sc-for list="{{ chooseList }}" as="v" hint-placeholder-count="10">
+            <div style="display:grid;grid-template-columns:20px 44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:6px 16px;border-bottom:1px solid var(--line);background:{{ v.bg }};">
+              <input type="checkbox" checked="{{ v.sel }}" style="accent-color:var(--pri);margin:0;">
+              <div style="width:44px;height:37px;border-radius:4px;background:#000 url(assets/frame.png) center/cover;"></div>
+              <div style="display:flex;flex-direction:column;min-width:0;"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);">{{ v.dur }} · {{ v.recShort }}</span></div>
+              <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:11px;border:1px solid {{ v.sbd }};background:{{ v.sbg }};color:{{ v.sfg }};font-size:11.5px;font-weight:500;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{ v.dot }};"></span>{{ v.status }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;overflow:auto;background:var(--panel);">
+        <span style="font-weight:600;">Template</span>
+        <sc-for list="{{ templates }}" as="t" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:18px 76px minmax(0,1fr);gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid {{ t.bd }};background:{{ t.bg }};cursor:pointer;">
+            <span style="width:16px;height:16px;box-sizing:border-box;border-radius:50%;border:{{ t.radio }};"></span>
+            <div style="position:relative;width:76px;height:65px;border-radius:5px;overflow:hidden;background:#000 url(assets/frame.png) center/cover;">
+              <svg viewBox="0 0 746 635" style="position:absolute;inset:0;width:100%;height:100%;"><rect x="164" y="19" width="412" height="204" style="fill:oklch(0.8 0.12 235 / 0.2);stroke:oklch(0.8 0.12 235);stroke-width:14;"></rect><rect x="164" y="243" width="412" height="186" style="fill:oklch(0.77 0.13 172 / 0.2);stroke:oklch(0.77 0.13 172);stroke-width:14;"></rect><rect x="164" y="447" width="412" height="184" style="fill:oklch(0.7 0.17 300 / 0.2);stroke:oklch(0.7 0.17 300);stroke-width:14;"></rect></svg>
+            </div>
+            <div style="display:flex;flex-direction:column;min-width:0;gap:2px;"><span style="font-weight:500;">{{ t.name }}</span><span style="font-size:11.5px;color:var(--tx3);">{{ t.meta }}</span><span style="font-size:11.5px;color:var(--tx3);">{{ t.saved }}</span></div>
+          </div>
+        </sc-for>
+        <button style="height:30px;border:1px dashed var(--line2);border-radius:8px;background:transparent;color:var(--tx2);font:inherit;font-size:12.5px;cursor:pointer;">Import template file…</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCheck }}">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none;">
+      <span style="color:var(--tx2);text-wrap:pretty;flex:1;min-width:240px;">Check each video before tracking. Drag the overlay to nudge it if the camera moved, and set when each trial starts.</span>
+      <span style="font-size:12px;color:var(--tx2);white-space:nowrap;">6 of 7 included</span>
+      <button style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">lock</span>Trial length 5:00</button>
+    </div>
+    <div style="flex:1;overflow:auto;min-height:0;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-content:start;">
+      <sc-for list="{{ checkCards }}" as="c" hint-placeholder-count="6">
+        <div style="display:flex;flex-direction:column;border:1px solid {{ c.bd }};border-radius:10px;background:var(--panel);overflow:hidden;opacity:{{ c.op }};">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;"><input type="checkbox" checked="{{ c.inc }}" style="accent-color:var(--pri);margin:0;"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">{{ c.name }}</span><sc-if value="{{ c.hasWarn }}"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--warn);">warning</span></sc-if></div>
+          <div title="Drag to nudge the overlay" style="position:relative;aspect-ratio:746/635;background:#000;overflow:hidden;cursor:move;">
+            <img src="assets/frame.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;display:block;">
+            <svg viewBox="0 0 746 635" style="position:absolute;inset:0;width:100%;height:100%;"><g transform="{{ c.tr }}"><rect x="156" y="10" width="428" height="624" style="fill:none;stroke:oklch(0.95 0.02 85);stroke-width:3;stroke-dasharray:14 9;"></rect><rect x="164" y="19" width="412" height="204" style="fill:oklch(0.8 0.12 235 / 0.14);stroke:oklch(0.8 0.12 235);stroke-width:4;"></rect><rect x="164" y="243" width="412" height="186" style="fill:oklch(0.77 0.13 172 / 0.14);stroke:oklch(0.77 0.13 172);stroke-width:4;"></rect><rect x="164" y="447" width="412" height="184" style="fill:oklch(0.7 0.17 300 / 0.14);stroke:oklch(0.7 0.17 300);stroke-width:4;"></rect><path d="M318 416L428 416L446 460L300 460Z" style="fill:oklch(0.88 0.17 122 / 0.14);stroke:oklch(0.88 0.17 122);stroke-width:4;"></path></g></svg>
+            <span style="position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;padding:2px 7px;border-radius:5px;background:oklch(0.15 0.005 70 / 0.82);color:oklch(0.96 0.01 85);font-family:'IBM Plex Mono',monospace;font-size:11px;"><span style="font-family:'Material Symbols Outlined';font-size:13px;line-height:1;">open_with</span>{{ c.offset }}</span>
+          </div>
+          <sc-if value="{{ c.hasWarn }}"><div style="display:flex;gap:6px;padding:7px 10px;background:var(--warns);font-size:11.5px;text-wrap:pretty;"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--warn);">warning</span>{{ c.warn }}</div></sc-if>
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;">
+            <button title="Preview · Space" style="width:26px;height:26px;border:none;border-radius:50%;background:var(--raised);color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0;flex:none;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;font-variation-settings:'FILL' 1;">play_arrow</span></button>
+            <div style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--raised);">
+              <div style="position:absolute;top:0;bottom:0;left:{{ c.sL }};width:{{ c.sW }};background:var(--pris);border-left:2px solid var(--pri);border-right:2px solid var(--pri);box-sizing:border-box;"></div>
+              <div style="position:absolute;top:-2px;bottom:-2px;left:{{ c.pL }};width:1px;background:var(--tx);"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:0 10px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2);"><span>{{ c.start }}</span><span style="color:var(--tx3);">→</span><span>{{ c.end }}</span></div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isRun }}">
+    <div style="flex:1;overflow:auto;min-height:0;padding:16px;display:flex;flex-direction:column;gap:14px;">
+      <div style="padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;"><span style="font-weight:600;font-size:14px;">Tracking 6 videos · 2 at a time</span><span style="color:var(--tx2);font-size:12px;">3 done · 2 running · 1 waiting · about 1 min 40 s left</span><div style="flex:1;"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;">58%</span></div>
+        <div style="height:6px;border-radius:3px;background:var(--raised);overflow:hidden;"><div style="width:58%;height:100%;background:var(--pri);"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:12px;color:var(--tx3);">GPU · NVIDIA RTX A2000 · you can keep working in other videos</span><button style="height:28px;padding:0 12px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Cancel all</button></div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;">
+        <sc-for list="{{ queue }}" as="q" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:44px minmax(140px,1fr) 112px minmax(120px,1.2fr) 110px 32px;gap:12px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);">
+            <div style="width:44px;height:37px;border-radius:4px;background:#000 url(assets/frame.png) center/cover;opacity:{{ q.op }};"></div>
+            <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ q.nfg }};">{{ q.name }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:11px;border:1px solid var(--line2);color:{{ q.sfg }};font-size:11.5px;font-weight:500;justify-self:start;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{ q.dot }};"></span>{{ q.status }}</span>
+            <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:4px;border-radius:2px;background:var(--raised);overflow:hidden;"><div style="width:{{ q.w }};height:100%;background:{{ q.bar }};"></div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;width:36px;text-align:right;">{{ q.pct }}</span></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx3);white-space:nowrap;">{{ q.meta }}</span>
+            <sc-if value="{{ q.canCancel }}"><button title="Cancel this video" style="width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">close</span></button></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isFinish }}">
+    <div style="flex:1;overflow:auto;min-height:0;padding:16px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;flex:1;min-width:240px;"><span style="font-weight:600;font-size:14px;">5 videos tracked · 1 cancelled</span><span style="color:var(--tx2);font-size:12px;">Review each video’s flags before exporting, or export now and review later.</span></div>
+        <button style="height:34px;padding:0 14px;display:flex;align-items:center;gap:6px;border:none;border-radius:7px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">download</span>Export all to one workbook</button>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;">
+        <div style="display:grid;grid-template-columns:44px minmax(140px,1fr) 112px 130px 150px;gap:12px;align-items:center;padding:0 14px;height:34px;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--line);"><span></span><span>Video</span><span>Status</span><span>Flags to review</span><span></span></div>
+        <sc-for list="{{ finish }}" as="q" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:44px minmax(140px,1fr) 112px 130px 150px;gap:12px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);">
+            <div style="width:44px;height:37px;border-radius:4px;background:#000 url(assets/frame.png) center/cover;"></div>
+            <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ q.name }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:11px;border:1px solid var(--line2);color:{{ q.sfg }};font-size:11.5px;font-weight:500;justify-self:start;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{ q.dot }};"></span>{{ q.status }}</span>
+            <div><sc-if value="{{ q.hasFlags }}"><span style="display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;background:var(--warns);color:var(--warn);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;"><span style="width:6px;height:6px;transform:rotate(45deg);background:oklch(0.8 0.15 75);"></span>{{ q.flags }}</span></sc-if><sc-if value="{{ q.noFlags }}"><span style="font-size:12px;color:var(--tx3);">{{ q.flagsTxt }}</span></sc-if></div>
+            <sc-if value="{{ q.canOpen }}"><button style="height:28px;padding:0 10px;display:flex;align-items:center;gap:4px;justify-self:end;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;">Open in Review<span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">arrow_forward</span></button></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <footer style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);background:var(--panel);flex:none;flex-wrap:wrap;">
+    <span style="color:var(--tx2);font-size:12.5px;flex:1;min-width:200px;">{{ footText }}</span>
+    <sc-if value="{{ hasBack }}"><button style="height:32px;padding:0 14px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-weight:500;cursor:pointer;">Back</button></sc-if>
+    <sc-if value="{{ hasNext }}"><button style="height:32px;padding:0 14px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;">{{ nextLabel }}<span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">arrow_forward</span></button></sc-if>
+  </footer>
+</sc-if>
+
+<sc-if value="{{ isSettings }}">
+  <header style="display:flex;align-items:center;padding:0 16px;height:60px;border-bottom:1px solid var(--line);background:var(--panel);flex:none;"><span style="font-size:15px;font-weight:600;">Settings</span></header>
+  <div style="flex:1;overflow:auto;min-height:0;padding:20px 16px 32px;">
+    <div style="max-width:720px;display:flex;flex-direction:column;gap:22px;">
+      <sc-for list="{{ settings }}" as="g" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);padding:0 2px;">{{ g.title }}</span>
+          <div style="border:1px solid var(--line);border-radius:10px;background:var(--panel);">
+            <sc-for list="{{ g.rows }}" as="r">
+              <div style="display:flex;align-items:center;gap:16px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;flex:1;min-width:220px;"><span style="font-weight:500;">{{ r.label }}</span><span style="font-size:12px;color:var(--tx3);text-wrap:pretty;">{{ r.help }}</span></div>
+                <sc-if value="{{ r.isSeg }}"><div style="display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--bg);"><sc-for list="{{ r.opts }}" as="o"><button style="height:28px;padding:0 14px;border:none;border-radius:6px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">{{ o.label }}</button></sc-for></div></sc-if>
+                <sc-if value="{{ r.isStep }}"><div style="display:flex;align-items:center;border:1px solid var(--line2);border-radius:7px;overflow:hidden;"><button style="width:32px;height:30px;border:none;background:transparent;color:var(--tx2);cursor:pointer;display:grid;place-items:center;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">remove</span></button><span style="width:40px;text-align:center;font-family:'IBM Plex Mono',monospace;border-left:1px solid var(--line2);border-right:1px solid var(--line2);line-height:30px;">{{ r.value }}</span><button style="width:32px;height:30px;border:none;background:transparent;color:var(--tx2);cursor:pointer;display:grid;place-items:center;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">add</span></button></div></sc-if>
+                <sc-if value="{{ r.isSelect }}"><button style="height:30px;min-width:110px;padding:0 8px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);color:var(--tx);font-family:'IBM Plex Mono',monospace;font-size:12.5px;cursor:pointer;">{{ r.value }}<span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--tx3);">expand_more</span></button></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;start&quot;,&quot;library&quot;,&quot;libraryGrid&quot;,&quot;libraryEmpty&quot;,&quot;batchChoose&quot;,&quot;batchCheck&quot;,&quot;batchRun&quot;,&quot;batchFinish&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;library&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const ST={New:['var(--tx3)','transparent','var(--line2)','var(--tx2)'],'Set up':['var(--tx2)','transparent','var(--line2)','var(--tx)'],Tracked:['var(--pri)','var(--pris)','transparent','var(--tx)'],Reviewed:['var(--ok)','color-mix(in oklch,var(--ok) 14%,transparent)','transparent','var(--tx)'],Exported:['var(--ok)','transparent','color-mix(in oklch,var(--ok) 50%,transparent)','var(--ok)']};
+const VIDS=[['M09_day3_trial1.mp4','05:58.200','08:12:05','Exported',0],['M10_day3_trial1.mp4','06:05.940','08:34:40','Reviewed',0,true],['M11_day3_trial1.mp4','06:21.030','09:02:17','Tracked',3],['M12_day3_trial1.mp4','06:12.480','09:41:12','Tracked',5],['M13_day3_trial1.mp4','06:00.000','10:15:51','Set up',null],['M14_day3_trial1.mp4','06:08.320','10:48:09','Set up',null],['M15_day3_trial1.mp4','05:55.760','11:20:33','New',null],['M16_day3_trial1.mp4','06:11.100','11:52:02','New',null],['M09_day3_trial2.mp4','06:02.410','13:30:44','New',null],['M10_day3_trial2.mp4','06:15.000','14:02:19','New',null],['M11_day3_trial2.mp4','04:48.620','14:31:57','New',null],['M12_day3_trial2.mp4','06:09.870','15:05:26','New',null]];
+const vrow=(v,sel)=>{const s=ST[v[3]];return{name:v[0],dur:v[1],rec:'25 Sep 2026 '+v[2],recShort:'25 Sep · '+v[2].slice(0,5),status:v[3],dot:s[0],sbg:s[1],sbd:s[2],sfg:s[3],flags:v[4],hasFlags:v[4]>0,noFlags:!(v[4]>0),flagsTxt:v[4]===0?'0':'—',changed:!!v[5],sel:!!sel,bg:sel?'var(--pris)':'transparent'};};
+class Component extends DCLogic {
+  renderVals(){
+    const sc=this.props.screen||'library';
+    const isBatch=sc.startsWith('batch'),isLib=['library','libraryGrid','libraryEmpty'].includes(sc);
+    const act=isBatch?'batch':sc==='settings'?'settings':'lib';
+    const nav=[['lib','video_library','Library · Ctrl+1'],['tpl','bookmarks','Templates · Ctrl+2'],['batch','stacks','Batch · Ctrl+3']].map(([k,icon,title])=>({icon,title,bg:act===k?'var(--pris)':'transparent',fg:act===k?'var(--tx)':'var(--tx2)'}));
+    const selSet=sc==='library'?[4,5,6]:[];
+    const videos=VIDS.map((v,i)=>vrow(v,selSet.includes(i)));
+    const bi={batchChoose:0,batchCheck:1,batchRun:2,batchFinish:3}[sc]??0;
+    const bsteps=['Choose','Check','Run','Finish'].map((l,i)=>({label:l,num:String(i+1),showNum:i>=bi,done:i<bi,line:i<3,cbg:i===bi?'var(--pri)':i<bi?'var(--pris)':'transparent',cfg:i===bi?'var(--onpri)':'var(--tx2)',cbd:i===bi?'var(--pri)':'var(--line2)',fg:i<=bi?'var(--tx)':'var(--tx3)'}));
+    const chosen=[4,5,6,7,8,9,10];
+    const chooseList=VIDS.map((v,i)=>vrow(v,chosen.includes(i)));
+    const templates=[['Three-chamber · Cam 2','Arena + 4 zones · trial 5:00 · 1600 × 1362','Saved 24 Sep 2026 by J. Okafor',true],['Three-chamber · Cam 2 · 10 min','Arena + 4 zones · trial 10:00 · 1600 × 1362','Saved 11 Sep 2026 by J. Okafor',false],['Three-chamber · Cam 3','Arena + 3 zones · no trial length · 1280 × 1090','Saved 2 Aug 2026 by A. Lindqvist',false]].map(t=>({name:t[0],meta:t[1],saved:t[2],bd:t[3]?'var(--pri)':'var(--line)',bg:t[3]?'var(--pris)':'transparent',radio:t[3]?'5px solid var(--pri)':'1.5px solid var(--line2)'}));
+    const L=372;const fmt=s=>{const m=Math.floor(s/60),r=s-m*60;return String(m).padStart(2,'0')+':'+r.toFixed(3).padStart(6,'0');};
+    const checkCards=[[4,12.4,'0, 0',null,true],[5,31.867,'+6, −3 px',null,true],[6,8.2,'0, 0',null,false],[7,19.5,'0, 0','Different resolution: 1280 × 1090 (template 1600 × 1362). The overlay was scaled to fit.',true],[8,6.033,'+2, 0 px',null,true],[9,44.1,'0, 0',null,true],[10,10.6,'0, 0','Video is 04:48.620 long — shorter than the 5:00 trial. The end was set to the last frame.',true]].map(c=>{const v=VIDS[c[0]];const len=c[0]===10?288.62:L;const e=Math.min(c[1]+300,len);
+      return{name:v[0],inc:c[4],op:c[4]?1:0.5,bd:c[3]?'oklch(0.8 0.15 75 / 0.55)':'var(--line)',tr:c[2]==='+6, −3 px'?'translate(6 -3)':c[2]==='+2, 0 px'?'translate(2 0)':'translate(0 0)',offset:c[2]==='0, 0'?'Drag to nudge':'Offset '+c[2],hasWarn:!!c[3],warn:c[3],
+        sL:(c[1]/len*100)+'%',sW:((e-c[1])/len*100)+'%',pL:(c[1]/len*100)+'%',start:'Start '+fmt(c[1]),end:'End '+fmt(e)};});
+    const Q=[['M13_day3_trial1.mp4','Done',100,'2 flags'],['M14_day3_trial1.mp4','Done',100,'0 flags'],['M16_day3_trial1.mp4','Done',100,'4 flags'],['M09_day3_trial2.mp4','Tracking',62,'186 fps · 0:18'],['M10_day3_trial2.mp4','Tracking',17,'179 fps · 0:40'],['M11_day3_trial2.mp4','Waiting',0,'next'],['M15_day3_trial1.mp4','Cancelled',0,'excluded']];
+    const qc={Done:['var(--ok)','var(--ok)'],Tracking:['var(--pri)','var(--pri)'],Waiting:['var(--tx3)','var(--tx3)'],Cancelled:['var(--tx3)','var(--tx3)']};
+    const queue=Q.map(q=>({name:q[0],status:q[1],w:q[2]+'%',pct:q[1]==='Cancelled'?'—':q[2]+'%',meta:q[3],dot:qc[q[1]][0],sfg:q[1]==='Tracking'||q[1]==='Done'?'var(--tx)':'var(--tx2)',bar:q[1]==='Done'?'var(--ok)':'var(--pri)',canCancel:q[1]==='Tracking'||q[1]==='Waiting',op:q[1]==='Cancelled'?0.4:1,nfg:q[1]==='Cancelled'?'var(--tx3)':'var(--tx)'}));
+    const F=[['M13_day3_trial1.mp4','Tracked',2],['M14_day3_trial1.mp4','Tracked',0],['M16_day3_trial1.mp4','Tracked',4],['M09_day3_trial2.mp4','Tracked',1],['M10_day3_trial2.mp4','Tracked',7],['M11_day3_trial2.mp4','Cancelled',null]];
+    const finish=F.map(f=>({name:f[0],status:f[1],dot:f[1]==='Tracked'?'var(--pri)':'var(--tx3)',sfg:f[1]==='Tracked'?'var(--tx)':'var(--tx2)',flags:f[2]+(f[2]===1?' flag':' flags'),hasFlags:f[2]>0,noFlags:!(f[2]>0),flagsTxt:f[2]===0?'None':'Not tracked',canOpen:f[1]==='Tracked'}));
+    const seg=(opts,a)=>opts.map(o=>({label:o,bg:o===a?'var(--raised)':'transparent',fg:o===a?'var(--tx)':'var(--tx2)'}));
+    const settings=[{title:'Processing',rows:[{label:'Run tracking on',help:'Auto uses the GPU when one is available. Found: NVIDIA RTX A2000.',isSeg:true,opts:seg(['Auto','CPU','GPU'],'Auto')},{label:'Videos processed in parallel',help:'Used by Batch. More is faster but uses more memory.',isStep:true,value:'2'}]},
+      {title:'Defaults for new analyses',rows:[{label:'Playback speed in Review',help:'Speed used when a video opens in Review.',isSelect:true,value:'4×'},{label:'Trail length',help:'How much recent movement the red trail and heatmap show.',isSelect:true,value:'10 s'},{label:'In-zone threshold',help:'Share of the body that must be inside a zone to count as in it.',isSelect:true,value:'50%'}]},
+      {title:'Appearance',rows:[{label:'Theme',help:'System follows your operating system setting.',isSeg:true,opts:seg(['Dark','Light','System'],'Dark')}]}];
+    const foot={batchChoose:['7 videos · Three-chamber · Cam 2',false,'Next: Check'],batchCheck:['6 of 7 videos included · 2 warnings',true,'Track 6 videos'],batchRun:['Tracking continues if you leave this page.',false,null],batchFinish:['Finished 27 Sep 2026 15:22',false,null]}[sc]||['',false,null];
+    return{nav,setBg:act==='settings'?'var(--pris)':'transparent',setFg:act==='settings'?'var(--tx)':'var(--tx2)',
+      isStart:sc==='start',isLib,isTable:sc==='library',isGrid:sc==='libraryGrid',isEmpty:sc==='libraryEmpty',hasSelection:sc==='library',
+      folderName:sc==='libraryEmpty'?'Cohort-C/2026-10-02':'Cohort-B/2026-09-25',folderPath:sc==='libraryEmpty'?'D:\\Lab\\Recordings\\Cohort-C\\2026-10-02 · 0 videos':'D:\\Lab\\Recordings\\Cohort-B\\2026-09-25 · 12 videos',
+      tbBg:sc!=='libraryGrid'?'var(--raised)':'transparent',tbFg:sc!=='libraryGrid'?'var(--tx)':'var(--tx3)',grBg:sc==='libraryGrid'?'var(--raised)':'transparent',grFg:sc==='libraryGrid'?'var(--tx)':'var(--tx3)',
+      videos,recents:[['Cohort-B/2026-09-25','D:\\Lab\\Recordings\\Cohort-B\\2026-09-25','12 videos','Yesterday'],['Cohort-B/2026-09-18','D:\\Lab\\Recordings\\Cohort-B\\2026-09-18','12 videos','18 Sep'],['Cohort-A/2026-08-30','D:\\Lab\\Recordings\\Cohort-A\\2026-08-30','10 videos','30 Aug'],['Pilot/2026-07-02','\\\\labnas\\share\\Pilot\\2026-07-02','4 videos','2 Jul']].map(r=>({name:r[0],path:r[1],meta:r[2],when:r[3]})),
+      isBatch,bsteps,isChoose:sc==='batchChoose',isCheck:sc==='batchCheck',isRun:sc==='batchRun',isFinish:sc==='batchFinish',chooseList,templates,checkCards,queue,finish,
+      footText:foot[0],hasBack:foot[1],hasNext:!!foot[2],nextLabel:foot[2]||'',isSettings:sc==='settings',settings};
+  }
+}
+</script>
+</body>
+</html>

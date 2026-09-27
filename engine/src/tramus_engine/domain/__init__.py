@@ -1,0 +1,93 @@
+"""Domain models shared by every layer (engine core, storage, API) and exported to the UI as
+TypeScript types via the OpenAPI schema. Changing a model here changes the sidecar format and
+the API contract — bump `SCHEMA_VERSION` and add a migration when the sidecar changes shape."""
+
+from .base import DomainModel, UtcDateTime, new_id, utc_now
+from .document import SCHEMA_VERSION, AnalysisDocument, HistoryEntry, HistoryKind, SetupChange
+from .jobs import Job, JobState
+from .results import Results, SummaryRow, SummaryRowKind, ZoneVisit
+from .settings import (
+    PLAYBACK_SPEEDS,
+    AppSettings,
+    ProcessingDevice,
+    RecentFolder,
+    ThemePreference,
+)
+from .setup import (
+    ZONE_PALETTE_SIZE,
+    AnalysisSettings,
+    DetectionSettings,
+    ImageAdjustments,
+    Polarity,
+    Setup,
+    TemplateRef,
+    TrialWindow,
+    Zone,
+)
+from .shapes import EllipseShape, PolygonShape, RectShape, Shape
+from .templates import Template
+from .track import (
+    VISIBLE_STATUSES,
+    AcceptFlag,
+    Correction,
+    Flag,
+    FlagReason,
+    FlagStatus,
+    FrameStatus,
+    Interpolate,
+    MarkHidden,
+    SetPosition,
+    Track,
+)
+from .video import VIDEO_EXTENSIONS, VideoInfo, VideoStatus
+
+__all__ = [
+    "PLAYBACK_SPEEDS",
+    "SCHEMA_VERSION",
+    "VIDEO_EXTENSIONS",
+    "VISIBLE_STATUSES",
+    "ZONE_PALETTE_SIZE",
+    "AcceptFlag",
+    "AnalysisDocument",
+    "AnalysisSettings",
+    "AppSettings",
+    "Correction",
+    "DetectionSettings",
+    "DomainModel",
+    "EllipseShape",
+    "Flag",
+    "FlagReason",
+    "FlagStatus",
+    "FrameStatus",
+    "HistoryEntry",
+    "HistoryKind",
+    "ImageAdjustments",
+    "Interpolate",
+    "Job",
+    "JobState",
+    "MarkHidden",
+    "Polarity",
+    "PolygonShape",
+    "ProcessingDevice",
+    "RecentFolder",
+    "RectShape",
+    "Results",
+    "SetPosition",
+    "Setup",
+    "SetupChange",
+    "Shape",
+    "SummaryRow",
+    "SummaryRowKind",
+    "Template",
+    "TemplateRef",
+    "ThemePreference",
+    "Track",
+    "TrialWindow",
+    "UtcDateTime",
+    "VideoInfo",
+    "VideoStatus",
+    "Zone",
+    "ZoneVisit",
+    "new_id",
+    "utc_now",
+]

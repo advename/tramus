@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+</helmet>
+<div tabIndex="0" onKeyDown="{{ onKey }}" style="position:relative;width:100%;height:100%;min-width:0;display:grid;grid-template-columns:52px minmax(0,1fr);background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.4;overflow:hidden;outline:none;">
+
+<nav style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;background:var(--panel);border-right:1px solid var(--line);">
+  <div title="Tramus" style="width:28px;height:28px;border-radius:7px;background:var(--pri);color:var(--onpri);display:grid;place-items:center;font-weight:600;font-size:14px;margin-bottom:12px;">T</div>
+  <button title="Library · Ctrl+1" style="width:38px;height:38px;border:none;border-radius:8px;background:var(--pris);color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">video_library</span></button>
+  <button title="Templates · Ctrl+2" style="width:38px;height:38px;border:none;border-radius:8px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">bookmarks</span></button>
+  <button title="Batch · Ctrl+3" style="width:38px;height:38px;border:none;border-radius:8px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">stacks</span></button>
+  <div style="flex:1;"></div>
+  <button title="Settings · Ctrl+," style="width:38px;height:38px;border:none;border-radius:8px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">settings</span></button>
+</nav>
+
+<div style="display:grid;grid-template-rows:48px minmax(0,1fr) auto;min-width:0;min-height:0;">
+
+<header style="display:flex;align-items:center;gap:12px;padding:0 10px 0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0;">
+  <div style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:4px;">
+    <span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--tx3);flex:none;">folder</span>
+    <a title="Back to Library" style="color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:pointer;" style-hover="color:var(--tx);">Cohort-B/2026-09-25</a>
+    <span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:var(--tx3);flex:none;">chevron_right</span>
+    <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">M12_day3_trial1.mp4</span>
+  </div>
+  <div style="display:flex;gap:2px;padding:3px;border-radius:9px;background:var(--bg);border:1px solid var(--line);flex:none;">
+    <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+      <button title="{{ st.title }}" onClick="{{ st.onClick }}" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px 0 6px;border:none;border-radius:6px;background:{{ st.bg }};box-shadow:{{ st.shadow }};color:{{ st.color }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">
+        <span style="width:18px;height:18px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:{{ st.cbg }};color:{{ st.cfg }};border:1px solid {{ st.cbd }};font-size:10.5px;font-weight:600;">
+          <sc-if value="{{ st.showNum }}" hint-placeholder-val="{{ true }}">{{ st.num }}</sc-if>
+          <sc-if value="{{ st.showIcon }}"><span style="font-family:'Material Symbols Outlined';font-size:13px;line-height:1;">check</span></sc-if>
+        </span>{{ st.label }}</button>
+    </sc-for>
+  </div>
+  <div style="flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:12px;">
+    <div title="Recording start, read from the video file" style="display:flex;flex-direction:column;align-items:flex-end;min-width:0;overflow:hidden;line-height:1.2;">
+      <span style="font-size:10.5px;color:var(--tx3);white-space:nowrap;">Recorded</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx2);white-space:nowrap;">25 Sep 2026 09:41:12</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);white-space:nowrap;flex:none;"><span style="width:7px;height:7px;border-radius:50%;background:{{ saveDot }};"></span>{{ saveLabel }}</div>
+    <button title="Save · Ctrl+S" onClick="{{ onSave }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;flex:none;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">save</span>Save</button>
+  </div>
+</header>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 312px;min-height:0;min-width:0;">
+
+<div style="position:relative;min-width:0;min-height:0;background:var(--canvas);overflow:hidden;">
+  <sc-if value="{{ showVideo }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;padding:48px 52px 30px 60px;display:flex;">
+      <svg ref="{{ svgRef }}" onClick="{{ onCanvasClick }}" viewBox="0 0 746 635" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;overflow:visible;cursor:{{ cursor }};">
+        <defs><radialGradient id="trm-heat"><stop offset="0" style="stop-color:oklch(0.64 0.23 27);stop-opacity:0.5;"></stop><stop offset="1" style="stop-color:oklch(0.64 0.23 27);stop-opacity:0;"></stop></radialGradient></defs>
+        <image href="assets/frame.png" x="0" y="0" width="746" height="635" style="filter:{{ imgFilter }};"></image>
+        <path d="M0 0H746V635H0Z M156 10V634H584V10Z" style="fill:#000;fill-rule:evenodd;opacity:{{ outsideOp }};"></path>
+        <sc-if value="{{ hasArena }}" hint-placeholder-val="{{ true }}">
+          <rect x="156" y="10" width="428" height="624" style="fill:none;stroke:oklch(0.95 0.02 85);stroke-width:1.25;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;"></rect>
+          <text x="592" y="22" style="font:600 10px 'IBM Plex Sans';letter-spacing:.08em;fill:oklch(0.95 0.02 85);">ARENA</text>
+        </sc-if>
+        <sc-for list="{{ zoneShapes }}" as="z" hint-placeholder-count="0">
+          <path d="{{ z.d }}" onClick="{{ z.onClick }}" style="fill:{{ z.fill }};stroke:{{ z.stroke }};stroke-width:{{ z.sw }};stroke-dasharray:{{ z.dash }};vector-effect:non-scaling-stroke;cursor:pointer;"></path>
+        </sc-for>
+        <sc-if value="{{ showHeat }}"><sc-for list="{{ heat }}" as="h"><circle cx="{{ h.x }}" cy="{{ h.y }}" r="30" style="fill:url(#trm-heat);opacity:{{ h.op }};pointer-events:none;"></circle></sc-for></sc-if>
+        <sc-if value="{{ showTrail }}"><sc-for list="{{ trail }}" as="g"><line x1="{{ g.x1 }}" y1="{{ g.y1 }}" x2="{{ g.x2 }}" y2="{{ g.y2 }}" style="stroke:oklch(0.64 0.23 27);stroke-width:2.5;stroke-linecap:round;opacity:{{ g.op }};vector-effect:non-scaling-stroke;pointer-events:none;"></line></sc-for></sc-if>
+        <sc-if value="{{ showOutline }}">
+          <ellipse cx="{{ mx }}" cy="{{ my }}" rx="35" ry="11" transform="{{ mrot }}" style="fill:none;stroke:oklch(0.97 0.02 90);stroke-width:1.5;vector-effect:non-scaling-stroke;pointer-events:none;"></ellipse>
+          <circle cx="{{ mx }}" cy="{{ my }}" r="2.5" style="fill:oklch(0.97 0.02 90);pointer-events:none;"></circle>
+        </sc-if>
+        <sc-if value="{{ isTracker }}">
+          <ellipse cx="290" cy="575" rx="38" ry="14" transform="rotate(-3 290 575)" style="fill:none;stroke:oklch(0.8 0.15 150);stroke-width:1.5;vector-effect:non-scaling-stroke;"></ellipse>
+          <text x="332" y="560" style="font:500 11px 'IBM Plex Mono';fill:oklch(0.8 0.15 150);">mouse · {{ blobArea }}</text>
+        </sc-if>
+        <sc-for list="{{ zoneShapes }}" as="z">
+          <g transform="{{ z.lt }}" style="pointer-events:none;"><rect x="0" y="0" width="{{ z.lw }}" height="19" rx="4" style="fill:{{ z.lbg }};stroke:{{ z.stroke }};stroke-width:1;vector-effect:non-scaling-stroke;"></rect><rect x="7" y="6.5" width="6" height="6" rx="1.5" style="fill:{{ z.sq }};"></rect><text x="18" y="13.5" style="font:500 11px 'IBM Plex Sans';fill:{{ z.ltx }};">{{ z.label }}</text></g>
+        </sc-for>
+        <sc-for list="{{ handles }}" as="k"><rect x="{{ k.x }}" y="{{ k.y }}" width="8" height="8" rx="1.5" style="fill:oklch(0.98 0.005 85);stroke:{{ k.c }};stroke-width:1.5;vector-effect:non-scaling-stroke;cursor:{{ k.cur }};"></rect></sc-for>
+        <sc-if value="{{ hasPos }}">
+          <circle cx="{{ mx }}" cy="{{ my }}" r="11" style="fill:none;stroke:oklch(0.87 0.05 82);stroke-width:1.5;stroke-dasharray:3 2;vector-effect:non-scaling-stroke;"></circle>
+          <text x="{{ posLx }}" y="{{ posLy }}" style="font:500 11px 'IBM Plex Mono';fill:oklch(0.87 0.05 82);">set at {{ tStr }}</text>
+        </sc-if>
+      </svg>
+    </div>
+
+    <div style="position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;">
+      <sc-for list="{{ tools }}" as="tl" hint-placeholder-count="6">
+        <button title="{{ tl.title }}" onClick="{{ tl.onClick }}" style="width:32px;height:30px;border:none;border-radius:6px;background:{{ tl.bg }};color:{{ tl.color }};display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">{{ tl.icon }}</span></button>
+      </sc-for>
+      <div style="height:1px;background:var(--line);margin:3px 2px;"></div>
+      <sc-if value="{{ isReview }}">
+        <button title="Undo · Ctrl+Z" onClick="{{ undo }}" style="width:32px;height:30px;border:none;border-radius:6px;background:transparent;color:{{ undoFg }};display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">undo</span></button>
+        <button title="Redo · Ctrl+Shift+Z" onClick="{{ redo }}" style="width:32px;height:30px;border:none;border-radius:6px;background:transparent;color:{{ redoFg }};display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">redo</span></button>
+        <div style="height:1px;background:var(--line);margin:3px 2px;"></div>
+      </sc-if>
+      <button title="Zoom in · Ctrl+=" style="width:32px;height:30px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">zoom_in</span></button>
+      <button title="Zoom out · Ctrl+−" style="width:32px;height:30px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">zoom_out</span></button>
+      <button title="Fit to window · Ctrl+0" style="width:32px;height:30px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:19px;line-height:1;">fit_screen</span></button>
+    </div>
+
+    <sc-if value="{{ showTip }}">
+      <div style="position:absolute;left:54px;top:115px;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:oklch(0.3 0.008 70);color:oklch(0.96 0.01 85);font-size:12px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);">Ellipse zone<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid oklch(0.5 0.01 70);">E</span></div>
+    </sc-if>
+
+    <sc-if value="{{ showViewToggle }}">
+      <div style="position:absolute;top:10px;right:12px;display:flex;gap:2px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:9px;">
+        <button title="Video · B" onClick="{{ setViewVideo }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:{{ vVidBg }};color:{{ vVidFg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">videocam</span>Video</button>
+        <button title="What the tracker sees · B" onClick="{{ setViewTracker }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:{{ vTrBg }};color:{{ vTrFg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">contrast</span>What the tracker sees</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isReview }}">
+      <div style="position:absolute;top:10px;right:12px;display:flex;align-items:center;gap:2px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:9px;max-width:calc(100% - 80px);flex-wrap:wrap;justify-content:flex-end;">
+        <sc-for list="{{ ovItems }}" as="o" hint-placeholder-count="4">
+          <button title="{{ o.title }}" onClick="{{ o.onClick }}" style="height:28px;padding:0 9px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;"><span style="width:8px;height:8px;border-radius:2px;background:{{ o.sw }};opacity:{{ o.swOp }};"></span>{{ o.label }}</button>
+        </sc-for>
+        <div style="width:1px;height:18px;background:var(--line);margin:0 4px;"></div>
+        <label title="Trail length" style="display:flex;align-items:center;gap:4px;padding:0 4px 0 6px;font-size:12px;color:var(--tx2);white-space:nowrap;">Trail<select value="{{ trailLen }}" onChange="{{ onTrailLen }}" style="height:24px;border:1px solid var(--line2);border-radius:5px;background:var(--raised);color:var(--tx);font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:0 2px;"><option value="5">5 s</option><option value="10">10 s</option><option value="20">20 s</option><option value="30">30 s</option></select></label>
+      </div>
+    </sc-if>
+
+    <div style="position:absolute;left:60px;right:12px;bottom:7px;display:flex;gap:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;">
+      <span>Fit · 104%</span><span>Frame {{ frameStr }} / 11 174</span><span>x {{ vx }}  y {{ vy }} px</span><span style="flex:1;"></span><span>1600 × 1362 · 30 fps</span>
+    </div>
+
+    <sc-if value="{{ showFlagBanner }}">
+      <div style="position:absolute;left:50%;bottom:32px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;background:var(--panel);border:1px solid oklch(0.8 0.15 75 / 0.55);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100% - 90px);">
+        <span style="width:9px;height:9px;transform:rotate(45deg);background:oklch(0.8 0.15 75);flex:none;"></span>
+        <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;">{{ curFlagReason }}</span><span style="font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;">{{ curFlagMeta }}</span></div>
+        <button title="Accept — tracking was fine · A" onClick="{{ acceptCur }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">check</span>Accept</button>
+        <button title="Set position · P — then click the mouse" onClick="{{ toolPosition }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">my_location</span>Set position</button>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ isResults }}">
+    <div style="position:absolute;inset:0;overflow:auto;padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;gap:2px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:9px;">
+          <button onClick="{{ setResSummary }}" style="height:28px;padding:0 12px;border:none;border-radius:6px;background:{{ rsBg }};color:{{ rsFg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Summary</button>
+          <button onClick="{{ setResEvents }}" style="height:28px;padding:0 12px;border:none;border-radius:6px;background:{{ reBg }};color:{{ reFg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Events</button>
+        </div>
+        <span style="font-size:12px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">Trial {{ startStr }}–{{ endStr }} · {{ durStr }}</span>
+        <sc-if value="{{ isUpdated }}"><span style="display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;background:color-mix(in oklch,var(--ok) 16%,transparent);color:var(--ok);font-size:11.5px;font-weight:500;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:14px;line-height:1;">refresh</span>Updated 14:15 · zone edited</span></sc-if>
+        <div style="flex:1;"></div>
+        <button title="Export to Excel · Ctrl+E" style="height:30px;padding:0 12px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">download</span>Excel (.xlsx)</button>
+        <button title="Export CSV · Ctrl+Shift+E" style="height:30px;padding:0 12px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);">CSV</button>
+      </div>
+
+      <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 80px;gap:12px;padding:0 16px;height:34px;align-items:center;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--line);"><span>Zone</span><span style="text-align:right;">Time in zone</span><span style="text-align:right;">% of trial</span></div>
+            <sc-for list="{{ sumRows }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 80px;gap:12px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0;"><span style="width:12px;height:12px;box-sizing:border-box;border-radius:3px;border:1.5px solid {{ r.color }};background:{{ r.fill }};flex:none;"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span><sc-if value="{{ r.changed }}"><span style="font-size:11px;color:var(--ok);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">{{ r.delta }}</span></sc-if></div>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;">{{ r.sec }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--tx2);">{{ r.pct }}</span>
+              </div>
+            </sc-for>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 80px;gap:12px;padding:0 16px;height:42px;align-items:center;font-weight:600;">
+              <div style="display:flex;align-items:center;gap:8px;">Total<span style="font-weight:400;font-size:11.5px;color:var(--tx3);">= trial length</span></div>
+              <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;">{{ totalSec }}</span>
+              <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;">100.0 %</span>
+            </div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:11.5px;color:var(--tx3);">Time in zone (s)</span>
+            <sc-for list="{{ sumRows }}" as="r">
+              <div style="display:grid;grid-template-columns:96px minmax(0,1fr) 52px;gap:10px;align-items:center;height:22px;">
+                <span style="font-size:12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span>
+                <div style="position:relative;height:14px;border-left:1px solid var(--line2);"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ r.w }};background:{{ r.bar }};border-radius:0 3px 3px 0;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-align:right;">{{ r.short }}</span>
+              </div>
+            </sc-for>
+            <div style="display:grid;grid-template-columns:96px minmax(0,1fr) 52px;gap:10px;">
+              <span></span>
+              <div style="position:relative;height:14px;border-top:1px solid var(--line);"><sc-for list="{{ axis }}" as="ax"><span style="position:absolute;left:{{ ax.l }};top:2px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);">{{ ax.v }}</span></sc-for></div>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEvents }}">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:12px;color:var(--tx3);margin-right:4px;">Filter</span>
+          <sc-for list="{{ evChips }}" as="c"><button onClick="{{ c.onClick }}" style="height:26px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid {{ c.bd }};border-radius:13px;background:{{ c.bg }};color:var(--tx);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;"><span style="width:8px;height:8px;border-radius:2px;background:{{ c.color }};"></span>{{ c.label }}<span style="font-family:'IBM Plex Mono',monospace;color:var(--tx3);font-size:11px;">{{ c.n }}</span></button></sc-for>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:44px minmax(110px,1.3fr) minmax(104px,1fr) minmax(104px,1fr) 92px;gap:10px;padding:0 14px;height:34px;align-items:center;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--line);background:var(--raised);">
+            <sc-for list="{{ evHeads }}" as="h"><button onClick="{{ h.onClick }}" style="display:flex;align-items:center;gap:3px;justify-content:{{ h.jc }};border:none;background:transparent;color:{{ h.fg }};font:inherit;font-size:11.5px;cursor:pointer;padding:0;">{{ h.label }}<span style="font-family:'Material Symbols Outlined';font-size:14px;line-height:1;opacity:{{ h.op }};">{{ h.icon }}</span></button></sc-for>
+          </div>
+          <sc-for list="{{ events }}" as="e" hint-placeholder-count="8">
+            <div onClick="{{ e.onClick }}" style="display:grid;grid-template-columns:44px minmax(110px,1.3fr) minmax(104px,1fr) minmax(104px,1fr) 92px;gap:10px;padding:0 14px;height:40px;align-items:center;border-bottom:1px solid var(--line);cursor:pointer;" style-hover="background:var(--hover);">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx3);">{{ e.n }}</span>
+              <div style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="width:10px;height:10px;border-radius:2px;background:{{ e.color }};flex:none;"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ e.zone }}</span></div>
+              <div style="display:flex;flex-direction:column;line-height:1.2;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{{ e.av }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--tx3);">{{ e.ac }}</span></div>
+              <div style="display:flex;flex-direction:column;line-height:1.2;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{{ e.bv }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--tx3);">{{ e.bc }}</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;">{{ e.d }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;justify-content:space-between;padding:8px 14px;font-size:11.5px;color:var(--tx3);"><span>{{ evCount }}</span><span>Video time · local clock time below</span></div>
+        </div>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--tx3);"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;">schedule</span>Times are stored in UTC and shown in this computer’s time zone (Europe/Amsterdam, UTC+02:00).</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showNoSetup }}">
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px,calc(100% - 140px));background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 40px rgba(0,0,0,.4);">
+      <span style="font-family:'Material Symbols Outlined';font-size:26px;line-height:1;color:var(--tx2);">highlight_alt</span>
+      <div style="font-size:15px;font-weight:600;">This video has no setup yet</div>
+      <div style="color:var(--tx2);text-wrap:pretty;">Draw the arena outline, then add zones. If this camera was used before, load its template instead.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button title="Arena outline · A" onClick="{{ toolArena }}" style="height:32px;padding:0 14px;display:flex;align-items:center;gap:6px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;">Draw arena<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid oklch(0.2 0.01 70 / 0.35);">A</span></button>
+        <button style="height:32px;padding:0 14px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);">Load template…</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showChanged }}">
+    <div style="position:absolute;left:60px;right:12px;top:52px;display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:color-mix(in oklch,var(--panel) 88%,oklch(0.8 0.15 75));border:1px solid oklch(0.8 0.15 75 / 0.6);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);">
+      <span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;color:var(--warn);">warning</span>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-weight:600;">Video file changed since it was analysed</span><span style="color:var(--tx2);text-wrap:pretty;">Modified 27 Sep 2026 08:15 · size 1.84 GB → 1.79 GB. The saved track may no longer match these frames.</span></div>
+      <div style="display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;">
+        <button onClick="{{ dismissChanged }}" style="height:28px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Keep results</button>
+        <button onClick="{{ onTrack }}" style="height:28px;padding:0 10px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;">Re-track</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showProgress }}">
+    <div style="position:absolute;left:50%;bottom:36px;transform:translateX(-50%);width:min(440px,calc(100% - 130px));background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.4);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:600;">Tracking M12_day3_trial1</span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;">{{ progPct }}</span></div>
+      <div style="height:4px;border-radius:2px;background:var(--raised);overflow:hidden;"><div style="width:{{ progW }};height:100%;background:var(--pri);"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+        <div style="display:flex;flex-direction:column;"><span style="font-size:11px;color:var(--tx3);">Elapsed</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;">{{ elapsed }}</span></div>
+        <div style="display:flex;flex-direction:column;"><span style="font-size:11px;color:var(--tx3);">Remaining</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;">{{ remaining }}</span></div>
+        <div style="display:flex;flex-direction:column;"><span style="font-size:11px;color:var(--tx3);">Speed</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;">186 fps · GPU</span></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><span style="font-size:11.5px;color:var(--tx3);">You can look at the setup, not edit it.</span><button title="Cancel tracking · Esc" onClick="{{ cancelTrack }}" style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;flex:none;">Cancel<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid var(--line2);color:var(--tx2);">Esc</span></button></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showStopped }}">
+    <div style="position:absolute;left:50%;bottom:36px;transform:translateX(-50%);width:min(440px,calc(100% - 130px));background:var(--panel);border:1px solid {{ stopBd }};border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.4);padding:14px 16px;display:flex;gap:12px;">
+      <span style="font-family:'Material Symbols Outlined';font-size:22px;line-height:1;color:{{ stopFg }};">{{ stopIcon }}</span>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;">
+        <span style="font-weight:600;">{{ stopTitle }}</span>
+        <span style="color:var(--tx2);text-wrap:pretty;">{{ stopBody }}</span>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button onClick="{{ onTrack }}" style="height:28px;padding:0 12px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;">{{ stopRetry }}</button>
+          <button onClick="{{ backToSetup }}" style="height:28px;padding:0 12px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Back to setup</button>
+          <sc-if value="{{ isFailed }}"><button style="height:28px;padding:0 10px;border:none;border-radius:6px;background:transparent;color:var(--tx2);font:inherit;font-size:12.5px;cursor:pointer;">Show log</button></sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showSnack }}">
+    <div style="position:absolute;left:60px;bottom:32px;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;max-width:calc(100% - 90px);background:oklch(0.3 0.008 70);color:oklch(0.96 0.01 85);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.4);">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:{{ snackIc }};">{{ snackIcon }}</span>
+      <div style="display:flex;flex-direction:column;min-width:0;line-height:1.3;"><span style="font-weight:500;">{{ snackTitle }}</span><span style="font-size:12px;color:oklch(0.8 0.01 80);text-wrap:pretty;">{{ snackBody }}</span></div>
+      <button onClick="{{ dismissSnack }}" style="height:28px;padding:0 10px;border:none;border-radius:6px;background:transparent;color:oklch(0.87 0.05 82);font:inherit;font-weight:600;font-size:12.5px;cursor:pointer;flex:none;">{{ snackAction }}</button>
+    </div>
+  </sc-if>
+</div>
+
+<aside style="display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);">
+  <div style="display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 12px 0 14px;flex:none;">
+    <span style="font-weight:600;">{{ inspTitle }}</span>
+    <sc-if value="{{ isTracking }}"><span style="display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:10px;background:var(--raised);color:var(--tx2);font-size:11px;"><span style="font-family:'Material Symbols Outlined';font-size:13px;line-height:1;">lock</span>Locked while tracking</span></sc-if>
+    <sc-if value="{{ isReview }}"><span style="font-size:11.5px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;">{{ speedLabel }} playback</span></sc-if>
+  </div>
+  <sc-if value="{{ isReview }}">
+    <div style="display:flex;gap:2px;padding:0 8px;border-bottom:1px solid var(--line);flex:none;">
+      <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:34px;padding:0 8px;border:none;border-bottom:2px solid {{ tb.bd }};margin-bottom:-1px;background:transparent;color:{{ tb.fg }};font:inherit;font-weight:500;display:flex;align-items:center;gap:6px;cursor:pointer;">{{ tb.label }}<sc-if value="{{ tb.hasBadge }}"><span style="min-width:18px;height:18px;box-sizing:border-box;padding:0 5px;border-radius:9px;background:oklch(0.8 0.15 75);color:oklch(0.22 0.03 70);font-size:11px;font-weight:600;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;">{{ tb.badge }}</span></sc-if></button></sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ notReview }}"><div style="height:1px;background:var(--line);flex:none;"></div></sc-if>
+
+  <div style="flex:1 1 0;min-height:0;overflow-y:auto;">
+  <div style="opacity:{{ lockOp }};pointer-events:{{ lockPE }};">
+
+    <sc-if value="{{ showZonesList }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ isReview }}">
+        <div style="margin:12px 14px 0;display:flex;gap:8px;padding:9px 10px;border-radius:8px;background:var(--raised);font-size:12px;color:var(--tx2);text-wrap:pretty;"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:var(--tx);">info</span>Editing zones recalculates results from the existing track. No re-tracking needed.</div>
+      </sc-if>
+      <sc-if value="{{ isSetupish }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 14px 6px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Arena</span></div>
+        <div style="margin:0 8px;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;height:32px;padding:0 6px;border-radius:6px;">
+          <span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--tx2);">highlight_alt</span>
+          <span style="color:{{ arenaFg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ arenaLabel }}</span>
+          <button title="Edit arena outline · A" onClick="{{ toolArena }}" style="width:26px;height:26px;border:none;border-radius:5px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">edit</span></button>
+        </div>
+      </sc-if>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 12px 6px 14px;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Zones · {{ zoneCount }}</span>
+        <button title="Add zone · R / E / G" onClick="{{ toolRect }}" style="height:24px;padding:0 8px 0 4px;display:flex;align-items:center;gap:2px;border:none;border-radius:5px;background:transparent;color:var(--tx2);font:inherit;font-size:12px;cursor:pointer;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">add</span>Add</button>
+      </div>
+      <sc-if value="{{ noZones }}"><div style="margin:0 14px 8px;padding:14px;border:1px dashed var(--line2);border-radius:8px;color:var(--tx3);font-size:12px;text-align:center;">No zones yet. Draw one on the video.</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:1px;padding:0 8px;">
+        <sc-for list="{{ zoneRows }}" as="z" hint-placeholder-count="4">
+          <div onClick="{{ z.onSelect }}" style="display:grid;grid-template-columns:14px 12px minmax(0,1fr) auto;align-items:center;gap:8px;height:32px;padding:0 2px 0 2px;border-radius:6px;background:{{ z.bg }};cursor:pointer;">
+            <span title="Drag to reorder" style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--tx3);cursor:grab;">drag_indicator</span>
+            <span style="width:12px;height:12px;box-sizing:border-box;border-radius:3px;border:1.5px solid {{ z.color }};background:{{ z.fill }};"></span>
+            <input value="{{ z.name }}" onChange="{{ z.onName }}" style="min-width:0;border:none;background:transparent;color:{{ z.fg }};font:inherit;padding:3px 4px;border-radius:4px;outline:none;">
+            <div style="display:flex;">
+              <button title="Show / hide" onClick="{{ z.onVis }}" style="width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:{{ z.visFg }};display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">{{ z.visIcon }}</span></button>
+              <button title="Lock" onClick="{{ z.onLock }}" style="width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:{{ z.lockFg }};display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">{{ z.lockIcon }}</span></button>
+              <button title="Delete · Del" onClick="{{ z.onDel }}" style="width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:var(--tx3);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--err);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">delete</span></button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ hasSel }}">
+        <div style="margin:8px 14px 4px;padding:12px;border-radius:8px;background:var(--raised);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;gap:8px;"><span style="font-size:12px;color:var(--tx2);">{{ selType }}</span><span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selName }}</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:11.5px;color:var(--tx3);">Colour</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ swatches }}" as="sw" hint-placeholder-count="8"><button title="{{ sw.name }}" onClick="{{ sw.onClick }}" style="width:22px;height:22px;box-sizing:border-box;border-radius:5px;border:2px solid {{ sw.ring }};background:{{ sw.color }};padding:0;cursor:pointer;"></button></sc-for></div>
+          </div>
+          <sc-if value="{{ selIsRect }}">
+            <div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:11.5px;color:var(--tx3);">Position and size (video px)</span>
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;"><sc-for list="{{ geom }}" as="g" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:4px;height:28px;padding:0 6px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);font-family:'IBM Plex Mono',monospace;font-size:11.5px;min-width:0;"><span style="color:var(--tx3);">{{ g.k }}</span><span style="overflow:hidden;">{{ g.v }}</span></div></sc-for></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ selIsPoly }}"><span style="font-size:12px;color:var(--tx2);text-wrap:pretty;">{{ selPts }} corners. Drag a corner to move it; double-click an edge to add one.</span></sc-if>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isSetupish }}" hint-placeholder-val="{{ true }}">
+      <div style="height:1px;background:var(--line);margin:12px 0 0;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px 14px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Image</span><button title="Reset image" onClick="{{ resetImage }}" style="height:22px;padding:0 6px;border:none;border-radius:5px;background:transparent;color:var(--tx2);font:inherit;font-size:12px;cursor:pointer;" style-hover="background:var(--hover);">Reset</button></div>
+      <div style="padding:0 14px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;justify-content:space-between;"><span>Brightness</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);">{{ brightV }}</span></div><input type="range" min="-100" max="100" value="{{ bright }}" onChange="{{ onBright }}" style="width:100%;margin:0;accent-color:var(--pri);"></div>
+        <div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;justify-content:space-between;"><span>Contrast</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);">{{ contrastV }}</span></div><input type="range" min="-100" max="100" value="{{ contrast }}" onChange="{{ onContrast }}" style="width:100%;margin:0;accent-color:var(--pri);"></div>
+      </div>
+      <div style="height:1px;background:var(--line);margin:14px 0 0;"></div>
+      <div style="padding:12px 14px 8px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Detection</span></div>
+      <div style="padding:0 14px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;justify-content:space-between;"><span>Sensitivity</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);">{{ sens }}</span></div><input type="range" min="0" max="100" value="{{ sens }}" onChange="{{ onSens }}" style="width:100%;margin:0;accent-color:var(--pri);"></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><span>Mouse is</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px;border-radius:8px;background:var(--bg);border:1px solid var(--line);">
+            <button onClick="{{ polDark }}" style="height:26px;border:none;border-radius:5px;background:{{ pdBg }};color:{{ pdFg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer;">Darker than floor</button>
+            <button onClick="{{ polLight }}" style="height:26px;border:none;border-radius:5px;background:{{ plBg }};color:{{ plFg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer;">Lighter than floor</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;justify-content:space-between;"><span>Minimum mouse size</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);">{{ minSizeV }}</span></div><input type="range" min="20" max="800" step="10" value="{{ minSize }}" onChange="{{ onMinSize }}" style="width:100%;margin:0;accent-color:var(--pri);"></div>
+        <div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;justify-content:space-between;"><span>In-zone threshold</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);">{{ thrV }}</span></div><input type="range" min="10" max="90" step="5" value="{{ thr }}" onChange="{{ onThr }}" style="width:100%;margin:0;accent-color:var(--pri);"><span style="font-size:11.5px;color:var(--tx3);text-wrap:pretty;">Share of the body that must be inside a zone before the mouse counts as in it.</span></div>
+      </div>
+      <div style="height:1px;background:var(--line);margin:14px 0 0;"></div>
+      <div style="padding:12px 14px 8px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Template</span></div>
+      <div style="padding:0 14px 16px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">bookmarks</span>{{ tplLabel }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button style="height:28px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);">Save as template…</button>
+          <button style="height:28px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);">Load template…</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showFlags }}">
+      <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:10px;">
+        <sc-if value="{{ isMany }}"><div style="display:flex;gap:8px;padding:10px;border-radius:8px;background:var(--warns);font-size:12px;text-wrap:pretty;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--warn);">warning</span><div style="display:flex;flex-direction:column;gap:6px;"><span>This many flags usually means the detection settings don’t suit this video.</span><a onClick="{{ backToSetup }}" style="font-weight:600;color:var(--tx);cursor:pointer;text-decoration:underline;">Adjust detection in Setup</a></div></div></sc-if>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button title="Previous flag · [" onClick="{{ prevFlag }}" style="height:28px;display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">chevron_left</span>Previous<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 4px;border-radius:4px;border:1px solid var(--line2);color:var(--tx2);">[</span></button>
+          <button title="Next flag · ]" onClick="{{ nextFlag }}" style="height:28px;display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;" style-hover="background:var(--hover);">Next<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 4px;border-radius:4px;border:1px solid var(--line2);color:var(--tx2);">]</span><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;">chevron_right</span></button>
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;"><sc-for list="{{ flagChips }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onClick }}" style="height:24px;padding:0 8px;display:flex;align-items:center;gap:5px;border:1px solid {{ c.bd }};border-radius:12px;background:{{ c.bg }};color:var(--tx);font:inherit;font-size:11.5px;cursor:pointer;">{{ c.label }}<span style="font-family:'IBM Plex Mono',monospace;color:var(--tx3);">{{ c.n }}</span></button></sc-for></div>
+      </div>
+      <sc-if value="{{ noFlags }}">
+        <div style="margin:8px 14px;padding:22px 16px;border:1px dashed var(--line2);border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;">
+          <span style="font-family:'Material Symbols Outlined';font-size:26px;line-height:1;color:var(--ok);">check_circle</span>
+          <span style="font-weight:600;">No flags</span>
+          <span style="font-size:12px;color:var(--tx2);text-wrap:pretty;">Tracking looked consistent for the whole trial. You can still scrub through and correct any frame.</span>
+        </div>
+      </sc-if>
+      <sc-for list="{{ flagRows }}" as="f" hint-placeholder-count="6">
+        <div onClick="{{ f.onClick }}" style="display:grid;grid-template-columns:10px 74px minmax(0,1fr) auto;align-items:center;gap:10px;padding:7px 14px;background:{{ f.bg }};cursor:pointer;" style-hover="background:var(--hover);">
+          <span style="width:8px;height:8px;transform:rotate(45deg);background:{{ f.dia }};"></span>
+          <div style="display:flex;flex-direction:column;line-height:1.25;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{{ f.time }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--tx3);">{{ f.clock }}</span></div>
+          <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.reason }}</span><span style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.detail }}</span></div>
+          <span style="display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:10px;background:{{ f.sbg }};color:{{ f.sfg }};font-size:11px;font-weight:500;">{{ f.statusLabel }}</span>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ showHistory }}">
+      <div style="padding:12px 14px 6px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Edit history</span><span style="font-size:11.5px;color:var(--tx3);">J. Okafor · 27 Sep 2026</span></div>
+      <sc-for list="{{ histRows }}" as="h" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;padding:8px 14px;align-items:start;background:{{ h.bg }};">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--raised);display:grid;place-items:center;"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--tx2);">{{ h.icon }}</span></span>
+          <div style="display:flex;flex-direction:column;line-height:1.3;min-width:0;"><span style="font-weight:500;">{{ h.what }}</span><span style="font-size:11.5px;color:var(--tx3);">{{ h.detail }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2);margin-top:2px;">{{ h.t }}</span></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);">{{ h.when }}</span>
+        </div>
+      </sc-for>
+      <div style="margin:8px 14px 16px;font-size:11.5px;color:var(--tx3);text-wrap:pretty;">Every correction is saved in the analysis file and exported with the results as a separate sheet.</div>
+    </sc-if>
+
+    <sc-if value="{{ isResults }}">
+      <div style="padding:12px 14px 8px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Trial</span></div>
+      <div style="padding:0 14px;display:flex;flex-direction:column;">
+        <sc-for list="{{ trialInfo }}" as="i" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="color:var(--tx2);">{{ i.k }}</span><div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{{ i.v }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--tx3);">{{ i.c }}</span></div></div></sc-for>
+      </div>
+      <div style="padding:16px 14px 8px;"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);">Analysis</span></div>
+      <div style="padding:0 14px;display:flex;flex-direction:column;">
+        <sc-for list="{{ anaInfo }}" as="i" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="color:var(--tx2);">{{ i.k }}</span><span style="font-size:12px;text-align:right;color:{{ i.fg }};">{{ i.v }}</span></div></sc-for>
+      </div>
+      <div style="margin:14px;display:flex;gap:8px;padding:10px;border-radius:8px;background:var(--warns);font-size:12px;text-wrap:pretty;"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:var(--warn);">flag</span><div style="display:flex;flex-direction:column;gap:4px;"><span>5 flags are still unresolved. You can export, but the sheet will note them.</span><a onClick="{{ goReview }}" style="font-weight:600;color:var(--tx);cursor:pointer;text-decoration:underline;">Review flags</a></div></div>
+      <label style="margin:0 14px 16px;display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" checked="{{ true }}" style="accent-color:var(--pri);margin:0;">Include edit history sheet</label>
+    </sc-if>
+  </div>
+  </div>
+
+  <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:12px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;flex:none;">
+      <button title="Track · Ctrl+T" onClick="{{ onTrack }}" style="height:36px;display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:7px;background:var(--pri);color:var(--onpri);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;opacity:{{ trackOp }};"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;">play_circle</span>Track<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid oklch(0.2 0.01 70 / 0.3);font-weight:500;">Ctrl+T</span></button>
+      <span style="font-size:11.5px;color:var(--tx3);text-align:center;font-family:'IBM Plex Mono',monospace;">{{ trackHint }}</span>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isReview }}">
+    <div style="padding:10px 14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;">
+      <span style="font-size:12px;color:var(--tx2);">{{ unresolvedText }}</span>
+      <button onClick="{{ goResults }}" style="height:32px;padding:0 14px;display:flex;align-items:center;gap:6px;border:none;border-radius:7px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;">Results<span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;">arrow_forward</span></button>
+    </div>
+  </sc-if>
+</aside>
+</div>
+
+<section style="display:flex;flex-direction:column;min-width:0;background:var(--panel);border-top:1px solid var(--line);user-select:none;">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:6px 12px;border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:2px;">
+      <button title="Previous frame · ←" onClick="{{ prevFrame }}" style="width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">navigate_before</span></button>
+      <button title="Play / pause · Space" onClick="{{ togglePlay }}" style="width:32px;height:32px;border:none;border-radius:50%;background:var(--pri);color:var(--onpri);display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:22px;line-height:1;font-variation-settings:'FILL' 1;">{{ playIcon }}</span></button>
+      <button title="Next frame · →" onClick="{{ nextFrame }}" style="width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);color:var(--tx);"><span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;">navigate_next</span></button>
+      <button title="Playback speed 0.25×–16× · − / +" onClick="{{ cycleSpeed }}" style="height:26px;margin-left:6px;padding:0 4px 0 8px;display:flex;align-items:center;gap:2px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;">{{ speedLabel }}<span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:var(--tx3);">expand_more</span></button>
+    </div>
+    <div title="{{ clockTitle }}" style="display:flex;align-items:baseline;gap:8px;white-space:nowrap;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;">{{ tStr }}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx3);">/ 06:12.480</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--tx2);">{{ clockStr }}</span>
+    </div>
+    <div style="flex:1 1 0;"></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);margin-right:2px;">Trial</span>
+      <button title="Set start at playhead · I" onClick="{{ setStartHere }}" style="height:26px;padding:0 6px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12px;cursor:pointer;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--tx2);">first_page</span><span style="font-family:'IBM Plex Mono',monospace;">{{ startStr }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:0 4px;border-radius:3px;border:1px solid var(--line2);color:var(--tx2);">I</span></button>
+      <button title="Set end at playhead · O" onClick="{{ setEndHere }}" style="height:26px;padding:0 6px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12px;cursor:pointer;" style-hover="background:var(--hover);"><span style="font-family:'IBM Plex Mono',monospace;">{{ endStr }}</span><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--tx2);">last_page</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:0 4px;border-radius:3px;border:1px solid var(--line2);color:var(--tx2);">O</span></button>
+      <span title="Trial duration" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2);padding:0 2px;">{{ durStr }}</span>
+      <button title="Lock duration — moving the start also moves the end" onClick="{{ toggleLock }}" style="height:26px;padding:0 8px 0 6px;display:flex;align-items:center;gap:4px;border:1px solid {{ lockBd }};border-radius:6px;background:{{ lockBg }};color:var(--tx);font:inherit;font-size:12px;cursor:pointer;"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;">{{ lockIcon }}</span>{{ lockLabel }}</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:2px;">
+      <button title="Zoom timeline out · Ctrl+Scroll" onClick="{{ zoomOut }}" style="width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;">remove</span></button>
+      <input title="Timeline zoom" type="range" min="1" max="8" step="0.5" value="{{ zoom }}" onChange="{{ onZoom }}" style="width:64px;margin:0;accent-color:var(--tx2);">
+      <button title="Zoom timeline in · Ctrl+Scroll" onClick="{{ zoomIn }}" style="width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;" style-hover="background:var(--hover);"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;">add</span></button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:128px minmax(0,1fr);min-width:0;">
+    <div style="border-right:1px solid var(--line);display:flex;flex-direction:column;font-size:11.5px;color:var(--tx2);padding-bottom:6px;">
+      <div style="height:20px;border-bottom:1px solid var(--line);"></div>
+      <div style="height:34px;display:flex;align-items:center;gap:6px;padding:0 12px;"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;color:var(--tx3);">movie</span>Video</div>
+      <sc-for list="{{ lanes }}" as="ln"><div style="height:16px;display:flex;align-items:center;gap:7px;padding:0 12px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ ln.color }};flex:none;"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ln.name }}</span></div></sc-for>
+      <sc-if value="{{ showFlagLane }}">
+        <div style="height:18px;display:flex;align-items:center;gap:7px;padding:0 12px;"><span style="width:7px;height:7px;transform:rotate(45deg);background:oklch(0.8 0.15 75);flex:none;"></span>Flags<span style="font-family:'IBM Plex Mono',monospace;color:var(--tx3);">{{ unresolvedN }}</span></div>
+        <div style="height:16px;display:flex;align-items:center;gap:7px;padding:0 12px;"><span style="width:8px;height:3px;background:var(--pri);flex:none;"></span>Corrections</div>
+      </sc-if>
+    </div>
+    <div style="overflow-x:auto;overflow-y:hidden;min-width:0;">
+      <div ref="{{ laneRef }}" onPointerDown="{{ onLaneDown }}" style="position:relative;width:{{ tlW }};min-width:100%;padding-bottom:6px;">
+        <div style="position:relative;height:20px;border-bottom:1px solid var(--line);">
+          <sc-for list="{{ ticks }}" as="k" hint-placeholder-count="0"><div style="position:absolute;left:{{ k.left }};bottom:0;width:1px;height:{{ k.h }};background:var(--line2);"></div><sc-if value="{{ k.major }}"><span style="position:absolute;left:{{ k.left }};top:3px;padding-left:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);">{{ k.label }}</span></sc-if></sc-for>
+        </div>
+        <div style="position:relative;height:34px;">
+          <div style="position:absolute;left:0;right:0;top:3px;bottom:3px;border-radius:4px;background-color:#000;background-image:url(assets/frame.png);background-size:auto 100%;background-repeat:repeat-x;"></div>
+          <sc-if value="{{ showProc }}"><div style="position:absolute;left:{{ procL }};width:{{ procW }};top:3px;bottom:3px;background:repeating-linear-gradient(135deg,oklch(0.87 0.05 82 / 0.5) 0 4px,transparent 4px 8px);border-right:2px solid var(--pri);"></div></sc-if>
+        </div>
+        <sc-for list="{{ lanes }}" as="ln">
+          <div style="position:relative;height:16px;"><div style="position:absolute;left:0;right:0;top:8px;height:1px;background:var(--line);"></div><sc-for list="{{ ln.segs }}" as="g"><div style="position:absolute;left:{{ g.l }};width:{{ g.w }};top:3px;height:10px;border-radius:2px;background:{{ ln.color }};"></div></sc-for></div>
+        </sc-for>
+        <sc-if value="{{ showFlagLane }}">
+          <div style="position:relative;height:18px;"><sc-for list="{{ flagMarks }}" as="m"><div title="{{ m.title }}" onClick="{{ m.onClick }}" style="position:absolute;left:{{ m.l }};top:5px;width:8px;height:8px;margin-left:-4px;transform:rotate(45deg);background:{{ m.c }};box-shadow:{{ m.ring }};cursor:pointer;"></div></sc-for></div>
+          <div style="position:relative;height:16px;"><sc-for list="{{ editMarks }}" as="m"><div title="{{ m.title }}" style="position:absolute;left:{{ m.l }};width:{{ m.w }};min-width:2px;top:6px;height:4px;border-radius:1px;background:var(--pri);"></div></sc-for></div>
+        </sc-if>
+        <div style="position:absolute;left:0;top:20px;bottom:0;width:{{ dimLW }};background:var(--dim);pointer-events:none;"></div>
+        <div style="position:absolute;left:{{ endL }};right:0;top:20px;bottom:0;background:var(--dim);pointer-events:none;"></div>
+        <sc-if value="{{ hasRange }}">
+          <div style="position:absolute;left:{{ rL }};width:{{ rW }};top:20px;bottom:0;background:oklch(0.87 0.05 82 / 0.14);border-left:1px solid var(--pri);border-right:1px solid var(--pri);pointer-events:none;"></div>
+          <div style="position:absolute;left:{{ rL }};top:24px;display:flex;align-items:center;gap:2px;padding:2px 2px 2px 8px;background:var(--panel);border:1px solid var(--line2);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap;z-index:3;">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2);margin-right:4px;">{{ rangeText }}</span>
+            <button title="Fill in between · F" onClick="{{ fillRange }}" style="height:22px;padding:0 7px;border:none;border-radius:4px;background:var(--pri);color:var(--onpri);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;">Fill in between</button>
+            <button title="Mouse not visible · N" onClick="{{ hideRange }}" style="height:22px;padding:0 7px;border:none;border-radius:4px;background:transparent;color:var(--tx);font:inherit;font-size:11.5px;cursor:pointer;" style-hover="background:var(--hover);">Mouse not visible</button>
+            <button title="Clear selection · Esc" onClick="{{ clearRange }}" style="width:22px;height:22px;border:none;border-radius:4px;background:transparent;color:var(--tx2);display:grid;place-items:center;cursor:pointer;padding:0;"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1;">close</span></button>
+          </div>
+        </sc-if>
+        <div data-drag="start" title="Trial start — drag, or press I" style="position:absolute;left:{{ startL }};top:20px;bottom:0;width:12px;margin-left:-12px;cursor:ew-resize;">
+          <div style="position:absolute;right:0;top:0;bottom:0;width:2px;background:var(--pri);"></div>
+          <div style="position:absolute;right:0;top:3px;height:28px;width:10px;background:var(--pri);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:center;gap:1px;"><span style="width:1px;height:10px;background:var(--onpri);opacity:.5;"></span><span style="width:1px;height:10px;background:var(--onpri);opacity:.5;"></span></div>
+        </div>
+        <div data-drag="end" title="Trial end — drag, or press O" style="position:absolute;left:{{ endL }};top:20px;bottom:0;width:12px;cursor:ew-resize;">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pri);"></div>
+          <div style="position:absolute;left:0;top:3px;height:28px;width:10px;background:var(--pri);border-radius:0 4px 4px 0;display:flex;align-items:center;justify-content:center;gap:1px;"><span style="width:1px;height:10px;background:var(--onpri);opacity:.5;"></span><span style="width:1px;height:10px;background:var(--onpri);opacity:.5;"></span></div>
+        </div>
+        <div style="position:absolute;left:{{ tL }};top:0;bottom:0;width:0;pointer-events:none;z-index:2;">
+          <div style="position:absolute;left:-6px;top:3px;width:12px;height:13px;background:var(--tx);border-radius:3px 3px 6px 6px;"></div>
+          <div style="position:absolute;left:-0.5px;top:14px;bottom:0;width:1px;background:var(--tx);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<sc-if value="{{ showUnsaved }}">
+  <div style="position:absolute;inset:0;background:oklch(0.1 0.004 70 / 0.6);display:grid;place-items:center;z-index:10;">
+    <div role="dialog" style="width:min(420px,calc(100% - 48px));background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);padding:20px;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:16px;font-weight:600;">Save changes before leaving?</div>
+      <div style="color:var(--tx2);text-wrap:pretty;">You resized 1 zone and made 3 corrections to M12_day3_trial1.mp4 since the last save. If you don’t save, they will be lost.</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onClick="{{ dismissUnsaved }}" style="height:32px;padding:0 12px;border:none;border-radius:6px;background:transparent;color:var(--err);font:inherit;font-weight:500;cursor:pointer;">Don’t save</button>
+        <div style="flex:1;"></div>
+        <button onClick="{{ dismissUnsaved }}" style="height:32px;padding:0 14px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-weight:500;cursor:pointer;">Cancel</button>
+        <button onClick="{{ onSave }}" style="height:32px;padding:0 14px;display:flex;align-items:center;gap:8px;border:none;border-radius:6px;background:var(--pri);color:var(--onpri);font:inherit;font-weight:600;cursor:pointer;">Save<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:0 5px;border-radius:4px;border:1px solid oklch(0.2 0.01 70 / 0.3);font-weight:500;">Ctrl+S</span></button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;step&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;setup&quot;,&quot;tracking&quot;,&quot;review&quot;,&quot;results&quot;],&quot;default&quot;:&quot;setup&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;noSetup&quot;,&quot;loaded&quot;,&quot;unsaved&quot;,&quot;failed&quot;,&quot;cancelled&quot;,&quot;changed&quot;,&quot;manyFlags&quot;,&quot;noFlags&quot;,&quot;resultsUpdated&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;video&quot;,&quot;tracker&quot;],&quot;default&quot;:&quot;video&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;reviewTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;flags&quot;,&quot;zones&quot;,&quot;history&quot;],&quot;default&quot;:&quot;flags&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;resultsView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;summary&quot;,&quot;events&quot;],&quot;default&quot;:&quot;summary&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tooltip&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const LEN=372.48,FPS=30,REC=9*3600+41*60+12,SC=1600/746;
+const PAL=[[0.8,0.12,235],[0.77,0.13,172],[0.7,0.17,300],[0.88,0.17,122],[0.75,0.15,350],[0.63,0.16,262],[0.92,0.05,205],[0.65,0.12,148]];
+const PALN=['Sky','Teal','Violet','Lime','Orchid','Blue','Ice','Green'];
+const oc=(i,a)=>{const p=PAL[i];return 'oklch('+p[0]+' '+p[1]+' '+p[2]+(a!=null?' / '+a:'')+')';};
+const p2=(n,w)=>String(n).padStart(w||2,'0');
+const fmt=t=>{const ms=Math.round(Math.max(0,t)*1000);return p2(Math.floor(ms/60000))+':'+p2(Math.floor(ms/1000)%60)+'.'+p2(ms%1000,3);};
+const fmtD=t=>{const ms=Math.round(t*1000);return Math.floor(ms/60000)+':'+p2(Math.floor(ms/1000)%60)+'.'+p2(ms%1000,3);};
+const clk=t=>{const s=Math.floor(REC+t);return p2(Math.floor(s/3600))+':'+p2(Math.floor(s/60)%60)+':'+p2(s%60);};
+const clkMs=t=>{const ms=Math.round((REC+t)*1000);return clk(t)+'.'+p2(ms%1000,3);};
+const pc=t=>(t/LEN*100)+'%';
+const mmss=s=>Math.floor(s/60)+':'+p2(Math.round(s)%60);
+const ZONES0=[
+ {id:'L',name:'Left chamber',type:'Rectangle',c:0,x:164,y:19,w:412,h:204},
+ {id:'C',name:'Center',type:'Rectangle',c:1,x:164,y:243,w:412,h:186},
+ {id:'R',name:'Right chamber',type:'Rectangle',c:2,x:164,y:447,w:412,h:184},
+ {id:'D',name:'Door B',type:'Polygon',c:3,pts:[[318,416],[428,416],[446,460],[300,460]]}];
+const zd=z=>z.type==='Polygon'?'M'+z.pts.map(p=>p.join(' ')).join('L')+'Z':'M'+z.x+' '+z.y+'h'+z.w+'v'+z.h+'h'+(-z.w)+'Z';
+const bbx=z=>{if(z.type==='Polygon'){const xs=z.pts.map(p=>p[0]),ys=z.pts.map(p=>p[1]);return{x1:Math.min(...xs),y1:Math.min(...ys),x2:Math.max(...xs),y2:Math.max(...ys)};}return{x1:z.x,y1:z.y,x2:z.x+z.w,y2:z.y+z.h};};
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const SEGS=(()=>{const r=rng(12),nb={L:['C'],C:['L','D'],D:['C','R'],R:['D']},du={L:[9,34],C:[3,15],D:[0.6,2.4],R:[9,32],N:[0.4,1.8]};let t=5,z='C',last='C';const o=[];
+ while(t<305-1e-6){const[a,b]=du[z];const e=Math.min(305,+(t+a+r()*(b-a)).toFixed(3));o.push({z,a:t,b:e});t=e;
+  if(z!=='N'){last=z;if(r()<0.14){z='N';continue;}const n=nb[z];z=n[Math.floor(r()*n.length)];}else{const n=nb[last];z=r()<0.4?last:n[Math.floor(r()*n.length)];}}
+ const h=o.find(g=>g.a<=134.36&&g.b>134.36);if(h)h.z='R';return o;})();
+const FLAGS=[[31.42,'Mouse not found','Lost for 0.8 s','fixed'],[74.96,'Sudden jump','41 px in 1 frame','unresolved'],[134.36,'Sudden jump','38 px in 1 frame','unresolved'],[162.1,'Unusual size','2.4× typical body size','accepted'],[198.73,'Mouse not found','Lost for 2.1 s','unresolved'],[241.05,'Unusual size','0.4× typical body size','unresolved'],[287.4,'Sudden jump','52 px in 1 frame','unresolved']].map(f=>({t:f[0],reason:f[1],detail:f[2],status:f[3]}));
+const MANY=(()=>{const r=rng(5),R=[['Mouse not found','Lost for '],['Sudden jump',' px in 1 frame'],['Unusual size','× typical body size']];const a=[];for(let i=0;i<46;i++){const k=Math.floor(r()*3);const t=+(5+r()*300).toFixed(3);a.push({t,reason:R[k][0],detail:k===0?R[0][1]+(0.3+r()*2).toFixed(1)+' s':k===1?Math.round(30+r()*40)+R[1][1]:(0.3+r()*2.5).toFixed(1)+R[2][1],status:'unresolved'});}a.sort((x,y)=>x.t-y.t);[3,9,15,22,30].forEach((i,j)=>a[i].status=j%2?'accepted':'fixed');return a;})();
+const EDITS=[{a:31.42,b:32.22,title:'Mouse not visible'},{a:58.3,b:59.1,title:'Fill in between'},{a:74.96,title:'Set position'},{a:162.1,title:'Accepted flag'}];
+const HIST=[
+ {what:'Set position',detail:'(862, 839) → (796, 944) px',t:'01:14.960 · frame 2 249',when:'14:12',icon:'my_location'},
+ {what:'Fill in between',detail:'24 frames interpolated',t:'00:58.300–00:59.100',when:'14:09',icon:'linear_scale'},
+ {what:'Accepted flag',detail:'Unusual size · tracking was fine',t:'02:42.100',when:'14:07',icon:'check'},
+ {what:'Mouse not visible',detail:'24 frames excluded from zone times',t:'00:31.420–00:32.220',when:'14:05',icon:'visibility_off'},
+ {what:'Edited zone “Center”',detail:'Resized · results recalculated',t:'whole trial',when:'13:58',icon:'edit'},
+ {what:'Tracking finished',detail:'9 000 frames · 7 flags',t:'00:05.000–05:05.000',when:'13:41',icon:'play_circle'}];
+const TRAIL=[[505,300],[492,318],[470,331],[452,347],[440,366],[431,384],[418,398],[400,410],[386,423],[377,437],[371,451],[362,466],[350,480],[336,494],[322,506],[308,517],[296,528],[289,540],[286,551],[287,561],[290,569],[290,575]];
+const SPEEDS=[0.25,0.5,1,2,4,8,16];
+const nowHM=()=>{const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());};
+
+class Component extends DCLogic {
+  constructor(p){super(p);
+    const step=p.step||'setup',st=p.state||'default';
+    this.svgRef=React.createRef();this.laneRef=React.createRef();
+    this.state={step,st,tool:'select',sel:step==='setup'&&st!=='noSetup'?'C':null,
+      zones:st==='noSetup'?[]:ZONES0.map(z=>({...z,vis:true,lock:false})),
+      view:p.view||'video',t:p.t!=null?p.t:(step==='setup'?5:134.36),playing:false,speed:(step==='review'||step==='results')?4:1,
+      start:5,end:305,lock:true,zoom:1,bright:0,contrast:0,sens:62,pol:'dark',minSize:180,thr:50,
+      ov:{trail:true,heat:true,outline:true,zone:true},trailLen:10,tab:p.reviewTab||'flags',res:p.resultsView||'summary',
+      flags:(st==='manyFlags'?MANY:st==='noFlags'?[]:FLAGS).map(f=>({...f})),flagFilter:'all',flagSel:st==='noFlags'?-1:2,
+      pos:null,hist:HIST.slice(),redo:[],range:step==='review'&&st==='default'?{a:88,b:90.4}:null,
+      sortK:'a',sortDir:1,evZone:'all',prog:step==='tracking'?((st==='failed'||st==='cancelled')?0.41:0.64):1,
+      unsavedOpen:st==='unsaved',snackOpen:st==='loaded'||st==='resultsUpdated',changedOpen:st==='changed',saved:null};
+  }
+  componentWillUnmount(){clearInterval(this.iv);clearInterval(this.tiv);}
+  stopPlay(){clearInterval(this.iv);this.iv=null;if(this.state.playing)this.setState({playing:false});}
+  togglePlay=()=>{if(this.state.playing){this.stopPlay();return;}this.setState({playing:true});this.iv=setInterval(()=>this.setState(s=>{const t=Math.min(LEN,s.t+0.05*s.speed);if(t>=LEN){clearInterval(this.iv);return{t,playing:false};}return{t};}),50);};
+  stepF(d){this.stopPlay();this.setState(s=>({t:Math.max(0,Math.min(LEN,Math.round(s.t*FPS+d)/FPS))}));}
+  go(k){this.stopPlay();clearInterval(this.tiv);this.setState(s=>({step:k,tool:'select',speed:(k==='review'||k==='results')?4:s.speed,st:k==='review'&&s.st==='cancelled'?'default':s.st}));}
+  onTrack=()=>{if(this.state.st==='noSetup')return;this.stopPlay();clearInterval(this.tiv);this.setState({step:'tracking',st:'default',prog:0,changedOpen:false});
+    this.tiv=setInterval(()=>{this.setState(s=>({prog:Math.min(1,s.prog+0.012)}),()=>{if(this.state.prog>=1){clearInterval(this.tiv);this.setState({step:'review',speed:4,t:134.36});}});},60);};
+  setStartHere=()=>this.setState(s=>{if(s.lock){const L=s.end-s.start;const a=Math.min(s.t,LEN-L);return{start:a,end:a+L};}return{start:Math.min(s.t,s.end-1)};});
+  setEndHere=()=>this.setState(s=>{if(s.lock){const L=s.end-s.start;const b=Math.max(s.t,L);return{end:b,start:b-L};}return{end:Math.max(s.t,s.start+1)};});
+  tAt(e){const r=this.laneRef.current.getBoundingClientRect();return Math.max(0,Math.min(LEN,(e.clientX-r.left)/r.width*LEN));}
+  applyDrag(t){const d=this.drag;if(!d)return;t=Math.round(t*FPS)/FPS;const s=this.state;
+    if(d.kind==='playhead')this.setState({t});
+    else if(d.kind==='start'){if(s.lock){const L=s.end-s.start;const a=Math.min(t,LEN-L);this.setState({start:a,end:a+L});}else this.setState({start:Math.min(t,s.end-1)});}
+    else if(d.kind==='end'){if(s.lock){const L=s.end-s.start;const b=Math.max(t,L);this.setState({end:b,start:b-L});}else this.setState({end:Math.max(t,s.start+1)});}
+    else if(d.kind==='range')this.setState({range:{a:Math.min(d.t0,t),b:Math.max(d.t0,t)}});}
+  onLaneDown=e=>{if(e.target.closest('button'))return;const el=e.target.closest('[data-drag]');let kind=el?el.dataset.drag:'playhead';
+    if(e.shiftKey&&this.state.step==='review')kind='range';this.stopPlay();const t0=this.tAt(e);this.drag={kind,t0};this.applyDrag(t0);
+    const mv=ev=>this.applyDrag(this.tAt(ev));const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);this.drag=null;};
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);};
+  pushEntry(entry,patch){this.setState(s=>({hist:[{...entry,isNew:true,when:nowHM()},...s.hist],redo:[],...patch(s)}));}
+  onCanvasClick=e=>{const s=this.state;if(s.step!=='review'||s.tool!=='position')return;const svg=this.svgRef.current;if(!svg)return;
+    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(svg.getScreenCTM().inverse());const pos={x:Math.round(q.x),y:Math.round(q.y)};
+    const fi=s.flags.findIndex(f=>Math.abs(f.t-s.t)<0.25);
+    this.pushEntry({what:'Set position',detail:'→ ('+Math.round(pos.x*SC)+', '+Math.round(pos.y*SC)+') px',t:fmt(s.t)+' · frame '+Math.round(s.t*FPS),icon:'my_location',kind:'pos',prevPos:s.pos,pos,fi,prevStatus:fi>=0?s.flags[fi].status:null},
+      st=>({pos,flags:st.flags.map((f,i)=>i===fi?{...f,status:'fixed'}:f)}));};
+  acceptFlag(i){const f=this.state.flags[i];if(!f)return;this.pushEntry({what:'Accepted flag',detail:f.reason+' · tracking was fine',t:fmt(f.t),icon:'check',kind:'accept',fi:i,prevStatus:f.status},st=>({flags:st.flags.map((g,j)=>j===i?{...g,status:'accepted'}:g)}));}
+  undo=()=>this.setState(s=>{const h=s.hist[0];if(!h||!h.isNew)return null;const flags=s.flags.map((f,i)=>i===h.fi?{...f,status:h.prevStatus}:f);return{hist:s.hist.slice(1),redo:[h,...s.redo],flags,pos:h.kind==='pos'?h.prevPos:s.pos};});
+  redo=()=>this.setState(s=>{const h=s.redo[0];if(!h)return null;const flags=s.flags.map((f,i)=>i===h.fi?{...f,status:h.kind==='accept'?'accepted':'fixed'}:f);return{redo:s.redo.slice(1),hist:[h,...s.hist],flags,pos:h.kind==='pos'?h.pos:s.pos};});
+  flagNav(d){const s=this.state;const fl=s.flags;if(!fl.length)return;let i;if(d>0){i=fl.findIndex(f=>f.t>s.t+0.01);if(i<0)i=0;}else{i=-1;fl.forEach((f,j)=>{if(f.t<s.t-0.01)i=j;});if(i<0)i=fl.length-1;}this.stopPlay();this.setState({t:fl[i].t,flagSel:i});}
+  updZone(id,patch){this.setState(s=>({zones:s.zones.map(z=>z.id===id?{...z,...patch}:z)}));}
+  save=()=>this.setState({st:this.state.st==='unsaved'||this.state.st==='resultsUpdated'?'default':this.state.st,unsavedOpen:false,saved:nowHM()});
+  onKey=e=>{const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT')return;const k=e.key,s=this.state,mod=e.ctrlKey||e.metaKey;
+    if(mod&&k.toLowerCase()==='z'){e.preventDefault();e.shiftKey?this.redo():this.undo();return;}
+    if(mod&&k.toLowerCase()==='s'){e.preventDefault();this.save();return;}
+    if(mod&&k.toLowerCase()==='t'){e.preventDefault();this.onTrack();return;}
+    if(mod)return;
+    if(k===' '){e.preventDefault();this.togglePlay();}
+    else if(k==='ArrowLeft'){e.preventDefault();this.stepF(-1);}else if(k==='ArrowRight'){e.preventDefault();this.stepF(1);}
+    else if(k==='i'||k==='I')this.setStartHere();else if(k==='o'||k==='O')this.setEndHere();
+    else if(k===']')this.flagNav(1);else if(k==='[')this.flagNav(-1);
+    else if(k==='Escape'){if(s.step==='tracking'){clearInterval(this.tiv);this.setState({st:'cancelled'});}else this.setState({range:null});}
+    else if((k==='a'||k==='A')&&s.step==='review'){const i=s.flags.findIndex(f=>Math.abs(f.t-s.t)<0.25&&f.status==='unresolved');if(i>=0)this.acceptFlag(i);}
+    else if(k==='b'||k==='B')this.setState({view:s.view==='video'?'tracker':'video'});
+    else{const map=s.step==='review'?{v:'select',p:'position',n:'hidden',f:'fill',h:'pan'}:{v:'select',a:'arena',r:'rect',e:'ellipse',g:'poly',h:'pan'};const tk=map[k.toLowerCase()];if(tk&&s.step!=='tracking')this.setState({tool:tk});}};
+
+  renderVals(){
+    const s=this.state,step=s.step,st=s.st;
+    const isSetup=step==='setup',isTracking=step==='tracking',isReview=step==='review',isResults=step==='results';
+    const tracked=isReview||isResults,failed=isTracking&&st==='failed',cancelled=isTracking&&st==='cancelled';
+    const isTracker=s.view==='tracker'&&(isSetup||isTracking);
+    const trackedTo=isTracking?(failed||cancelled?s.start:s.start+(s.end-s.start)*s.prog):s.end;
+    const cur=['setup','tracking','review','results'].indexOf(step);
+    const steps=[['setup','Setup'],['tracking','Track'],['review','Review'],['results','Results']].map(([k,l],i)=>{const done=i<cur,act=i===cur,dis=st==='noSetup'&&i>0;
+      return{label:l,num:String(i+1),showNum:!done,showIcon:done,title:l,bg:act?'var(--raised)':'transparent',shadow:act?'0 0 0 1px var(--line2)':'none',
+        color:act?'var(--tx)':dis?'var(--tx3)':'var(--tx2)',cbg:act?'var(--pri)':done?'var(--pris)':'transparent',cfg:act?'var(--onpri)':'var(--tx2)',cbd:act?'var(--pri)':'var(--line2)',
+        onClick:()=>{if(dis)return;if(k==='tracking'){if(isSetup)this.onTrack();return;}this.go(k);}};});
+    const ST=[['select','arrow_selector_tool','Select / move','V'],['arena','highlight_alt','Arena outline','A'],['rect','rectangle','Rectangle zone','R'],['ellipse','circle','Ellipse zone','E'],['poly','pentagon','Polygon zone','G'],['pan','pan_tool','Pan','H']];
+    const RT=[['select','arrow_selector_tool','Select','V'],['position','my_location','Set position — click the mouse','P'],['hidden','visibility_off','Mouse not visible','N'],['fill','linear_scale','Fill in between','F'],['pan','pan_tool','Pan','H']];
+    const tools=(isReview?RT:ST).map(([k,ic,n,key])=>({icon:ic,title:n+' · '+key,bg:s.tool===k&&!isTracking?'var(--pris)':'transparent',color:isTracking?'var(--tx3)':s.tool===k?'var(--tx)':'var(--tx2)',onClick:()=>{if(!isTracking)this.setState({tool:k});}}));
+    const inZoneSeg=SEGS.find(g=>g.a<=s.t&&g.b>s.t);const inZone=tracked&&inZoneSeg?inZoneSeg.z:null;
+    const editZones=isSetup||(isReview&&s.tab==='zones');
+    const zoneShapes=s.zones.filter(z=>z.vis).map(z=>{const sel=editZones&&s.sel===z.id,hi=tracked&&s.ov.zone&&inZone===z.id;const b=bbx(z);
+      const lab=z.type==='Polygon'?[b.x2+6,(b.y1+b.y2)/2-9.5]:[b.x1+8,b.y1+8];const label=hi?z.name+' · mouse here':z.name;
+      return{d:zd(z),fill:isTracker?'none':oc(z.c,hi?0.3:sel?0.2:0.12),stroke:oc(z.c),sw:sel||hi?2.5:1.5,dash:isTracker?'5 4':'none',
+        onClick:e=>{if(s.tool==='select'&&(isSetup||isReview)){e.stopPropagation();this.setState({sel:z.id,tab:isReview?'zones':s.tab});}},
+        lt:'translate('+lab[0]+' '+lab[1]+')',lw:Math.round(label.length*6.1+28),label,lbg:hi?oc(z.c):'oklch(0.17 0.006 70 / 0.86)',ltx:hi?'oklch(0.18 0.01 70)':'oklch(0.96 0.01 85)',sq:hi?'oklch(0.18 0.01 70)':oc(z.c)};});
+    const sz=s.zones.find(z=>z.id===s.sel&&z.vis);let handles=[];
+    if(sz&&editZones){const b=bbx(sz);const pts=sz.type==='Polygon'?sz.pts:[[b.x1,b.y1],[(b.x1+b.x2)/2,b.y1],[b.x2,b.y1],[b.x2,(b.y1+b.y2)/2],[b.x2,b.y2],[(b.x1+b.x2)/2,b.y2],[b.x1,b.y2],[b.x1,(b.y1+b.y2)/2]];
+      const cur=['nwse-resize','ns-resize','nesw-resize','ew-resize','nwse-resize','ns-resize','nesw-resize','ew-resize'];handles=pts.map((p,i)=>({x:p[0]-4,y:p[1]-4,c:oc(sz.c),cur:sz.type==='Polygon'?'move':cur[i]}));}
+    const n=Math.max(2,Math.min(TRAIL.length-1,Math.round(s.trailLen/10*(TRAIL.length-1))));const tp=TRAIL.slice(-n-1);
+    const trail=tp.slice(1).map((p,i)=>({x1:tp[i][0],y1:tp[i][1],x2:p[0],y2:p[1],op:(0.15+0.85*(i+1)/n).toFixed(2)}));
+    const heat=tp.filter((p,i)=>i%2===0).map((p,i,a)=>({x:p[0],y:p[1],op:(0.35+0.65*i/Math.max(1,a.length-1)).toFixed(2)}));
+    const mx=s.pos?s.pos.x:290,my=s.pos?s.pos.y:575;
+    const flags=s.flags;const cnt={all:flags.length,unresolved:0,fixed:0,accepted:0};flags.forEach(f=>cnt[f.status]++);
+    const curFlagI=isReview?flags.findIndex(f=>Math.abs(f.t-s.t)<0.25&&f.status==='unresolved'):-1;const curFlag=flags[curFlagI];
+    const sc={unresolved:['var(--warns)','var(--warn)','Unresolved'],fixed:['color-mix(in oklch,var(--ok) 16%,transparent)','var(--ok)','Fixed'],accepted:['var(--raised)','var(--tx2)','Accepted']};
+    const flagRows=flags.map((f,i)=>({...f,i})).filter(f=>s.flagFilter==='all'||f.status===s.flagFilter).map(f=>({time:fmt(f.t),clock:clk(f.t),reason:f.reason,detail:f.detail,statusLabel:sc[f.status][2],sbg:sc[f.status][0],sfg:sc[f.status][1],
+      bg:f.i===s.flagSel?'var(--pris)':'transparent',dia:f.status==='unresolved'?'oklch(0.8 0.15 75)':'var(--tx3)',onClick:()=>{this.stopPlay();this.setState({flagSel:f.i,t:f.t});}}));
+    const flagChips=[['all','All'],['unresolved','Unresolved'],['fixed','Fixed'],['accepted','Accepted']].map(([k,l])=>({label:l,n:cnt[k],bg:s.flagFilter===k?'var(--pris)':'transparent',bd:s.flagFilter===k?'var(--pri)':'var(--line2)',onClick:()=>this.setState({flagFilter:k})}));
+    const ticks=[];for(let x=0;x<=LEN;x+=10)ticks.push({left:pc(x),major:x%30===0,label:Math.floor(x/60)+':'+p2(x%60),h:x%30===0?'8px':'4px'});
+    const showLanes=tracked||(isTracking&&!failed&&!cancelled);
+    const lanes=showLanes?s.zones.map(z=>({name:z.name,color:oc(z.c),segs:SEGS.filter(g=>g.z===z.id&&g.a<trackedTo).map(g=>({l:pc(g.a),w:pc(Math.min(g.b,trackedTo)-g.a)}))})):[];
+    const flagMarks=flags.map((f,i)=>({l:pc(f.t),c:f.status==='unresolved'?'oklch(0.8 0.15 75)':'var(--tx3)',ring:i===s.flagSel?'0 0 0 2px var(--panel), 0 0 0 3.5px oklch(0.8 0.15 75)':'none',title:fmt(f.t)+' · '+f.reason,onClick:()=>this.setState({flagSel:i,t:f.t})}));
+    const userEdits=s.hist.filter(h=>h.isNew).map(h=>({l:pc(parseFloat(h.t.slice(0,2))*60+parseFloat(h.t.slice(3,9))),w:'2px',title:h.what}));
+    const editMarks=EDITS.map(e=>({l:pc(e.a),w:e.b?pc(e.b-e.a):'2px',title:e.title})).concat(userEdits);
+    const lockZ=isTracking;
+    const sumTot={};SEGS.forEach(g=>{sumTot[g.z]=(sumTot[g.z]||0)+(g.b-g.a);});
+    if(st==='resultsUpdated'){sumTot.C+=1.833;sumTot.N-=1.833;}
+    const trialLen=s.end-s.start;const rowsRaw=ZONES0.map(z=>({id:z.id,name:z.name,c:z.c,v:sumTot[z.id]||0})).concat([{id:'N',name:'No zone',c:null,v:sumTot.N||0}]);
+    const maxV=Math.max(...rowsRaw.map(r=>r.v));const axMax=Math.ceil(maxV/30)*30;
+    const sumRows=rowsRaw.map(r=>({name:r.name,color:r.c==null?'var(--tx3)':oc(r.c),fill:r.c==null?'transparent':oc(r.c,0.25),bar:r.c==null?'var(--line2)':oc(r.c,0.85),sec:r.v.toFixed(3)+' s',short:r.v.toFixed(1),pct:(r.v/300*100).toFixed(1)+' %',w:(r.v/axMax*100)+'%',
+      changed:st==='resultsUpdated'&&(r.id==='C'||r.id==='N'),delta:r.id==='C'?'+1.833':'−1.833'}));
+    const axis=[];for(let v=0;v<=axMax;v+=30)axis.push({l:(v/axMax*100)+'%',v});
+    const zmap={};ZONES0.forEach(z=>zmap[z.id]=z);
+    let evs=SEGS.filter(g=>g.z!=='N').map((g,i)=>({i:i+1,z:g.z,a:g.a,b:g.b,d:g.b-g.a}));
+    const evChips=[{k:'all',label:'All zones',color:'var(--tx3)',n:evs.length}].concat(ZONES0.map(z=>({k:z.id,label:z.name,color:oc(z.c),n:evs.filter(e=>e.z===z.id).length}))).map(c=>({...c,bg:s.evZone===c.k?'var(--pris)':'transparent',bd:s.evZone===c.k?'var(--pri)':'var(--line2)',onClick:()=>this.setState({evZone:c.k})}));
+    if(s.evZone!=='all')evs=evs.filter(e=>e.z===s.evZone);
+    evs.sort((x,y)=>{const k=s.sortK;const a=k==='z'?zmap[x.z].name:x[k],b=k==='z'?zmap[y.z].name:y[k];return(a<b?-1:a>b?1:0)*s.sortDir;});
+    const events=evs.map(e=>({n:e.i,zone:zmap[e.z].name,color:oc(zmap[e.z].c),av:fmt(e.a),ac:clkMs(e.a),bv:fmt(e.b),bc:clkMs(e.b),d:e.d.toFixed(3)+' s',onClick:()=>this.setState({t:e.a})}));
+    const evHeads=[['i','#','flex-start'],['z','Zone','flex-start'],['a','Entered','flex-start'],['b','Left','flex-start'],['d','Duration','flex-end']].map(([k,l,jc])=>({label:l,jc,fg:s.sortK===k?'var(--tx)':'var(--tx3)',op:s.sortK===k?1:0,icon:s.sortDir>0?'arrow_upward':'arrow_downward',onClick:()=>this.setState(q=>({sortK:k,sortDir:q.sortK===k?-q.sortDir:1}))}));
+    const selZ=s.zones.find(z=>z.id===s.sel);const hasSel=!!selZ&&editZones;
+    const geom=selZ&&selZ.type!=='Polygon'?[['X',selZ.x],['Y',selZ.y],['W',selZ.w],['H',selZ.h]].map(([k,v])=>({k,v:Math.round(v*SC)})):[];
+    const pctProg=Math.round(s.prog*100);const TT=9000/186;
+    const saveLabel=st==='noSetup'?'Not saved yet':(st==='unsaved'||st==='resultsUpdated')&&!s.saved?'Unsaved changes':s.saved?'Saved '+s.saved:st==='loaded'?'Loaded · saved 26 Sep 16:02':'Saved 14:12';
+    const unsavedNow=saveLabel==='Unsaved changes'||saveLabel==='Not saved yet';
+    let snack=null;if(s.snackOpen&&st==='loaded')snack=['history','var(--ok)','Loaded analysis saved on 26 Sep 2026 at 16:02','Setup, track, 4 corrections and flag decisions were restored.','Dismiss'];
+    if(s.snackOpen&&st==='resultsUpdated')snack=['refresh','var(--ok)','Results updated','“Center” was resized. Zone times were recalculated from the existing track. No re-tracking needed.','Undo'];
+    const ov=[['trail','Trail','oklch(0.64 0.23 27)','Movement trail · T'],['heat','Heatmap','oklch(0.64 0.23 27 / 0.45)','Heatmap of the trail window · M'],['outline','Body outline','oklch(0.97 0.02 90)','Body outline · L'],['zone','Current zone','oklch(0.7 0.17 300)','Highlight the zone the mouse is in · Z']].map(([k,l,sw,title])=>({label:l,title,sw,swOp:s.ov[k]?1:0.25,bg:s.ov[k]?'var(--raised)':'transparent',fg:s.ov[k]?'var(--tx)':'var(--tx3)',onClick:()=>this.setState(q=>({ov:{...q.ov,[k]:!q.ov[k]}}))}));
+    const setup2=isSetup||isTracking;
+    return{
+      onKey:this.onKey,steps,saveLabel,saveDot:unsavedNow?'oklch(0.8 0.15 75)':'var(--ok)',onSave:this.save,
+      showVideo:!isResults,svgRef:this.svgRef,onCanvasClick:this.onCanvasClick,cursor:isReview&&s.tool==='position'?'crosshair':s.tool==='pan'?'grab':'default',
+      imgFilter:isTracker?'grayscale(1) '+(s.pol==='dark'?'invert(1) ':'')+'brightness('+(1+s.bright/200)+') contrast('+(3+s.sens/100*10).toFixed(2)+')':'brightness('+(1+s.bright/100)+') contrast('+(1+s.contrast/100)+')',
+      outsideOp:isTracker?1:(s.zones.length?0.45:0),hasArena:st!=='noSetup',zoneShapes,handles,isTracker,blobArea:(212+Math.round((62-s.sens)*1.5))+' px²',
+      showHeat:tracked&&s.ov.heat,heat,showTrail:tracked&&s.ov.trail,trail,showOutline:(tracked&&s.ov.outline)||(isTracking&&!failed&&!cancelled),mx,my,mrot:'rotate(-3 '+mx+' '+my+')',
+      hasPos:isReview&&!!s.pos,posLx:mx+16,posLy:my-14,tools,isReview,notReview:!isReview,undo:this.undo,redo:this.redo,
+      undoFg:s.hist[0]&&s.hist[0].isNew?'var(--tx)':'var(--tx3)',redoFg:s.redo.length?'var(--tx)':'var(--tx3)',
+      showTip:!!this.props.tooltip&&isSetup,showViewToggle:setup2,setViewVideo:()=>this.setState({view:'video'}),setViewTracker:()=>this.setState({view:'tracker'}),
+      vVidBg:s.view==='video'?'var(--raised)':'transparent',vVidFg:s.view==='video'?'var(--tx)':'var(--tx2)',vTrBg:s.view==='tracker'?'var(--raised)':'transparent',vTrFg:s.view==='tracker'?'var(--tx)':'var(--tx2)',
+      ovItems:ov,trailLen:String(s.trailLen),onTrailLen:e=>this.setState({trailLen:+e.target.value}),
+      frameStr:Math.round(s.t*FPS).toLocaleString('en-US').replace(/,/g,' '),vx:Math.round(mx*SC),vy:Math.round(my*SC),
+      showFlagBanner:!!curFlag,curFlagReason:curFlag?curFlag.reason+' · '+curFlag.detail:'',curFlagMeta:curFlag?'Flag '+(curFlagI+1)+' of '+flags.length+' · '+fmt(curFlag.t):'',
+      acceptCur:()=>this.acceptFlag(curFlagI),toolPosition:()=>this.setState({tool:'position'}),
+      isResults,isSummary:s.res==='summary',isEvents:s.res==='events',setResSummary:()=>this.setState({res:'summary'}),setResEvents:()=>this.setState({res:'events'}),
+      rsBg:s.res==='summary'?'var(--raised)':'transparent',rsFg:s.res==='summary'?'var(--tx)':'var(--tx2)',reBg:s.res==='events'?'var(--raised)':'transparent',reFg:s.res==='events'?'var(--tx)':'var(--tx2)',
+      isUpdated:st==='resultsUpdated',sumRows,totalSec:trialLen.toFixed(3)+' s',axis,evChips,evHeads,events,evCount:events.length+' events · click a row to jump there',
+      startStr:fmt(s.start),endStr:fmt(s.end),durStr:fmtD(s.end-s.start),
+      showNoSetup:st==='noSetup'&&isSetup,toolArena:()=>this.setState({tool:'arena'}),toolRect:()=>this.setState({tool:'rect'}),
+      showChanged:s.changedOpen,dismissChanged:()=>this.setState({changedOpen:false}),onTrack:this.onTrack,
+      showProgress:isTracking&&!failed&&!cancelled,progPct:pctProg+'%',progW:pctProg+'%',elapsed:mmss(s.prog*TT),remaining:mmss((1-s.prog)*TT),
+      cancelTrack:()=>{clearInterval(this.tiv);this.setState({st:'cancelled'});},
+      showStopped:failed||cancelled,isFailed:failed,stopBd:failed?'oklch(0.7 0.18 25 / 0.6)':'var(--line2)',stopFg:failed?'var(--err)':'var(--tx2)',stopIcon:failed?'error':'cancel',
+      stopTitle:failed?'Tracking failed at 41%':'Tracking cancelled at 41%',stopBody:failed?'Couldn’t decode frame 3 858 (02:08.600). The file may be damaged or still being copied. Your setup is unchanged.':'Your setup is unchanged. Nothing from this run was kept.',stopRetry:failed?'Try again':'Track again',
+      backToSetup:()=>{this.go('setup');this.setState({st:'default'});},
+      showSnack:!!snack,snackIcon:snack?snack[0]:'',snackIc:snack?snack[1]:'',snackTitle:snack?snack[2]:'',snackBody:snack?snack[3]:'',snackAction:snack?snack[4]:'',dismissSnack:()=>this.setState({snackOpen:false}),
+      inspTitle:{setup:'Setup',tracking:'Tracking',review:'Review & correct',results:'Results'}[step],isTracking,
+      tabs:[['flags','Flags',cnt.unresolved],['zones','Zones',null],['history','History',null]].map(([k,l,b])=>({label:l,badge:b,hasBadge:b!=null&&b>0,bd:s.tab===k?'var(--pri)':'transparent',fg:s.tab===k?'var(--tx)':'var(--tx2)',onClick:()=>this.setState({tab:k})})),
+      speedLabel:s.speed+'×',lockOp:lockZ?0.55:1,lockPE:lockZ?'none':'auto',
+      showZonesList:setup2||(isReview&&s.tab==='zones'),isSetupish:setup2,arenaLabel:st==='noSetup'?'Not drawn yet':'Rectangle · 918 × 1338 px',arenaFg:st==='noSetup'?'var(--tx3)':'var(--tx)',
+      zoneCount:s.zones.length,noZones:!s.zones.length,
+      zoneRows:s.zones.map(z=>({name:z.name,color:oc(z.c),fill:oc(z.c,0.25),bg:s.sel===z.id&&editZones?'var(--pris)':'transparent',fg:z.vis?'var(--tx)':'var(--tx3)',
+        visIcon:z.vis?'visibility':'visibility_off',lockIcon:z.lock?'lock':'lock_open',visFg:z.vis?'var(--tx2)':'var(--tx3)',lockFg:z.lock?'var(--tx)':'var(--tx3)',
+        onSelect:()=>this.setState({sel:z.id}),onName:e=>this.updZone(z.id,{name:e.target.value}),
+        onVis:e=>{e.stopPropagation();this.updZone(z.id,{vis:!z.vis});},onLock:e=>{e.stopPropagation();this.updZone(z.id,{lock:!z.lock});},
+        onDel:e=>{e.stopPropagation();this.setState(q=>({zones:q.zones.filter(y=>y.id!==z.id),sel:q.sel===z.id?null:q.sel,st:isReview?'resultsUpdated':q.st,snackOpen:isReview?true:q.snackOpen}));}})),
+      hasSel,selName:selZ?selZ.name:'',selType:selZ?selZ.type+' zone':'',selIsRect:hasSel&&selZ.type!=='Polygon',selIsPoly:hasSel&&selZ.type==='Polygon',selPts:selZ&&selZ.pts?selZ.pts.length:0,geom,
+      swatches:PAL.map((p,i)=>({name:PALN[i],color:oc(i),ring:selZ&&selZ.c===i?'var(--tx)':'transparent',onClick:()=>selZ&&this.updZone(selZ.id,{c:i})})),
+      resetImage:()=>this.setState({bright:0,contrast:0}),bright:s.bright,contrast:s.contrast,brightV:(s.bright>0?'+':'')+s.bright,contrastV:(s.contrast>0?'+':'')+s.contrast,
+      onBright:e=>this.setState({bright:+e.target.value}),onContrast:e=>this.setState({contrast:+e.target.value}),sens:s.sens,onSens:e=>this.setState({sens:+e.target.value}),
+      polDark:()=>this.setState({pol:'dark'}),polLight:()=>this.setState({pol:'light'}),pdBg:s.pol==='dark'?'var(--raised)':'transparent',pdFg:s.pol==='dark'?'var(--tx)':'var(--tx2)',plBg:s.pol==='light'?'var(--raised)':'transparent',plFg:s.pol==='light'?'var(--tx)':'var(--tx2)',
+      minSize:s.minSize,minSizeV:s.minSize+' px²',onMinSize:e=>this.setState({minSize:+e.target.value}),thr:s.thr,thrV:s.thr+'%',onThr:e=>this.setState({thr:+e.target.value}),
+      tplLabel:st==='noSetup'?'No template applied':'From “Three-chamber · Cam 2”',
+      showFlags:isReview&&s.tab==='flags',isMany:st==='manyFlags',noFlags:!flags.length,flagChips,flagRows,prevFlag:()=>this.flagNav(-1),nextFlag:()=>this.flagNav(1),
+      showHistory:isReview&&s.tab==='history',histRows:s.hist.map(h=>({...h,bg:h.isNew?'var(--pris)':'transparent'})),
+      trialInfo:[{k:'Start',v:fmt(s.start),c:clk(s.start)},{k:'End',v:fmt(s.end),c:clk(s.end)},{k:'Duration',v:fmtD(s.end-s.start),c:Math.round((s.end-s.start)*FPS).toLocaleString('en-US').replace(/,/g,' ')+' frames'},{k:'Recorded',v:'25 Sep 2026',c:'09:41:12 local'}],
+      anaInfo:[{k:'Template',v:'Three-chamber · Cam 2',fg:'var(--tx)'},{k:'In-zone threshold',v:s.thr+'% of body',fg:'var(--tx)'},{k:'Tracked',v:'27 Sep 2026 13:41',fg:'var(--tx)'},{k:'Corrections',v:String(s.hist.length-2),fg:'var(--tx)'},{k:'Flags',v:cnt.unresolved+' unresolved of '+cnt.all,fg:'var(--warn)'}],
+      goReview:()=>this.go('review'),goResults:()=>this.go('results'),isSetup,trackOp:st==='noSetup'?0.4:1,trackHint:'Trial '+fmtD(s.end-s.start)+' · about '+Math.round((s.end-s.start)*FPS/186)+' s',
+      unresolvedText:cnt.unresolved?cnt.unresolved+' unresolved flag'+(cnt.unresolved>1?'s':''):'All flags resolved',unresolvedN:cnt.unresolved,
+      prevFrame:()=>this.stepF(-1),nextFrame:()=>this.stepF(1),togglePlay:this.togglePlay,playIcon:s.playing?'pause':'play_arrow',
+      cycleSpeed:()=>this.setState(q=>({speed:SPEEDS[(SPEEDS.indexOf(q.speed)+1)%SPEEDS.length]})),
+      tStr:fmt(s.t),clockStr:clkMs(s.t)+' local',clockTitle:'Local clock time '+clkMs(s.t)+' · 25 Sep 2026',
+      setStartHere:this.setStartHere,setEndHere:this.setEndHere,toggleLock:()=>this.setState(q=>({lock:!q.lock})),
+      lockIcon:s.lock?'lock':'lock_open',lockLabel:s.lock?'Locked '+mmss(s.end-s.start):'Lock duration',lockBg:s.lock?'var(--pris)':'transparent',lockBd:s.lock?'var(--pri)':'var(--line2)',
+      zoom:s.zoom,onZoom:e=>this.setState({zoom:+e.target.value}),zoomIn:()=>this.setState(q=>({zoom:Math.min(8,q.zoom*1.5)})),zoomOut:()=>this.setState(q=>({zoom:Math.max(1,q.zoom/1.5)})),
+      laneRef:this.laneRef,onLaneDown:this.onLaneDown,tlW:(s.zoom*100)+'%',ticks,lanes,showFlagLane:tracked,flagMarks,editMarks,
+      showProc:isTracking&&!failed&&!cancelled,procL:pc(s.start),procW:pc(Math.max(0,trackedTo-s.start)),
+      dimLW:pc(s.start),endL:pc(s.end),startL:pc(s.start),tL:pc(s.t),
+      hasRange:isReview&&!!s.range,rL:s.range?pc(s.range.a):'0',rW:s.range?pc(s.range.b-s.range.a):'0',rangeText:s.range?fmt(s.range.a)+'–'+fmt(s.range.b):'',
+      fillRange:()=>{const r=s.range;this.pushEntry({what:'Fill in between',detail:Math.round((r.b-r.a)*FPS)+' frames interpolated',t:fmt(r.a)+'–'+fmt(r.b),icon:'linear_scale',kind:'range'},()=>({range:null}));},
+      hideRange:()=>{const r=s.range;this.pushEntry({what:'Mouse not visible',detail:Math.round((r.b-r.a)*FPS)+' frames excluded from zone times',t:fmt(r.a)+'–'+fmt(r.b),icon:'visibility_off',kind:'range'},()=>({range:null}));},
+      clearRange:()=>this.setState({range:null}),
+      showUnsaved:s.unsavedOpen,dismissUnsaved:()=>this.setState({unsavedOpen:false})
+    };
+  }
+}
+</script>
+</body>
+</html>

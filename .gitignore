@@ -1,0 +1,37 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local recordings and their analysis files (never commit lab data)
+/*.mp4
+/*.mov
+/*.avi
+/*.mkv
+/*.m4v
+*.tramus.json
+*.tramus.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+engine/build/
+engine/dist/
+
+# Node / Electron
+node_modules/
+app/out/
+app/dist/
+app/release/
+app/resources/engine/
+*.tsbuildinfo
+
+# Logs
+*.log
