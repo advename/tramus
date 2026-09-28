@@ -1,11 +1,17 @@
 import type { RefObject } from 'react'
 import { alpha, type Theme, useTheme } from '@mui/material/styles'
 
-import type { Calibration, Observation, Setup, Zone } from '../../../api/types'
+import type { Calibration, Observation, Setup, Shape } from '../../../api/types'
 import { bboxHandles, distance, shapeBBox, shapePathD, type Point } from '../lib/geometry'
 import type { TrailPoint, TrailSegment } from '../lib/trail'
 import type { StageSelection } from '../state/workspaceStore'
-import type { CalibrationEndpoint, MeasureDraft, ZoneDraft, ZoneEditingApi } from './useZoneEditing'
+import type {
+  CalibrationEndpoint,
+  MeasureDraft,
+  ShapeTarget,
+  ZoneDraft,
+  ZoneEditingApi
+} from './useZoneEditing'
 
 export interface BodyEllipse {
   x: number
@@ -128,15 +134,38 @@ export function StageOverlay({
       )}
 
       {arena && (
-        <path
-          d={shapePathD(arena)}
-          fill="none"
-          stroke={theme.palette.text.primary}
-          strokeWidth={1.25}
-          strokeDasharray="6 4"
-          vectorEffect="non-scaling-stroke"
-          pointerEvents="none"
-        />
+        <>
+          <path
+            d={shapePathD(arena)}
+            fill="none"
+            stroke={theme.palette.text.primary}
+            strokeWidth={1.25}
+            strokeDasharray="6 4"
+            vectorEffect="non-scaling-stroke"
+            pointerEvents="none"
+          />
+          {/* A wide invisible hit stroke — zones usually cover the arena's interior, so it can
+              only be selected by its outline. */}
+          <path
+            d={shapePathD(arena)}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={10 * px}
+            vectorEffect="non-scaling-stroke"
+            pointerEvents="stroke"
+            style={{ cursor: editing.activeTool === 'select' ? 'move' : undefined }}
+            onPointerDown={(e) => editing.onShapePointerDown(e, { kind: 'arena', shape: arena })}
+          />
+          {showHandles && selection?.type === 'arena' && (
+            <ShapeHandles
+              target={{ kind: 'arena', shape: arena }}
+              shape={arena}
+              color={theme.palette.text.primary}
+              editing={editing}
+              px={px}
+            />
+          )}
+        </>
       )}
 
       {zones
@@ -163,7 +192,7 @@ export function StageOverlay({
                 strokeDasharray={isTracker ? '5 4' : undefined}
                 vectorEffect="non-scaling-stroke"
                 style={{ cursor: editing.activeTool === 'select' ? 'pointer' : undefined }}
-                onPointerDown={(e) => editing.onZonePointerDown(e, zone)}
+                onPointerDown={(e) => editing.onShapePointerDown(e, { kind: 'zone', zone })}
               />
               {!isTracker && (
                 <ZoneLabel
@@ -180,7 +209,13 @@ export function StageOverlay({
                 />
               )}
               {showHandles && selected && !zone.locked && (
-                <ZoneHandles zone={zone} color={color} editing={editing} px={px} />
+                <ShapeHandles
+                  target={{ kind: 'zone', zone }}
+                  shape={zone.shape}
+                  color={color}
+                  editing={editing}
+                  px={px}
+                />
               )}
             </g>
           )
@@ -375,21 +410,26 @@ function ZoneLabel({ x, y, text, swatch, bg, fg, stroke, px }: ZoneLabelProps): 
   )
 }
 
-function ZoneHandles({
-  zone,
+/** Selection handles for an editable shape target (a zone or the arena): 8 bounding-box handles
+ * for rect/ellipse, or one per vertex for a polygon — the `px` prop keeps them a constant screen
+ * size regardless of stage zoom. */
+function ShapeHandles({
+  target,
+  shape,
   color,
   editing,
   px
 }: {
-  zone: Zone
+  target: ShapeTarget
+  shape: Shape
   color: string
   editing: ZoneEditingApi
   px: number
 }): React.JSX.Element {
-  if (zone.shape.kind === 'polygon') {
+  if (shape.kind === 'polygon') {
     return (
       <>
-        {zone.shape.points.map((point, i) => (
+        {shape.points.map((point, i) => (
           <rect
             key={i}
             x={(point[0] ?? 0) - 4 * px}
@@ -402,13 +442,13 @@ function ZoneHandles({
             strokeWidth={1.5}
             vectorEffect="non-scaling-stroke"
             style={{ cursor: 'move' }}
-            onPointerDown={(e) => editing.onVertexPointerDown(e, zone, i)}
+            onPointerDown={(e) => editing.onVertexPointerDown(e, target, i)}
           />
         ))}
       </>
     )
   }
-  const handles = bboxHandles(shapeBBox(zone.shape))
+  const handles = bboxHandles(shapeBBox(shape))
   return (
     <>
       {handles.map((h, i) => (
@@ -424,7 +464,7 @@ function ZoneHandles({
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
           style={{ cursor: h.cursor }}
-          onPointerDown={(e) => editing.onHandlePointerDown(e, zone, i)}
+          onPointerDown={(e) => editing.onHandlePointerDown(e, target, i)}
         />
       ))}
     </>

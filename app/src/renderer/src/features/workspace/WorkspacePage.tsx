@@ -81,6 +81,7 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
   const setFrameCount = useWorkspaceStore((s) => s.setFrameCount)
   const setSpeed = useWorkspaceStore((s) => s.setSpeed)
   const setSetupTool = useWorkspaceStore((s) => s.setSetupTool)
+  const setupHintDismissed = useWorkspaceStore((s) => s.setupHintDismissed)
 
   const [saving, setSaving] = useState(false)
   const [fileChangedDismissed, setFileChangedDismissed] = useState(false)
@@ -283,7 +284,7 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
             onRetrack={() => void onTrack()}
           />
         ) : null}
-        {setupEmpty ? (
+        {setupEmpty && !setupHintDismissed ? (
           <NoSetupCard
             onDrawArena={() => setSetupTool('arena')}
             onLoadTemplate={(anchor) => setTemplateMenuAnchor(anchor)}

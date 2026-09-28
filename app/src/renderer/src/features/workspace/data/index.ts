@@ -2,3 +2,4 @@
 export * from './editors'
 export * from './queries'
 export * from './trackData'
+export * from './useDetectionPreview'

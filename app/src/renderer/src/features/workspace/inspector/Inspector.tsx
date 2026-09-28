@@ -188,7 +188,16 @@ export function Inspector({
           editor={setupEditor}
           selection={selection}
           onSelect={select}
-          onEditArena={() => setSetupTool('arena')}
+          onEditArena={() => {
+            // An arena already exists — select it (Select tool) so its handles show immediately;
+            // otherwise switch to the Arena tool to draw one.
+            if (setup?.arena) {
+              select({ type: 'arena' })
+              setSetupTool('select')
+            } else {
+              setSetupTool('arena')
+            }
+          }}
           onAddZone={() => setSetupTool('rect')}
           applyTemplate={sessionActions.applyTemplate}
         />

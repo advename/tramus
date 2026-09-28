@@ -20,43 +20,11 @@ from ..imaging.adjust import apply_adjustments
 from ..imaging.encode import encode_jpeg, encode_png, resize_max_side
 from ..tracking.base import Observation
 from ..tracking.registry import get_tracker
-from ..video.reader import FrameReader
+from ..video.reader_cache import FrameReaderCache
 from .library import LibraryService
 
 _READER_CACHE_SIZE = 4
 _THUMBNAIL_CACHE_SIZE = 128
-
-
-class _FrameReaderCache:
-    """At most `capacity` open readers, evicting the least recently used."""
-
-    def __init__(self, capacity: int = _READER_CACHE_SIZE) -> None:
-        self._capacity = capacity
-        self._lock = threading.Lock()
-        self._readers: OrderedDict[str, FrameReader] = OrderedDict()
-
-    def get(self, path: Path) -> FrameReader:
-        key = str(path)
-        with self._lock:
-            reader = self._readers.pop(key, None)
-            if reader is not None:
-                self._readers[key] = reader
-                return reader
-
-        reader = FrameReader(path)
-        with self._lock:
-            self._readers[key] = reader
-            while len(self._readers) > self._capacity:
-                _, oldest = self._readers.popitem(last=False)
-                oldest.close()
-        return reader
-
-    def close_all(self) -> None:
-        with self._lock:
-            readers = list(self._readers.values())
-            self._readers.clear()
-        for reader in readers:
-            reader.close()
 
 
 @dataclass(frozen=True)
@@ -78,7 +46,7 @@ class FrameService:
 
     def __init__(self, library: LibraryService) -> None:
         self._library = library
-        self._readers = _FrameReaderCache()
+        self._readers = FrameReaderCache(_READER_CACHE_SIZE)
         self._thumbnail_lock = threading.Lock()
         self._thumbnails: OrderedDict[tuple[str, int, float], bytes] = OrderedDict()
 

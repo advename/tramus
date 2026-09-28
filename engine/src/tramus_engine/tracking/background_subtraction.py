@@ -28,7 +28,7 @@ from ..domain.base import utc_now
 from ..imaging.adjust import apply_adjustments
 from ..imaging.raster import rasterize_shape
 from ..video.probe import read_frame_times
-from ..video.reader import FrameReader
+from ..video.reader_cache import FrameReaderCache
 from .background import sample_background
 from .base import (
     CancelToken,
@@ -122,6 +122,11 @@ class BackgroundSubtractionTracker:
 
     def __init__(self) -> None:
         self._background_cache: OrderedDict[tuple[str, float, int, int], np.ndarray] = OrderedDict()
+        # `preview()` is called many times per second while the user scrubs/plays with the
+        # tracker view on; reusing a reader avoids re-scanning the whole container (PyAV demux
+        # of every packet) on every single call. Small capacity — at most a couple of videos are
+        # ever open in Setup at once.
+        self._readers = FrameReaderCache(capacity=2)
 
     def track(
         self,
@@ -255,12 +260,12 @@ class BackgroundSubtractionTracker:
         detection, adjustments = setup.detection, setup.image
         darker = detection.polarity is Polarity.DARKER
 
-        with FrameReader(path) as reader:
-            width, height = reader.width, reader.height
-            scale = _processing_scale(width, height)
-            proc_w = max(1, round(width * scale))
-            proc_h = max(1, round(height * scale))
-            gray = reader.read(frame_index, gray=True)
+        reader = self._readers.get(path)
+        width, height = reader.width, reader.height
+        scale = _processing_scale(width, height)
+        proc_w = max(1, round(width * scale))
+        proc_h = max(1, round(height * scale))
+        gray = reader.read(frame_index, gray=True)
 
         if adjustments.brightness or adjustments.contrast:
             gray = apply_adjustments(gray, adjustments)

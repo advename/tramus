@@ -60,7 +60,10 @@ export function usePlaybackClock(frameTimes: Float64Array | undefined): void {
 
     const initial = useWorkspaceStore.getState()
     if (initial.playing) {
-      clockRef.current = initPlaybackClock(frameTimes, initial.currentFrame)
+      // Keep sub-frame progress if the clock is still on the frame it last set.
+      if (clockRef.current.frame !== initial.currentFrame) {
+        clockRef.current = initPlaybackClock(frameTimes, initial.currentFrame)
+      }
       raf = requestAnimationFrame(tick)
     }
 

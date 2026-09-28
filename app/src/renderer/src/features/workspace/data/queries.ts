@@ -3,16 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getApiClient, unwrap } from '../../../api/client'
 import { useJob } from '../../../api/queries'
 import { queryKeys } from '../../../api/queryKeys'
-import type {
-  DetectionPreview,
-  FlagView,
-  HistoryEntry,
-  Job,
-  Results,
-  SessionState,
-  Setup
-} from '../../../api/types'
-import { type TrackData, toTrackData } from './trackData'
+import type { FlagView, HistoryEntry, Job, Results, SessionState } from '../../../api/types'
+import { toTrackData } from './trackData'
 
 const path = (videoId: string) => ({ params: { path: { video_id: videoId } } })
 
@@ -41,7 +33,7 @@ export function useTrackData(videoId: string) {
     queryKey: queryKeys.track.detail(videoId),
     queryFn: async () =>
       unwrap(await getApiClient().GET('/api/videos/{video_id}/session/track', path(videoId))),
-    select: (track): TrackData => toTrackData(track),
+    select: toTrackData, // a stable function reference, so the typed arrays are built once per fetch
     enabled: tracked,
     placeholderData: keepPreviousData,
     staleTime: Infinity
@@ -87,35 +79,4 @@ export function useActiveJob(videoId: string): Job | null {
   const activeJob = useSession(videoId).data?.active_job ?? null
   const live = useJob(activeJob?.id).data
   return live ?? activeJob
-}
-
-/**
- * "What the tracker sees" for one frame with the given (possibly unsaved) setup. Keyed by the
- * settings that affect detection, so slider changes refetch while the previous image stays up.
- */
-export function useDetectionPreview(
-  videoId: string,
-  frameIndex: number,
-  setup: Setup,
-  enabled: boolean
-) {
-  const { arena, image, detection } = setup
-  return useQuery({
-    queryKey: [
-      ...queryKeys.video.detail(videoId),
-      'preview',
-      frameIndex,
-      { arena, image, detection }
-    ],
-    queryFn: async (): Promise<DetectionPreview> =>
-      unwrap(
-        await getApiClient().POST('/api/videos/{video_id}/detection-preview', {
-          ...path(videoId),
-          body: { frame_index: frameIndex, setup }
-        })
-      ),
-    enabled,
-    placeholderData: keepPreviousData,
-    staleTime: 60_000
-  })
 }

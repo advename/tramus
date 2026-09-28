@@ -14,6 +14,15 @@ export type WorkspaceStep = 'setup' | 'tracking' | 'review' | 'results'
 export const WORKSPACE_STEPS: readonly WorkspaceStep[] = ['setup', 'tracking', 'review', 'results']
 
 export type SetupTool = 'select' | 'arena' | 'rect' | 'ellipse' | 'polygon' | 'measure' | 'pan'
+/** Tools that draw on the stage, as opposed to `select`/`pan` which just navigate it — picking
+ * one dismisses the "no setup yet" hint card for good (see `setupHintDismissed`). */
+const SETUP_DRAWING_TOOLS: ReadonlySet<SetupTool> = new Set([
+  'arena',
+  'rect',
+  'ellipse',
+  'polygon',
+  'measure'
+])
 export type ReviewTool = 'select' | 'position' | 'hidden' | 'fill' | 'pan'
 export type StageView = 'video' | 'tracker'
 export type InspectorTab = 'flags' | 'zones' | 'history'
@@ -57,6 +66,9 @@ interface WorkspaceState {
 
   // Stage
   setupTool: SetupTool
+  /** Once true (any drawing tool was picked), the `NoSetupCard` hint stays hidden until the next
+   * `open()` — set alongside `setupTool` in `setSetupTool`. */
+  setupHintDismissed: boolean
   reviewTool: ReviewTool
   selection: StageSelection
   stageView: StageView
@@ -127,6 +139,7 @@ const initialState: WorkspaceState = {
   playing: false,
   speed: 1,
   setupTool: 'select',
+  setupHintDismissed: false,
   reviewTool: 'select',
   selection: null,
   stageView: 'video',
@@ -176,7 +189,11 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()((se
   togglePlay: () => set((s) => ({ playing: !s.playing })),
   setSpeed: (speed) => set({ speed }),
 
-  setSetupTool: (setupTool) => set({ setupTool }),
+  setSetupTool: (setupTool) =>
+    set((s) => ({
+      setupTool,
+      setupHintDismissed: s.setupHintDismissed || SETUP_DRAWING_TOOLS.has(setupTool)
+    })),
   setReviewTool: (reviewTool) => set({ reviewTool }),
   select: (selection) => set({ selection }),
   setStageView: (stageView) => set({ stageView }),

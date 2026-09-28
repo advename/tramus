@@ -18,6 +18,7 @@ import { nextZoneColorIndex, nextZoneName, newZoneId } from '../lib/zones'
 import {
   type ReviewTool,
   type SetupTool,
+  type StageSelection,
   useWorkspaceStore,
   type WorkspaceStep
 } from '../state/workspaceStore'
@@ -58,6 +59,32 @@ function replaceZoneShape(base: Setup, zoneId: string, shape: Shape): Setup {
   return { ...base, zones: (base.zones ?? []).map((z) => (z.id === zoneId ? { ...z, shape } : z)) }
 }
 
+/**
+ * A shape target editable on the stage: the arena outline or one zone. Generalises move/resize/
+ * vertex editing so the arena isn't a second copy of the zone-editing gestures.
+ */
+export type ShapeTarget = { kind: 'arena'; shape: Shape } | { kind: 'zone'; zone: Zone }
+
+function targetShape(target: ShapeTarget): Shape {
+  return target.kind === 'arena' ? target.shape : target.zone.shape
+}
+
+function targetLocked(target: ShapeTarget): boolean {
+  return target.kind === 'zone' && target.zone.locked
+}
+
+function targetLabel(target: ShapeTarget, verb: string): string {
+  return target.kind === 'arena' ? `${verb} arena` : `${verb} zone “${target.zone.name}”`
+}
+
+function targetSelection(target: ShapeTarget): StageSelection {
+  return target.kind === 'arena' ? { type: 'arena' } : { type: 'zone', zoneId: target.zone.id }
+}
+
+function replaceTargetShape(base: Setup, target: ShapeTarget, shape: Shape): Setup {
+  return target.kind === 'arena' ? { ...base, arena: shape } : replaceZoneShape(base, target.zone.id, shape)
+}
+
 export interface ZoneEditingApi {
   /** Whichever tool is live for the current step (`select`, `arena`, `rect`, … or a review tool). */
   activeTool: SetupTool | ReviewTool
@@ -68,14 +95,16 @@ export interface ZoneEditingApi {
   measureDraft: MeasureDraft | null
   /** A just-finished Measure line waiting for its length — drives the `CalibrationPopover`. */
   pendingCalibration: PendingCalibration | null
-  onZonePointerDown: (e: React.PointerEvent, zone: Zone) => void
-  onHandlePointerDown: (e: React.PointerEvent, zone: Zone, handleIndex: number) => void
-  onVertexPointerDown: (e: React.PointerEvent, zone: Zone, vertexIndex: number) => void
+  /** Selects `target`, and — unless it's locked — drags its outline to move it. */
+  onShapePointerDown: (e: React.PointerEvent, target: ShapeTarget) => void
+  onHandlePointerDown: (e: React.PointerEvent, target: ShapeTarget, handleIndex: number) => void
+  onVertexPointerDown: (e: React.PointerEvent, target: ShapeTarget, vertexIndex: number) => void
   onCalibrationHandlePointerDown: (e: React.PointerEvent, endpoint: CalibrationEndpoint) => void
   onBackgroundPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void
   onBackgroundPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void
   onBackgroundDoubleClick: (e: React.MouseEvent<SVGSVGElement>) => void
-  deleteSelectedZone: () => void
+  /** Deletes whichever of the arena/a zone is currently selected. */
+  deleteSelected: () => void
   cancelDrawing: () => boolean
   /** Saves `pendingCalibration` with this real-world length (mm) as one undoable step. */
   saveCalibration: (lengthMm: number) => void
@@ -145,6 +174,7 @@ export function useZoneEditing(
     const base = setupEditor.setup
     if (!base) return
     select({ type: 'arena' })
+    setSetupTool('select') // drawing is done — switch straight to Select so the arena is adjustable
     void setupEditor.commit({ ...base, arena: shape }, 'Draw arena', base)
   }
 
@@ -175,22 +205,22 @@ export function useZoneEditing(
     })
   }
 
-  const onZonePointerDown = (e: React.PointerEvent, zone: Zone): void => {
+  const onShapePointerDown = (e: React.PointerEvent, target: ShapeTarget): void => {
     if (!editable || activeTool !== 'select') return
     e.stopPropagation()
-    select({ type: 'zone', zoneId: zone.id })
+    select(targetSelection(target))
     if (step === 'review') setInspectorTab('zones')
-    if (zone.locked) return
+    if (targetLocked(target)) return
     const svg = svgRef.current
     const base = setupEditor.setup
     if (!svg || !base) return
     const startPoint = toVideoPoint(svg, e)
-    const startShape = zone.shape
+    const startShape = targetShape(target)
 
     const onMove = (ev: PointerEvent): void => {
       const cur = toVideoPoint(svg, ev)
       const moved = moveShape(startShape, cur.x - startPoint.x, cur.y - startPoint.y)
-      setupEditor.preview(replaceZoneShape(base, zone.id, moved))
+      setupEditor.preview(replaceTargetShape(base, target, moved))
     }
     const onUp = (ev: PointerEvent): void => {
       window.removeEventListener('pointermove', onMove)
@@ -202,8 +232,8 @@ export function useZoneEditing(
       }
       const moved = moveShape(startShape, cur.x - startPoint.x, cur.y - startPoint.y)
       void setupEditor.commit(
-        replaceZoneShape(base, zone.id, moved),
-        `Move zone “${zone.name}”`,
+        replaceTargetShape(base, target, moved),
+        targetLabel(target, 'Move'),
         base
       )
     }
@@ -211,9 +241,14 @@ export function useZoneEditing(
     window.addEventListener('pointerup', onUp)
   }
 
-  const onHandlePointerDown = (e: React.PointerEvent, zone: Zone, handleIndex: number): void => {
-    const shape = zone.shape
-    if (!editable || activeTool !== 'select' || zone.locked || shape.kind === 'polygon') return
+  const onHandlePointerDown = (
+    e: React.PointerEvent,
+    target: ShapeTarget,
+    handleIndex: number
+  ): void => {
+    const shape = targetShape(target)
+    if (!editable || activeTool !== 'select' || targetLocked(target) || shape.kind === 'polygon')
+      return
     e.stopPropagation()
     const svg = svgRef.current
     const base = setupEditor.setup
@@ -221,7 +256,7 @@ export function useZoneEditing(
 
     const onMove = (ev: PointerEvent): void => {
       const p = toVideoPoint(svg, ev)
-      setupEditor.preview(replaceZoneShape(base, zone.id, resizeByHandle(shape, handleIndex, p)))
+      setupEditor.preview(replaceTargetShape(base, target, resizeByHandle(shape, handleIndex, p)))
     }
     const onUp = (ev: PointerEvent): void => {
       window.removeEventListener('pointermove', onMove)
@@ -233,8 +268,8 @@ export function useZoneEditing(
         return
       }
       void setupEditor.commit(
-        replaceZoneShape(base, zone.id, resized),
-        `Resize zone “${zone.name}”`,
+        replaceTargetShape(base, target, resized),
+        targetLabel(target, 'Resize'),
         base
       )
     }
@@ -242,9 +277,14 @@ export function useZoneEditing(
     window.addEventListener('pointerup', onUp)
   }
 
-  const onVertexPointerDown = (e: React.PointerEvent, zone: Zone, vertexIndex: number): void => {
-    const shape = zone.shape
-    if (!editable || activeTool !== 'select' || zone.locked || shape.kind !== 'polygon') return
+  const onVertexPointerDown = (
+    e: React.PointerEvent,
+    target: ShapeTarget,
+    vertexIndex: number
+  ): void => {
+    const shape = targetShape(target)
+    if (!editable || activeTool !== 'select' || targetLocked(target) || shape.kind !== 'polygon')
+      return
     e.stopPropagation()
     const svg = svgRef.current
     const base = setupEditor.setup
@@ -252,15 +292,15 @@ export function useZoneEditing(
 
     const onMove = (ev: PointerEvent): void => {
       const p = toVideoPoint(svg, ev)
-      setupEditor.preview(replaceZoneShape(base, zone.id, movePolygonPoint(shape, vertexIndex, p)))
+      setupEditor.preview(replaceTargetShape(base, target, movePolygonPoint(shape, vertexIndex, p)))
     }
     const onUp = (ev: PointerEvent): void => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
       const p = toVideoPoint(svg, ev)
       void setupEditor.commit(
-        replaceZoneShape(base, zone.id, movePolygonPoint(shape, vertexIndex, p)),
-        `Edit zone “${zone.name}”`,
+        replaceTargetShape(base, target, movePolygonPoint(shape, vertexIndex, p)),
+        targetLabel(target, 'Edit'),
         base
       )
     }
@@ -421,9 +461,15 @@ export function useZoneEditing(
     finishPolygon()
   }
 
-  const deleteSelectedZone = (): void => {
+  const deleteSelected = (): void => {
     const base = setupEditor.setup
-    if (!base || !editable || selection?.type !== 'zone') return
+    if (!base || !editable || !selection) return
+    if (selection.type === 'arena') {
+      if (!base.arena) return
+      select(null)
+      void setupEditor.commit({ ...base, arena: null }, 'Delete arena', base)
+      return
+    }
     const zone = (base.zones ?? []).find((z) => z.id === selection.zoneId)
     if (!zone || zone.locked) return
     select(null)
@@ -473,14 +519,14 @@ export function useZoneEditing(
     draft,
     measureDraft,
     pendingCalibration,
-    onZonePointerDown,
+    onShapePointerDown,
     onHandlePointerDown,
     onVertexPointerDown,
     onCalibrationHandlePointerDown,
     onBackgroundPointerDown,
     onBackgroundPointerMove,
     onBackgroundDoubleClick,
-    deleteSelectedZone,
+    deleteSelected,
     cancelDrawing,
     saveCalibration,
     cancelPendingCalibration

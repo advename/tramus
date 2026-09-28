@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import Box from '@mui/material/Box'
 
 import type { Setup } from '../../../api/types'
+import { frameUrl } from '../../../api/urls'
 import { useShortcut } from '../../../lib/shortcuts'
 import {
   useCorrectionsEditor,
@@ -22,9 +23,9 @@ import { formatVideoTime } from '../../../lib/time'
 import { computeStageTransform, computeViewBox, svgPointFromClient } from '../lib/stageTransform'
 import { buildHeatmapPoints, buildTrailSegments } from '../lib/trail'
 import { useElementSize } from '../lib/useElementSize'
-import { useFrameBitmap } from '../playback/useFrameBitmap'
 import { useImageBitmap } from '../playback/useImageBitmap'
 import { usePlaybackClock } from '../playback/usePlaybackClock'
+import { usePlaybackFrames } from '../playback/usePlaybackFrames'
 import { useVideoTiming } from '../playback/useVideoTiming'
 import { type WorkspaceStep, useWorkspaceStore } from '../state/workspaceStore'
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
@@ -123,12 +124,31 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
       Math.round(Math.max(video.width, video.height) * transform.scale * dpr) || 2048
     )
   )
-  const videoBitmap = useFrameBitmap(
+  const speed = useWorkspaceStore((s) => s.speed)
+  const sourceFpsHint = videoInfo?.nominal_fps || 25
+  // Playing: a predictive multi-request pipeline (`usePlaybackFrames`) keeps a bounded cache of
+  // decoded frames ahead of the clock, instead of one full round trip per displayed frame.
+  const playingVideoBitmap = usePlaybackFrames({
     videoId,
+    playing: stageView === 'video' && playing,
     currentFrame,
-    { maxSide, brightness, contrast, quality: 82 },
-    { enabled: stageView === 'video' && playing, frameCount }
-  )
+    frameCount,
+    speed,
+    sourceFpsHint,
+    maxSide,
+    brightness,
+    contrast
+  })
+  // Paused/scrubbing: fetch exactly `currentFrame` at full quality, single-flight latest-wins.
+  // Runs continuously (not just while paused) so it's already showing the right frame the moment
+  // playback stops, and so it can stand in for `playingVideoBitmap` during the pipeline's first
+  // moment (before it has decoded anything yet) instead of a blank canvas.
+  const exactFrameUrl =
+    stageView === 'video'
+      ? frameUrl(videoId, currentFrame, { maxSide, brightness, contrast, quality: 82 })
+      : null
+  const exactVideoBitmap = useImageBitmap(exactFrameUrl)
+  const videoBitmap = playing ? (playingVideoBitmap ?? exactVideoBitmap) : exactVideoBitmap
   const detectionEnabled =
     stageView === 'tracker' && (step === 'setup' || step === 'tracking') && Boolean(setup)
   const detectionPreview = useDetectionPreview(
@@ -138,7 +158,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     detectionEnabled
   )
   const maskBitmap = useImageBitmap(
-    detectionPreview.data ? `data:image/png;base64,${detectionPreview.data.mask_png}` : null
+    detectionPreview ? `data:image/png;base64,${detectionPreview.mask_png}` : null
   )
   const bitmap = stageView === 'tracker' ? maskBitmap : videoBitmap
 
@@ -268,8 +288,8 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     },
     { enabled: step === 'review' }
   )
-  useShortcut('delete', () => zoneEditing.deleteSelectedZone(), { enabled: zoneEditing.editable })
-  useShortcut('backspace', () => zoneEditing.deleteSelectedZone(), {
+  useShortcut('delete', () => zoneEditing.deleteSelected(), { enabled: zoneEditing.editable })
+  useShortcut('backspace', () => zoneEditing.deleteSelected(), {
     enabled: zoneEditing.editable
   })
   useShortcut('escape', () => zoneEditing.cancelDrawing(), {
@@ -339,11 +359,11 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
             bodyEllipse={overlays.outline ? bodyEllipse : null}
             positionMarker={positionMarker}
             detectionObservation={
-              stageView === 'tracker' ? (detectionPreview.data?.observation ?? null) : null
+              stageView === 'tracker' ? (detectionPreview?.observation ?? null) : null
             }
             detectionBlobAreaLabel={
-              detectionPreview.data?.observation
-                ? `${Math.round(detectionPreview.data.observation.area_px)} px²`
+              detectionPreview?.observation
+                ? `${Math.round(detectionPreview.observation.area_px)} px²`
                 : null
             }
             calibration={step === 'setup' ? (setup?.calibration ?? null) : null}
