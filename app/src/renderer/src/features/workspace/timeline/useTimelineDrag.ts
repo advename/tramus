@@ -51,8 +51,17 @@ export interface TimelineDragApi {
  * a drag is one request and one undo step.
  */
 export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
-  const { trackRef, durationS, frameTimes, trial, rangeEditable, setupEditor, onSeek, onPauseForScrub, onSetRange } =
-    args
+  const {
+    trackRef,
+    durationS,
+    frameTimes,
+    trial,
+    rangeEditable,
+    setupEditor,
+    onSeek,
+    onPauseForScrub,
+    onSetRange
+  } = args
 
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     const target = e.target as HTMLElement
@@ -75,13 +84,19 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
       }
       if (kind === 'range') {
         if (!frameTimes) return
-        onSetRange({ start: nearestFrame(frameTimes, Math.min(t0, t)), end: nearestFrame(frameTimes, Math.max(t0, t)) })
+        onSetRange({
+          start: nearestFrame(frameTimes, Math.min(t0, t)),
+          end: nearestFrame(frameTimes, Math.max(t0, t))
+        })
         return
       }
       if (!setupAtStart || !frameTimes) return
       const snapped = timeOfFrame(frameTimes, nearestFrame(frameTimes, t))
       const duration = videoDuration(frameTimes)
-      const nextTrial = kind === 'start' ? moveTrialStart(trial, snapped, duration) : moveTrialEnd(trial, snapped, duration)
+      const nextTrial =
+        kind === 'start'
+          ? moveTrialStart(trial, snapped, duration)
+          : moveTrialEnd(trial, snapped, duration)
       setupEditor.preview({ ...setupAtStart, trial: nextTrial } satisfies Setup)
     }
 
@@ -96,8 +111,15 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
       const finalT = timeAtClientX(ev.clientX, rect, durationS)
       const snapped = timeOfFrame(frameTimes, nearestFrame(frameTimes, finalT))
       const duration = videoDuration(frameTimes)
-      const nextTrial = kind === 'start' ? moveTrialStart(trial, snapped, duration) : moveTrialEnd(trial, snapped, duration)
-      const label = trial.locked_duration ? 'Move trial' : kind === 'start' ? 'Set trial start' : 'Set trial end'
+      const nextTrial =
+        kind === 'start'
+          ? moveTrialStart(trial, snapped, duration)
+          : moveTrialEnd(trial, snapped, duration)
+      const label = trial.locked_duration
+        ? 'Move trial'
+        : kind === 'start'
+          ? 'Set trial start'
+          : 'Set trial end'
       void setupEditor.commit({ ...setupAtStart, trial: nextTrial }, label, setupAtStart)
     }
     window.addEventListener('pointermove', onMove)

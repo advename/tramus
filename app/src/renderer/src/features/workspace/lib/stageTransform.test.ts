@@ -21,7 +21,12 @@ describe('fitScale', () => {
 
 describe('computeStageTransform / videoToScreen / screenToVideo', () => {
   it('round-trips a point through the transform', () => {
-    const args = { container: { width: 800, height: 600 }, video, zoom: 2.5, pan: { x: 30, y: -10 } }
+    const args = {
+      container: { width: 800, height: 600 },
+      video,
+      zoom: 2.5,
+      pan: { x: 30, y: -10 }
+    }
     const t = computeStageTransform(args)
     const screen = videoToScreen(t, { x: 400, y: 300 })
     const back = screenToVideo(t, screen)
@@ -68,7 +73,12 @@ describe('zoomAroundPoint', () => {
 
 describe('clampPan', () => {
   it('leaves pan alone when the video is smaller than the container (fit)', () => {
-    const args = { container: { width: 2000, height: 2000 }, video, zoom: 1, pan: { x: 500, y: 500 } }
+    const args = {
+      container: { width: 2000, height: 2000 },
+      video,
+      zoom: 1,
+      pan: { x: 500, y: 500 }
+    }
     const clamped = clampPan(args.pan, args)
     expect(clamped.x).toBeLessThan(500)
   })

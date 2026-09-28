@@ -6,8 +6,7 @@ import { alpha } from '@mui/material/styles'
 import type { FlagView, TrialWindow } from '../../../api/types'
 import { Symbol } from '../../../components/Symbol'
 import { formatVideoTime } from '../../../lib/time'
-import { buildTicks } from '../lib/timelineScale'
-import { percentOfDuration } from '../lib/timelineScale'
+import { buildTicks, percentOfDuration, widthOfDuration } from '../lib/timelineScale'
 import { RangePopover } from './RangePopover'
 
 export interface ZoneLaneData {
@@ -28,6 +27,8 @@ export interface TimelineTracksProps {
   onTrackPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
   zoom: number
   pxPerSecond: number
+  /** Height (px) of each zone/flag/correction lane row — grows with the panel, see `Timeline.tsx`. */
+  laneRowHeight: number
   durationS: number
   currentTimeS: number
   trial: TrialWindow
@@ -60,6 +61,7 @@ export function TimelineTracks({
   onTrackPointerDown,
   zoom,
   pxPerSecond,
+  laneRowHeight,
   durationS,
   currentTimeS,
   trial,
@@ -81,21 +83,54 @@ export function TimelineTracks({
 }: TimelineTracksProps): React.JSX.Element {
   const ticks = buildTicks(durationS, pxPerSecond)
   const pct = (t: number): string => percentOfDuration(t, durationS)
-  const laneRowHeight = 16
+  const widthPct = (deltaS: number): string => widthOfDuration(deltaS, durationS)
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: `${LABEL_COLUMN_WIDTH}px minmax(0,1fr)`, minWidth: 0 }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: `${LABEL_COLUMN_WIDTH}px minmax(0,1fr)`,
+        minWidth: 0,
+        height: '100%',
+        minHeight: 0,
+        overflowY: 'auto'
+      }}
+    >
       {/* Label column */}
-      <Box sx={{ borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', fontSize: 11.5, color: 'text.secondary', pb: 0.75 }}>
+      <Box
+        sx={{
+          borderRight: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+          fontSize: 11.5,
+          color: 'text.secondary',
+          pb: 0.75
+        }}
+      >
         <Box sx={{ height: 20, borderBottom: 1, borderColor: 'divider' }} />
         <Box sx={{ height: 34, display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5 }}>
           <Symbol name="movie" size={15} sx={{ color: 'text.disabled' }} />
           Video
         </Box>
         {zoneLanes.map((lane) => (
-          <Box key={lane.zoneId} sx={{ height: laneRowHeight, display: 'flex', alignItems: 'center', gap: 0.875, px: 1.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: lane.color, flex: 'none' }} />
-            <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Box
+            key={lane.zoneId}
+            sx={{
+              height: laneRowHeight,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.875,
+              px: 1.5
+            }}
+          >
+            <Box
+              sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: lane.color, flex: 'none' }}
+            />
+            <Box
+              component="span"
+              sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
               {lane.name}
             </Box>
           </Box>
@@ -103,13 +138,29 @@ export function TimelineTracks({
         {showFlagLane && (
           <>
             <Box sx={{ height: 18, display: 'flex', alignItems: 'center', gap: 0.875, px: 1.5 }}>
-              <Box sx={{ width: 7, height: 7, transform: 'rotate(45deg)', bgcolor: 'warning.main', flex: 'none' }} />
+              <Box
+                sx={{
+                  width: 7,
+                  height: 7,
+                  transform: 'rotate(45deg)',
+                  bgcolor: 'warning.main',
+                  flex: 'none'
+                }}
+              />
               Flags
               <Typography variant="mono" sx={{ color: 'text.disabled', fontSize: 11 }}>
                 {flags.filter((f) => f.status === 'unresolved').length}
               </Typography>
             </Box>
-            <Box sx={{ height: laneRowHeight, display: 'flex', alignItems: 'center', gap: 0.875, px: 1.5 }}>
+            <Box
+              sx={{
+                height: laneRowHeight,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.875,
+                px: 1.5
+              }}
+            >
               <Box sx={{ width: 8, height: 3, bgcolor: 'primary.main', flex: 'none' }} />
               Corrections
             </Box>
@@ -117,21 +168,46 @@ export function TimelineTracks({
         )}
       </Box>
 
-      {/* Scrollable ruler + lanes */}
-      <Box sx={{ overflowX: 'auto', overflowY: 'hidden', minWidth: 0 }}>
+      {/* Horizontally-scrolling ruler + lanes (vertical scroll, if any, is on the outer grid so
+          the label column scrolls in lockstep). */}
+      <Box sx={{ overflowX: 'auto', minWidth: 0 }}>
         <Box
           ref={trackRef}
           onPointerDown={onTrackPointerDown}
-          sx={{ position: 'relative', width: `${zoom * 100}%`, minWidth: '100%', pb: 0.75, cursor: 'text' }}
+          sx={{
+            position: 'relative',
+            width: `${zoom * 100}%`,
+            minWidth: '100%',
+            pb: 0.75,
+            cursor: 'text'
+          }}
         >
           {/* Ruler */}
           <Box sx={{ position: 'relative', height: 20, borderBottom: 1, borderColor: 'divider' }}>
             {ticks.map((tick) => (
-              <Box key={tick.t} sx={{ position: 'absolute', left: pct(tick.t), bottom: 0, width: '1px', height: tick.major ? 8 : 4, bgcolor: 'surface.lineStrong' }}>
+              <Box
+                key={tick.t}
+                sx={{
+                  position: 'absolute',
+                  left: pct(tick.t),
+                  bottom: 0,
+                  width: '1px',
+                  height: tick.major ? 8 : 4,
+                  bgcolor: 'surface.lineStrong'
+                }}
+              >
                 {tick.major && (
                   <Typography
                     variant="mono"
-                    sx={{ position: 'absolute', left: 0, top: -14, pl: 0.5, fontSize: 10, color: 'text.disabled', whiteSpace: 'nowrap' }}
+                    sx={{
+                      position: 'absolute',
+                      left: 0,
+                      top: -14,
+                      pl: 0.5,
+                      fontSize: 10,
+                      color: 'text.disabled',
+                      whiteSpace: 'nowrap'
+                    }}
                   >
                     {tick.label}
                   </Typography>
@@ -161,7 +237,7 @@ export function TimelineTracks({
                 sx={{
                   position: 'absolute',
                   left: pct(processed.startS),
-                  width: pct(Math.max(0, processed.endS - processed.startS)),
+                  width: widthPct(Math.max(0, processed.endS - processed.startS)),
                   top: 3,
                   bottom: 3,
                   backgroundImage: (theme) =>
@@ -177,14 +253,23 @@ export function TimelineTracks({
           {showZoneLanes &&
             zoneLanes.map((lane) => (
               <Box key={lane.zoneId} sx={{ position: 'relative', height: laneRowHeight }}>
-                <Box sx={{ position: 'absolute', left: 0, right: 0, top: 8, height: '1px', bgcolor: 'divider' }} />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: 8,
+                    height: '1px',
+                    bgcolor: 'divider'
+                  }}
+                />
                 {lane.segments.map((seg, i) => (
                   <Box
                     key={i}
                     sx={{
                       position: 'absolute',
                       left: pct(seg.startS),
-                      width: pct(Math.max(0, seg.endS - seg.startS)),
+                      width: widthPct(Math.max(0, seg.endS - seg.startS)),
                       top: 3,
                       height: 10,
                       borderRadius: 0.5,
@@ -214,7 +299,11 @@ export function TimelineTracks({
                       ml: '-4px',
                       transform: 'rotate(45deg)',
                       bgcolor: flag.status === 'unresolved' ? 'warning.main' : 'text.disabled',
-                      boxShadow: flag.id === selectedFlagId ? (theme) => `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 3.5px ${theme.palette.warning.main}` : 'none',
+                      boxShadow:
+                        flag.id === selectedFlagId
+                          ? (theme) =>
+                              `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 3.5px ${theme.palette.warning.main}`
+                          : 'none',
                       cursor: 'pointer'
                     }}
                   />
@@ -228,7 +317,8 @@ export function TimelineTracks({
                     sx={{
                       position: 'absolute',
                       left: pct(mark.startS),
-                      width: mark.endS > mark.startS ? pct(mark.endS - mark.startS) : undefined,
+                      width:
+                        mark.endS > mark.startS ? widthPct(mark.endS - mark.startS) : undefined,
                       minWidth: 2,
                       top: 6,
                       height: 4,
@@ -242,8 +332,28 @@ export function TimelineTracks({
           )}
 
           {/* Trial dimming */}
-          <Box sx={{ position: 'absolute', left: 0, top: 20, bottom: 0, width: pct(trial.start_s), bgcolor: 'surface.dim', pointerEvents: 'none' }} />
-          <Box sx={{ position: 'absolute', left: pct(trial.end_s), right: 0, top: 20, bottom: 0, bgcolor: 'surface.dim', pointerEvents: 'none' }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 0,
+              top: 20,
+              bottom: 0,
+              width: pct(trial.start_s),
+              bgcolor: 'surface.dim',
+              pointerEvents: 'none'
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: pct(trial.end_s),
+              right: 0,
+              top: 20,
+              bottom: 0,
+              bgcolor: 'surface.dim',
+              pointerEvents: 'none'
+            }}
+          />
 
           {/* Range selection + popover */}
           {range && (
@@ -252,7 +362,7 @@ export function TimelineTracks({
                 sx={{
                   position: 'absolute',
                   left: pct(range.startS),
-                  width: pct(Math.max(0, range.endS - range.startS)),
+                  width: widthPct(Math.max(0, range.endS - range.startS)),
                   top: 20,
                   bottom: 0,
                   bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
@@ -278,9 +388,38 @@ export function TimelineTracks({
           <TrialHandle side="end" left={pct(trial.end_s)} />
 
           {/* Playhead */}
-          <Box sx={{ position: 'absolute', left: pct(currentTimeS), top: 0, bottom: 0, width: 0, pointerEvents: 'none', zIndex: 2 }}>
-            <Box sx={{ position: 'absolute', left: -6, top: 3, width: 12, height: 13, bgcolor: 'text.primary', borderRadius: '3px 3px 6px 6px' }} />
-            <Box sx={{ position: 'absolute', left: -0.5, top: 14, bottom: 0, width: '1px', bgcolor: 'text.primary' }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: pct(currentTimeS),
+              top: 0,
+              bottom: 0,
+              width: 0,
+              pointerEvents: 'none',
+              zIndex: 2
+            }}
+          >
+            <Box
+              sx={{
+                position: 'absolute',
+                left: -6,
+                top: 3,
+                width: 12,
+                height: 13,
+                bgcolor: 'text.primary',
+                borderRadius: '3px 3px 6px 6px'
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                left: -0.5,
+                top: 14,
+                bottom: 0,
+                width: '1px',
+                bgcolor: 'text.primary'
+              }}
+            />
           </Box>
         </Box>
       </Box>
@@ -304,7 +443,16 @@ function TrialHandle({ side, left }: { side: 'start' | 'end'; left: string }): R
         cursor: 'ew-resize'
       }}
     >
-      <Box sx={{ position: 'absolute', [isStart ? 'right' : 'left']: 0, top: 0, bottom: 0, width: '2px', bgcolor: 'primary.main' }} />
+      <Box
+        sx={{
+          position: 'absolute',
+          [isStart ? 'right' : 'left']: 0,
+          top: 0,
+          bottom: 0,
+          width: '2px',
+          bgcolor: 'primary.main'
+        }}
+      />
       <Box
         sx={{
           position: 'absolute',

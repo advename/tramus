@@ -14,7 +14,10 @@ export interface ImageAdjustmentsSectionProps {
 const DEFAULT_IMAGE = { brightness: 0, contrast: 0 }
 
 /** Brightness/contrast sliders (design: `Image` section). */
-export function ImageAdjustmentsSection({ setup, editor }: ImageAdjustmentsSectionProps): React.JSX.Element {
+export function ImageAdjustmentsSection({
+  setup,
+  editor
+}: ImageAdjustmentsSectionProps): React.JSX.Element {
   const image = setup.image ?? DEFAULT_IMAGE
 
   const set = (patch: Partial<typeof image>, label: string): void => {
@@ -23,7 +26,16 @@ export function ImageAdjustmentsSection({ setup, editor }: ImageAdjustmentsSecti
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.75, pt: 1.75, pb: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1.75,
+          pt: 1.75,
+          pb: 1
+        }}
+      >
         <Typography variant="overline" sx={{ color: 'text.disabled' }}>
           Image
         </Typography>

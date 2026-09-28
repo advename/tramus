@@ -25,7 +25,8 @@ function useCursorVideoPoint(svgRef: RefObject<SVGSVGElement | null>): Point | n
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) return undefined
-    const onMove = (e: PointerEvent): void => setPoint(svgPointFromClient(svg, e.clientX, e.clientY))
+    const onMove = (e: PointerEvent): void =>
+      setPoint(svgPointFromClient(svg, e.clientX, e.clientY))
     const onLeave = (): void => setPoint(null)
     svg.addEventListener('pointermove', onMove)
     svg.addEventListener('pointerleave', onLeave)
@@ -75,7 +76,8 @@ export function StatusBar({
       )}
       <Box sx={{ flex: 1 }} />
       <Typography variant="mono" sx={{ fontSize: 11, color: 'text.disabled' }}>
-        {videoWidth} × {videoHeight} · {nominalFps % 1 === 0 ? nominalFps : nominalFps.toFixed(2)} fps
+        {videoWidth} × {videoHeight} · {nominalFps % 1 === 0 ? nominalFps : nominalFps.toFixed(2)}{' '}
+        fps
       </Typography>
     </Box>
   )

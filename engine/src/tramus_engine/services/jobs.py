@@ -14,6 +14,7 @@ import threading
 from collections.abc import Callable
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
+from multiprocessing.managers import SyncManager
 from pathlib import Path
 from threading import RLock
 from typing import Any
@@ -21,7 +22,13 @@ from typing import Any
 from ..domain import Job, JobState, ProcessingDevice, Setup, new_id, utc_now
 from ..tracking.registry import get_tracker
 from .system import detect_gpu
-from .worker import ProgressMessage, WorkerRequest, WorkerResult, run_tracking_worker
+from .worker import (
+    ProgressMessage,
+    WorkerRequest,
+    WorkerResult,
+    exit_with_parent,
+    run_tracking_worker,
+)
 
 PublishJob = Callable[[Job], None]
 OnJobSuccess = Callable[[Job, WorkerResult], None]
@@ -38,8 +45,11 @@ class JobManager:
     def __init__(self, max_workers: int, publish: PublishJob | None = None) -> None:
         self._publish: PublishJob = publish or (lambda job: None)
         self._mp_context = multiprocessing.get_context("spawn")
-        self._manager = self._mp_context.Manager()
-        self._executor = ProcessPoolExecutor(max_workers=max_workers, mp_context=self._mp_context)
+        self._manager = SyncManager(ctx=self._mp_context)
+        self._manager.start(initializer=exit_with_parent)
+        self._executor = ProcessPoolExecutor(
+            max_workers=max_workers, mp_context=self._mp_context, initializer=exit_with_parent
+        )
         self._progress_queue: Any = self._manager.Queue()
         self._lock = RLock()
         self._jobs: dict[str, _JobHandle] = {}
@@ -103,8 +113,10 @@ class JobManager:
             return handle.job
 
     def shutdown(self) -> None:
+        """Stops all tracking immediately: running workers are terminated, not awaited."""
         self._stopping.set()
         self._executor.shutdown(wait=False, cancel_futures=True)
+        _terminate_workers(self._executor)
         self._manager.shutdown()
 
     def _resolve_device(self, tracker_id: str, requested: ProcessingDevice) -> ProcessingDevice:
@@ -195,3 +207,13 @@ class JobManager:
             with self._lock:
                 handle.job = handle.job.model_copy(update=update)
             self._publish(handle.job)
+
+
+def _terminate_workers(executor: ProcessPoolExecutor) -> None:
+    """Terminates the pool's worker processes (Python 3.14+ has a public API for this)."""
+    terminate = getattr(executor, "terminate_workers", None)
+    if terminate is not None:
+        terminate()
+        return
+    for process in list(getattr(executor, "_processes", {}).values()):
+        process.terminate()

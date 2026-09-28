@@ -105,7 +105,9 @@ export function BatchScreen(): React.JSX.Element {
   }
 
   const updateDraft = (videoId: string, patch: Partial<CheckDraft>): void => {
-    setDrafts((current) => current?.map((d) => (d.videoId === videoId ? { ...d, ...patch } : d)) ?? current)
+    setDrafts(
+      (current) => current?.map((d) => (d.videoId === videoId ? { ...d, ...patch } : d)) ?? current
+    )
   }
 
   const trackNow = (): void => {
@@ -160,7 +162,10 @@ export function BatchScreen(): React.JSX.Element {
           notify({
             severity: 'success',
             title: 'Export complete',
-            action: { label: 'Show in folder', onClick: () => void window.tramus.shell.showItemInFolder(path) }
+            action: {
+              label: 'Show in folder',
+              onClick: () => void window.tramus.shell.showItemInFolder(path)
+            }
           })
         },
         onError: (error) => notifyError('Export failed', error),
@@ -200,7 +205,9 @@ export function BatchScreen(): React.JSX.Element {
       if (!job.finished_at) return latest
       return !latest || job.finished_at > latest ? job.finished_at : latest
     }, null)
-    footerText = finishedAt ? `Finished ${formatDate(finishedAt)} ${formatClockTime(finishedAt, 0)}` : ''
+    footerText = finishedAt
+      ? `Finished ${formatDate(finishedAt)} ${formatClockTime(finishedAt, 0)}`
+      : ''
   }
 
   return (
@@ -229,7 +236,11 @@ export function BatchScreen(): React.JSX.Element {
         <BatchStepper step={step} />
         <Box sx={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end' }}>
           {step === 'finish' ? (
-            <Button variant="outlined" onClick={startNewBatch} sx={{ height: 28, px: 1.5, fontSize: 12.5 }}>
+            <Button
+              variant="outlined"
+              onClick={startNewBatch}
+              sx={{ height: 28, px: 1.5, fontSize: 12.5 }}
+            >
               Start a new batch
             </Button>
           ) : null}
@@ -281,7 +292,10 @@ export function BatchScreen(): React.JSX.Element {
       ) : step === 'run' ? (
         <RunStep
           jobs={jobs}
-          deviceLabel={deviceLabel(settingsQuery.data?.device ?? 'auto', systemQuery.data?.gpu?.name)}
+          deviceLabel={deviceLabel(
+            settingsQuery.data?.device ?? 'auto',
+            systemQuery.data?.gpu?.name
+          )}
           parallelJobs={settingsQuery.data?.parallel_jobs ?? 1}
           onCancelAll={cancelAllJobs}
           onCancelJob={(jobId) => cancelJob.mutate(jobId)}

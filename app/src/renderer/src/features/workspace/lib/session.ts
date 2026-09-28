@@ -46,7 +46,8 @@ export function saveLabel(session: {
   if (session.loaded_from_disk && session.saved_at) {
     return { label: `Loaded · saved ${formatLocalDateTime(session.saved_at)}`, dot: 'success' }
   }
-  if (session.saved_at) return { label: `Saved ${formatLocalTime(session.saved_at)}`, dot: 'success' }
+  if (session.saved_at)
+    return { label: `Saved ${formatLocalTime(session.saved_at)}`, dot: 'success' }
   return { label: 'Not saved yet', dot: 'warning' }
 }
 

@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useState } from 'react'
 
-import type { Setup, Shape, Zone } from '../../../api/types'
+import type { Calibration, Setup, Shape, Zone } from '../../../api/types'
 import type { SetupEditor } from '../data'
 import {
   distance,
@@ -15,12 +15,37 @@ import {
 } from '../lib/geometry'
 import { svgPointFromClient } from '../lib/stageTransform'
 import { nextZoneColorIndex, nextZoneName, newZoneId } from '../lib/zones'
-import { type ReviewTool, type SetupTool, useWorkspaceStore, type WorkspaceStep } from '../state/workspaceStore'
+import {
+  type ReviewTool,
+  type SetupTool,
+  useWorkspaceStore,
+  type WorkspaceStep
+} from '../state/workspaceStore'
 
 /** A shape being drawn but not yet committed. */
 export type ZoneDraft =
   | { kind: 'rect' | 'ellipse'; target: 'arena' | 'zone'; start: Point; current: Point }
   | { kind: 'polygon'; target: 'arena' | 'zone'; points: Point[]; cursor: Point | null }
+
+/** A Measure line being drawn (drag, or click–click), not yet committed. */
+export interface MeasureDraft {
+  start: Point
+  current: Point
+}
+
+/** A just-drawn Measure line waiting for its real-world length in the `CalibrationPopover`. */
+export interface PendingCalibration {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  /** Screen coordinates of the finishing click, to anchor the popover. */
+  clientX: number
+  clientY: number
+}
+
+/** Which endpoint of the calibration line a drag handle moves. */
+export type CalibrationEndpoint = 'start' | 'end'
 
 /** A click within this many video px of the start point counts as a click, not a drag. */
 const CLICK_THRESHOLD_PX = 4
@@ -39,14 +64,23 @@ export interface ZoneEditingApi {
   /** Zones/arena can be selected, moved, resized or deleted (drawing new ones needs `step === 'setup'`). */
   editable: boolean
   draft: ZoneDraft | null
+  /** The Measure line currently being drawn (drag in progress, or the first click of click–click). */
+  measureDraft: MeasureDraft | null
+  /** A just-finished Measure line waiting for its length — drives the `CalibrationPopover`. */
+  pendingCalibration: PendingCalibration | null
   onZonePointerDown: (e: React.PointerEvent, zone: Zone) => void
   onHandlePointerDown: (e: React.PointerEvent, zone: Zone, handleIndex: number) => void
   onVertexPointerDown: (e: React.PointerEvent, zone: Zone, vertexIndex: number) => void
+  onCalibrationHandlePointerDown: (e: React.PointerEvent, endpoint: CalibrationEndpoint) => void
   onBackgroundPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void
   onBackgroundPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void
   onBackgroundDoubleClick: (e: React.MouseEvent<SVGSVGElement>) => void
   deleteSelectedZone: () => void
   cancelDrawing: () => boolean
+  /** Saves `pendingCalibration` with this real-world length (mm) as one undoable step. */
+  saveCalibration: (lengthMm: number) => void
+  /** Discards `pendingCalibration` without saving. */
+  cancelPendingCalibration: () => void
 }
 
 /**
@@ -65,7 +99,10 @@ export function useZoneEditing(
   const selection = useWorkspaceStore((s) => s.selection)
   const select = useWorkspaceStore((s) => s.select)
   const setInspectorTab = useWorkspaceStore((s) => s.setInspectorTab)
+  const setSetupTool = useWorkspaceStore((s) => s.setSetupTool)
   const [draft, setDraft] = useState<ZoneDraft | null>(null)
+  const [measureDraft, setMeasureDraft] = useState<MeasureDraft | null>(null)
+  const [pendingCalibration, setPendingCalibration] = useState<PendingCalibration | null>(null)
 
   const activeTool: SetupTool | ReviewTool =
     step === 'setup' ? setupTool : step === 'review' ? reviewTool : 'select'
@@ -109,6 +146,14 @@ export function useZoneEditing(
     if (!base) return
     select({ type: 'arena' })
     void setupEditor.commit({ ...base, arena: shape }, 'Draw arena', base)
+  }
+
+  /** A Measure line was just finished (drag release or second click) — opens the length popover
+   * unless it's too short to be a deliberate line (a stray click). */
+  function finishMeasure(start: Point, end: Point, clientX: number, clientY: number): void {
+    setMeasureDraft(null)
+    if (distance(start, end) < CLICK_THRESHOLD_PX) return
+    setPendingCalibration({ x1: start.x, y1: start.y, x2: end.x, y2: end.y, clientX, clientY })
   }
 
   function finishPolygon(): void {
@@ -156,7 +201,11 @@ export function useZoneEditing(
         return
       }
       const moved = moveShape(startShape, cur.x - startPoint.x, cur.y - startPoint.y)
-      void setupEditor.commit(replaceZoneShape(base, zone.id, moved), `Move zone “${zone.name}”`, base)
+      void setupEditor.commit(
+        replaceZoneShape(base, zone.id, moved),
+        `Move zone “${zone.name}”`,
+        base
+      )
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -219,6 +268,39 @@ export function useZoneEditing(
     window.addEventListener('pointerup', onUp)
   }
 
+  const onCalibrationHandlePointerDown = (
+    e: React.PointerEvent,
+    endpoint: CalibrationEndpoint
+  ): void => {
+    if (!editable || activeTool !== 'select') return
+    e.stopPropagation()
+    const svg = svgRef.current
+    const base = setupEditor.setup
+    const calibration = base?.calibration
+    if (!svg || !base || !calibration) return
+
+    const moved = (p: Point): Calibration =>
+      endpoint === 'start'
+        ? { ...calibration, x1: p.x, y1: p.y }
+        : { ...calibration, x2: p.x, y2: p.y }
+
+    const onMove = (ev: PointerEvent): void => {
+      setupEditor.preview({ ...base, calibration: moved(toVideoPoint(svg, ev)) })
+    }
+    const onUp = (ev: PointerEvent): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      const next = moved(toVideoPoint(svg, ev))
+      if (distance({ x: next.x1, y: next.y1 }, { x: next.x2, y: next.y2 }) < CLICK_THRESHOLD_PX) {
+        setupEditor.preview(base) // would collapse the line to a point — revert
+        return
+      }
+      void setupEditor.commit({ ...base, calibration: next }, 'Adjust scale line', base)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   const onBackgroundPointerDown = (e: React.PointerEvent<SVGSVGElement>): void => {
     if (!editable) return
     const svg = svgRef.current
@@ -260,6 +342,34 @@ export function useZoneEditing(
       return
     }
 
+    if (activeTool === 'measure') {
+      if (pendingCalibration) return // popover open — ignore background clicks until it's resolved
+      if (measureDraft) {
+        // Second click of click–click: finish the line at this point.
+        finishMeasure(measureDraft.start, p, e.clientX, e.clientY)
+        return
+      }
+      e.preventDefault()
+      const start = p
+      setMeasureDraft({ start, current: start })
+      let moved = false
+      const onMove = (ev: PointerEvent): void => {
+        const cur = toVideoPoint(svg, ev)
+        if (!moved && distance(start, cur) > CLICK_THRESHOLD_PX) moved = true
+        setMeasureDraft({ start, current: cur })
+      }
+      const onUp = (ev: PointerEvent): void => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        if (moved) finishMeasure(start, toVideoPoint(svg, ev), ev.clientX, ev.clientY)
+        // else: leave `measureDraft` at `{ start, current: start }` — the click–click second
+        // point is picked up above, and `onBackgroundPointerMove` keeps it tracking the cursor.
+      }
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+      return
+    }
+
     if (activeTool === 'arena') {
       const alreadyDrawingPolygon = draft?.kind === 'polygon' && draft.target === 'arena'
       if (alreadyDrawingPolygon) {
@@ -292,11 +402,17 @@ export function useZoneEditing(
   }
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGSVGElement>): void => {
-    if (!draft || draft.kind !== 'polygon') return
     const svg = svgRef.current
     if (!svg) return
-    const cursor = toVideoPoint(svg, e)
-    setDraft((d) => (d && d.kind === 'polygon' ? { ...d, cursor } : d))
+    if (draft && draft.kind === 'polygon') {
+      const cursor = toVideoPoint(svg, e)
+      setDraft((d) => (d && d.kind === 'polygon' ? { ...d, cursor } : d))
+      return
+    }
+    if (measureDraft) {
+      const cursor = toVideoPoint(svg, e)
+      setMeasureDraft((d) => (d ? { ...d, current: cursor } : d))
+    }
   }
 
   const onBackgroundDoubleClick = (e: React.MouseEvent<SVGSVGElement>): void => {
@@ -319,22 +435,54 @@ export function useZoneEditing(
   }
 
   const cancelDrawing = (): boolean => {
+    if (pendingCalibration) {
+      setPendingCalibration(null)
+      return true
+    }
+    if (measureDraft) {
+      setMeasureDraft(null)
+      return true
+    }
     if (!draft) return false
     setDraft(null)
     return true
+  }
+
+  const saveCalibration = (lengthMm: number): void => {
+    const base = setupEditor.setup
+    if (!base || !pendingCalibration) return
+    const calibration: Calibration = {
+      x1: pendingCalibration.x1,
+      y1: pendingCalibration.y1,
+      x2: pendingCalibration.x2,
+      y2: pendingCalibration.y2,
+      length_mm: lengthMm
+    }
+    setPendingCalibration(null)
+    setSetupTool('select')
+    void setupEditor.commit({ ...base, calibration }, 'Set scale')
+  }
+
+  const cancelPendingCalibration = (): void => {
+    setPendingCalibration(null)
   }
 
   return {
     activeTool,
     editable,
     draft,
+    measureDraft,
+    pendingCalibration,
     onZonePointerDown,
     onHandlePointerDown,
     onVertexPointerDown,
+    onCalibrationHandlePointerDown,
     onBackgroundPointerDown,
     onBackgroundPointerMove,
     onBackgroundDoubleClick,
     deleteSelectedZone,
-    cancelDrawing
+    cancelDrawing,
+    saveCalibration,
+    cancelPendingCalibration
   }
 }

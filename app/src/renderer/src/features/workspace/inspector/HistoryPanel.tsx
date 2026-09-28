@@ -54,7 +54,9 @@ export function HistoryPanel({ entries, onSelect }: HistoryPanelProps): React.JS
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{entry.title}</Typography>
-              <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>{entry.detail}</Typography>
+              <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>
+                {entry.detail}
+              </Typography>
             </Box>
             <Typography
               variant="mono"

@@ -183,6 +183,13 @@ def _diff_setup(old: Setup, new: Setup) -> list[_SetupChangeText]:
     if old.trial != new.trial:
         changes.append(_SetupChangeText("Trial changed", "Results recalculated"))
 
+    if old.calibration != new.calibration:
+        if new.calibration is not None:
+            detail = f"1 px = {new.calibration.mm_per_px:.3f} mm"
+            changes.append(_SetupChangeText("Scale set", detail))
+        else:
+            changes.append(_SetupChangeText("Scale removed", "Zone sizes shown in px"))
+
     if old.detection != new.detection or old.image != new.image:
         changes.append(_SetupChangeText("Detection settings changed", "Re-track to apply"))
 

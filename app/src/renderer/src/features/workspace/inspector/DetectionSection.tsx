@@ -25,7 +25,11 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
   const thresholdFraction = setup.analysis?.in_zone_threshold ?? DEFAULT_THRESHOLD
   const thresholdPercent = Math.round(thresholdFraction * 100)
 
-  const setDetection = (patch: Partial<DetectionSettings>, label: string, debounced = true): void => {
+  const setDetection = (
+    patch: Partial<DetectionSettings>,
+    label: string,
+    debounced = true
+  ): void => {
     const next = { ...setup, detection: { ...detection, ...patch } }
     if (debounced) editor.commitDebounced(next, label)
     else void editor.commit(next, label)
@@ -106,7 +110,9 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
             max={800}
             step={10}
             value={detection.min_mouse_area_px}
-            onChange={(_, value) => setDetection({ min_mouse_area_px: value }, 'Adjust minimum mouse size')}
+            onChange={(_, value) =>
+              setDetection({ min_mouse_area_px: value }, 'Adjust minimum mouse size')
+            }
           />
         </Box>
 
@@ -117,7 +123,13 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
               {thresholdPercent}%
             </Typography>
           </Box>
-          <Slider min={10} max={90} step={5} value={thresholdPercent} onChange={(_, value) => setThreshold(value)} />
+          <Slider
+            min={10}
+            max={90}
+            step={5}
+            value={thresholdPercent}
+            onChange={(_, value) => setThreshold(value)}
+          />
           <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>
             Share of the body that must be inside a zone before the mouse counts as in it.
           </Typography>

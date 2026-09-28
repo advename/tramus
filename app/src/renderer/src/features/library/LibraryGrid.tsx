@@ -147,7 +147,11 @@ function VideoCard({ video, selected, onToggleSelect, onOpen }: VideoCardProps):
             fontSize: 11
           }}
         >
-          <TimeText seconds={video.duration_s} format="video" sx={{ color: 'inherit', fontSize: 11 }} />
+          <TimeText
+            seconds={video.duration_s}
+            format="video"
+            sx={{ color: 'inherit', fontSize: 11 }}
+          />
         </Box>
       </Box>
       <Box sx={{ px: 1.5, pt: 1.25, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -164,7 +168,9 @@ function VideoCard({ video, selected, onToggleSelect, onOpen }: VideoCardProps):
             />
           ) : null}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
+        >
           <Typography variant="mono" color="text.disabled" sx={{ fontSize: 11.5 }} noWrap>
             {video.recorded_at
               ? `${formatDate(video.recorded_at)} · ${formatClockTime(video.recorded_at, 0)}`

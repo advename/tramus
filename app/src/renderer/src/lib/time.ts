@@ -95,7 +95,8 @@ export function formatFrameCount(frameCount: number): string {
 export function formatRelativeDate(utcIso: string): string {
   const date = new Date(utcIso)
   const now = new Date()
-  const startOfDay = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const startOfDay = (d: Date): number =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
   const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000)
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'

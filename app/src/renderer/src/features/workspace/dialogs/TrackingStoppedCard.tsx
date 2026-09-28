@@ -38,7 +38,11 @@ export function TrackingStoppedCard({
         gap: 1.5
       }}
     >
-      <Symbol name={failed ? 'error' : 'cancel'} size={22} sx={{ color: failed ? 'error.main' : 'text.secondary' }} />
+      <Symbol
+        name={failed ? 'error' : 'cancel'}
+        size={22}
+        sx={{ color: failed ? 'error.main' : 'text.secondary' }}
+      />
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0 }}>
         <Typography sx={{ fontWeight: 600 }}>
           {failed ? 'Tracking failed' : 'Tracking cancelled'}

@@ -680,6 +680,25 @@ export interface components {
              */
             offset_y: number;
         };
+        /**
+         * Calibration
+         * @description A known-length line drawn over the video, used to convert video px to mm.
+         */
+        Calibration: {
+            /** X1 */
+            x1: number;
+            /** Y1 */
+            y1: number;
+            /** X2 */
+            x2: number;
+            /** Y2 */
+            y2: number;
+            /**
+             * Length Mm
+             * @description Real-world length the line represents.
+             */
+            length_mm: number;
+        };
         /** DetectionPreviewRequest */
         DetectionPreviewRequest: {
             /** Frame Index */
@@ -1224,6 +1243,8 @@ export interface components {
             trial?: components["schemas"]["TrialWindow"] | null;
             /** @description Template this setup came from. */
             template?: components["schemas"]["TemplateRef"] | null;
+            /** @description Scale reference: a line of known real-world length, in video px. */
+            calibration?: components["schemas"]["Calibration"] | null;
         };
         /**
          * SetupChange
@@ -1310,6 +1331,7 @@ export interface components {
             analysis?: components["schemas"]["AnalysisSettings"];
             /** Trial Duration S */
             trial_duration_s?: number | null;
+            calibration?: components["schemas"]["Calibration"] | null;
         };
         /** Template */
         "Template-Output": {
@@ -1342,6 +1364,7 @@ export interface components {
             analysis?: components["schemas"]["AnalysisSettings"];
             /** Trial Duration S */
             trial_duration_s?: number | null;
+            calibration?: components["schemas"]["Calibration"] | null;
         };
         /** TemplateCreateRequest */
         TemplateCreateRequest: {

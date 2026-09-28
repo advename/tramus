@@ -31,6 +31,12 @@ import { ResultsView } from './results/ResultsView'
 import { VideoStage } from './stage/VideoStage'
 import { useWorkspaceStore, type WorkspaceStep } from './state/workspaceStore'
 import { Timeline } from './timeline/Timeline'
+import {
+  clampTimelineHeight,
+  DEFAULT_TIMELINE_HEIGHT,
+  loadTimelineHeight,
+  saveTimelineHeight
+} from './timeline/timelineLayout'
 import { WorkspaceTopBar } from './topbar/WorkspaceTopBar'
 
 const TERMINAL_JOB_STATES = new Set(['succeeded', 'failed', 'cancelled'])
@@ -79,6 +85,10 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
   const [saving, setSaving] = useState(false)
   const [fileChangedDismissed, setFileChangedDismissed] = useState(false)
   const [templateMenuAnchor, setTemplateMenuAnchor] = useState<HTMLElement | null>(null)
+  const [timelineHeight, setTimelineHeight] = useState(() =>
+    clampTimelineHeight(loadTimelineHeight(), window.innerHeight)
+  )
+  const [resizingTimeline, setResizingTimeline] = useState(false)
 
   const openedVideoRef = useRef<string | null>(null)
   const loadedNotifiedRef = useRef<string | null>(null)
@@ -100,6 +110,43 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
   useEffect(() => {
     if (frameTimes.data) setFrameCount(frameTimes.data.length)
   }, [frameTimes.data, setFrameCount])
+
+  // Re-clamp a persisted timeline height if the window shrinks below what it allows.
+  useEffect(() => {
+    const onResize = (): void =>
+      setTimelineHeight((h) => clampTimelineHeight(h, window.innerHeight))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const onTimelineDividerPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startHeight = timelineHeight
+    setResizingTimeline(true)
+    const onMove = (ev: PointerEvent): void => {
+      setTimelineHeight(
+        clampTimelineHeight(startHeight - (ev.clientY - startY), window.innerHeight)
+      )
+    }
+    const onUp = (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setResizingTimeline(false)
+      setTimelineHeight((h) => {
+        saveTimelineHeight(h)
+        return h
+      })
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const onTimelineDividerDoubleClick = (): void => {
+    const next = clampTimelineHeight(DEFAULT_TIMELINE_HEIGHT, window.innerHeight)
+    setTimelineHeight(next)
+    saveTimelineHeight(next)
+  }
 
   const setup = session.data?.document.setup
   const setupEmpty = isSetupEmpty(setup)
@@ -133,7 +180,11 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
 
   // When the active job succeeds, move on to Review.
   useEffect(() => {
-    if (step === 'tracking' && activeJob?.state === 'succeeded' && jobStateRef.current !== 'succeeded') {
+    if (
+      step === 'tracking' &&
+      activeJob?.state === 'succeeded' &&
+      jobStateRef.current !== 'succeeded'
+    ) {
       void navigate(`/videos/${videoId}/review`, { replace: true })
     }
     jobStateRef.current = activeJob?.state
@@ -227,7 +278,10 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
     statusCards = (
       <>
         {sessionData.file_changed && !fileChangedDismissed ? (
-          <FileChangedCard onKeep={() => setFileChangedDismissed(true)} onRetrack={() => void onTrack()} />
+          <FileChangedCard
+            onKeep={() => setFileChangedDismissed(true)}
+            onRetrack={() => void onTrack()}
+          />
         ) : null}
         {setupEmpty ? (
           <NoSetupCard
@@ -266,7 +320,9 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0 }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0 }}
+    >
       <WorkspaceTopBar
         videoPath={sessionData.video.path}
         fileName={sessionData.video.file_name}
@@ -278,7 +334,15 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
         onSave={() => void onSave()}
         saving={saving}
       />
-      <Box sx={{ flex: '1 1 0', minHeight: 0, minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 312px' }}>
+      <Box
+        sx={{
+          flex: '1 1 0',
+          minHeight: 0,
+          minWidth: 0,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1fr) 312px'
+        }}
+      >
         {step === 'results' ? (
           <Box sx={{ position: 'relative', minWidth: 0, minHeight: 0, bgcolor: 'canvas' }}>
             <ResultsView videoId={videoId} />
@@ -301,7 +365,29 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
           trackDisabled={setupEmpty}
         />
       </Box>
-      <Timeline videoId={videoId} step={step} />
+      <Box
+        onPointerDown={onTimelineDividerPointerDown}
+        onDoubleClick={onTimelineDividerDoubleClick}
+        title="Drag to resize the timeline — double-click to reset"
+        sx={{
+          flex: 'none',
+          height: 7,
+          display: 'flex',
+          alignItems: 'center',
+          cursor: 'row-resize',
+          '&:hover > .timeline-divider-line': { bgcolor: 'primary.main' }
+        }}
+      >
+        <Box
+          className="timeline-divider-line"
+          sx={{
+            width: '100%',
+            height: '1px',
+            bgcolor: resizingTimeline ? 'primary.main' : 'divider'
+          }}
+        />
+      </Box>
+      <Timeline videoId={videoId} step={step} height={timelineHeight} />
 
       <LoadTemplateMenu
         anchorEl={templateMenuAnchor}

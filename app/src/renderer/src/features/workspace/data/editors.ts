@@ -188,6 +188,8 @@ export interface CorrectionsEditor {
   corrections: Correction[]
   /** Appends a correction as one undoable step. */
   add: (correction: NewCorrection, label: string) => Promise<void>
+  /** Drops the corrections with the given ids as one undoable step (e.g. "Reopen flag"). */
+  remove: (ids: string[], label: string) => Promise<void>
 }
 
 export function useCorrectionsEditor(videoId: string): CorrectionsEditor {
@@ -196,17 +198,17 @@ export function useCorrectionsEditor(videoId: string): CorrectionsEditor {
   const corrections = useSession(videoId).data?.document.corrections
   const stable = useMemo(() => corrections ?? [], [corrections])
 
-  const add = useCallback(
-    async (correction: NewCorrection, label: string) => {
-      const before =
-        queryClient.getQueryData<SessionState>(queryKeys.session.detail(videoId))?.document
-          .corrections ?? []
-      const created: Correction = {
-        ...correction,
-        id: newId(),
-        created_at: new Date().toISOString()
-      }
-      const after = [...before, created]
+  const currentCorrections = useCallback(
+    () =>
+      queryClient.getQueryData<SessionState>(queryKeys.session.detail(videoId))?.document
+        .corrections ?? [],
+    [queryClient, videoId]
+  )
+
+  /** Optimistically applies `after`, records it as one undo step, then persists it — shared by
+   * `add` and `remove` so both edit the corrections list the same way. */
+  const commit = useCallback(
+    async (before: Correction[], after: Correction[], label: string) => {
       patchDocument(queryClient, videoId, { corrections: after })
       pushEdit({ kind: 'corrections', label, before, after })
       try {
@@ -219,7 +221,33 @@ export function useCorrectionsEditor(videoId: string): CorrectionsEditor {
     [pushEdit, queryClient, videoId]
   )
 
-  return useMemo(() => ({ corrections: stable, add }), [stable, add])
+  const add = useCallback(
+    async (correction: NewCorrection, label: string) => {
+      const before = currentCorrections()
+      const created: Correction = {
+        ...correction,
+        id: newId(),
+        created_at: new Date().toISOString()
+      }
+      await commit(before, [...before, created], label)
+    },
+    [commit, currentCorrections]
+  )
+
+  const remove = useCallback(
+    async (ids: string[], label: string) => {
+      const before = currentCorrections()
+      const idSet = new Set(ids)
+      await commit(
+        before,
+        before.filter((c) => !idSet.has(c.id)),
+        label
+      )
+    },
+    [commit, currentCorrections]
+  )
+
+  return useMemo(() => ({ corrections: stable, add, remove }), [stable, add, remove])
 }
 
 export interface UndoRedo {

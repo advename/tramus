@@ -121,7 +121,12 @@ export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): Re
               const color = theme.palette.zones[zone.color_index % theme.palette.zones.length]
               return (
                 <g key={zone.id}>
-                  {shapeElement(scaled, { fill: color, fillOpacity: 0.14, stroke: color, strokeWidth: 4 })}
+                  {shapeElement(scaled, {
+                    fill: color,
+                    fillOpacity: 0.14,
+                    stroke: color,
+                    strokeWidth: 4
+                  })}
                 </g>
               )
             })}
@@ -215,25 +220,27 @@ const MIN_TRIAL_S = 1
 function TrimBar({ durationS, start, end, onChange }: TrimBarProps): React.JSX.Element {
   const barRef = useRef<HTMLDivElement>(null)
 
-  const dragHandle = (which: 'start' | 'end') => (event: ReactPointerEvent<HTMLDivElement>): void => {
-    event.stopPropagation()
-    const bar = barRef.current
-    if (!bar) return
-    const rect = bar.getBoundingClientRect()
+  const dragHandle =
+    (which: 'start' | 'end') =>
+    (event: ReactPointerEvent<HTMLDivElement>): void => {
+      event.stopPropagation()
+      const bar = barRef.current
+      if (!bar) return
+      const rect = bar.getBoundingClientRect()
 
-    const onMove = (moveEvent: PointerEvent): void => {
-      const fraction = clamp((moveEvent.clientX - rect.left) / rect.width, 0, 1)
-      const t = fraction * durationS
-      if (which === 'start') onChange(clamp(t, 0, end - MIN_TRIAL_S), end)
-      else onChange(start, clamp(t, start + MIN_TRIAL_S, durationS))
+      const onMove = (moveEvent: PointerEvent): void => {
+        const fraction = clamp((moveEvent.clientX - rect.left) / rect.width, 0, 1)
+        const t = fraction * durationS
+        if (which === 'start') onChange(clamp(t, 0, end - MIN_TRIAL_S), end)
+        else onChange(start, clamp(t, start + MIN_TRIAL_S, durationS))
+      }
+      const onUp = (): void => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+      }
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
     }
-    const onUp = (): void => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-  }
 
   const startPct = durationS > 0 ? (start / durationS) * 100 : 0
   const endPct = durationS > 0 ? (end / durationS) * 100 : 100

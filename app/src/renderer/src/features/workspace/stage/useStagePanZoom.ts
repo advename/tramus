@@ -43,7 +43,11 @@ export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.code !== 'Space') return
       const target = e.target
-      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+      )
+        return
       spaceHeldRef.current = true
       setSpaceHeld(true)
     }
@@ -105,7 +109,10 @@ export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
       const startPan = pan
       setIsPanning(true)
       const onMove = (ev: PointerEvent): void => {
-        const next = { x: startPan.x + (ev.clientX - start.x), y: startPan.y + (ev.clientY - start.y) }
+        const next = {
+          x: startPan.x + (ev.clientX - start.x),
+          y: startPan.y + (ev.clientY - start.y)
+        }
         setStagePan(clampPan(next, { container, video, zoom, pan: next }))
       }
       const onUp = (): void => {

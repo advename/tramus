@@ -104,7 +104,13 @@ export function pointInShape(shape: Shape, p: Point): boolean {
 export function moveShape(shape: Shape, dx: number, dy: number): Shape {
   if (shape.kind === 'rect') return { ...shape, x: shape.x + dx, y: shape.y + dy }
   if (shape.kind === 'ellipse') return { ...shape, cx: shape.cx + dx, cy: shape.cy + dy }
-  return { ...shape, points: shape.points.map((p) => { const c = coord(p); return [c.x + dx, c.y + dy] }) }
+  return {
+    ...shape,
+    points: shape.points.map((p) => {
+      const c = coord(p)
+      return [c.x + dx, c.y + dy]
+    })
+  }
 }
 
 export interface HandlePoint extends Point {
@@ -170,7 +176,13 @@ export function resizeByHandle(
   if (shape.kind === 'rect') {
     return { ...shape, x: nx1, y: ny1, width: nx2 - nx1, height: ny2 - ny1 }
   }
-  return { ...shape, cx: (nx1 + nx2) / 2, cy: (ny1 + ny2) / 2, rx: (nx2 - nx1) / 2, ry: (ny2 - ny1) / 2 }
+  return {
+    ...shape,
+    cx: (nx1 + nx2) / 2,
+    cy: (ny1 + ny2) / 2,
+    rx: (nx2 - nx1) / 2,
+    ry: (ny2 - ny1) / 2
+  }
 }
 
 /** Moves one vertex of a polygon zone/arena. */

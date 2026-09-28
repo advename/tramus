@@ -46,20 +46,51 @@ export function ChooseStep({
 
   const toggle = (id: string): void => {
     onChangeSelected(
-      selected.has(id) ? selectedVideoIds.filter((existing) => existing !== id) : [...selectedVideoIds, id]
+      selected.has(id)
+        ? selectedVideoIds.filter((existing) => existing !== id)
+        : [...selectedVideoIds, id]
     )
   }
 
   return (
-    <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 360px)' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 1.75, pb: 1.25, flexWrap: 'wrap' }}>
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 360px)'
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          borderRight: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 2,
+            pt: 1.75,
+            pb: 1.25,
+            flexWrap: 'wrap'
+          }}
+        >
           <Typography sx={{ fontWeight: 600 }}>Videos</Typography>
           <Typography variant="caption" color="text.disabled">
             {selectedVideoIds.length} of {videos.length} selected
           </Typography>
           <Box sx={{ flex: 1 }} />
-          <FilterChip label="Not tracked yet" active={filter === 'not_tracked'} onClick={() => setFilter('not_tracked')} />
+          <FilterChip
+            label="Not tracked yet"
+            active={filter === 'not_tracked'}
+            onClick={() => setFilter('not_tracked')}
+          />
           <FilterChip label="All" active={filter === 'all'} onClick={() => setFilter('all')} />
         </Box>
         <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
@@ -90,7 +121,13 @@ export function ChooseStep({
                   component="img"
                   src={thumbnailUrl(video.id, { maxSide: 96 })}
                   alt=""
-                  sx={{ width: 44, height: 37, borderRadius: '4px', objectFit: 'cover', bgcolor: 'canvas' }}
+                  sx={{
+                    width: 44,
+                    height: 37,
+                    borderRadius: '4px',
+                    objectFit: 'cover',
+                    bgcolor: 'canvas'
+                  }}
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <Typography sx={{ fontWeight: 500 }} noWrap>
@@ -139,12 +176,23 @@ export function ChooseStep({
                   borderRadius: '10px',
                   border: 1,
                   borderColor: active ? 'primary.main' : 'divider',
-                  bgcolor: active ? (theme) => alpha(theme.palette.primary.main, 0.13) : 'transparent',
+                  bgcolor: active
+                    ? (theme) => alpha(theme.palette.primary.main, 0.13)
+                    : 'transparent',
                   cursor: 'pointer'
                 }}
               >
                 <Radio checked={active} size="small" sx={{ p: 0 }} readOnly />
-                <Box sx={{ position: 'relative', width: 76, height: 65, borderRadius: '5px', overflow: 'hidden', bgcolor: 'canvas' }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: 76,
+                    height: 65,
+                    borderRadius: '5px',
+                    overflow: 'hidden',
+                    bgcolor: 'canvas'
+                  }}
+                >
                   <TemplatePreview template={template} />
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 0.25 }}>

@@ -77,7 +77,10 @@ export function WorkspaceTopBar({
             <Typography sx={{ fontSize: 10.5, color: 'text.disabled', whiteSpace: 'nowrap' }}>
               Recorded
             </Typography>
-            <Typography variant="mono" sx={{ fontSize: 11.5, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+            <Typography
+              variant="mono"
+              sx={{ fontSize: 11.5, color: 'text.secondary', whiteSpace: 'nowrap' }}
+            >
               {formatDate(recordedAt)}{' '}
               {new Intl.DateTimeFormat(undefined, {
                 hour: '2-digit',

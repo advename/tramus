@@ -19,14 +19,30 @@ export interface RunStepProps {
 }
 
 /** Batch step 3: live progress for every job in the batch — `designs/Screens.dc.html` §isRun. */
-export function RunStep({ jobs, deviceLabel, parallelJobs, onCancelAll, onCancelJob }: RunStepProps): React.JSX.Element {
+export function RunStep({
+  jobs,
+  deviceLabel,
+  parallelJobs,
+  onCancelAll,
+  onCancelJob
+}: RunStepProps): React.JSX.Element {
   const counts = summarizeJobs(jobs)
   const progress = Math.round(overallProgress(jobs) * 100)
   const remaining = remainingSeconds(jobs)
   const canCancelAny = counts.running + counts.waiting > 0
 
   return (
-    <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0, p: 2, display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+    <Box
+      sx={{
+        flex: 1,
+        overflow: 'auto',
+        minHeight: 0,
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.75
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -56,20 +72,45 @@ export function RunStep({ jobs, deviceLabel, parallelJobs, onCancelAll, onCancel
           <LinearProgress
             variant="determinate"
             value={progress}
-            sx={{ height: '100%', bgcolor: 'transparent', '& .MuiLinearProgress-bar': { bgcolor: 'primary.main' } }}
+            sx={{
+              height: '100%',
+              bgcolor: 'transparent',
+              '& .MuiLinearProgress-bar': { bgcolor: 'primary.main' }
+            }}
           />
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 1.25,
+            flexWrap: 'wrap'
+          }}
+        >
           <Typography variant="caption" color="text.disabled">
             {deviceLabel} · you can keep working in other videos
           </Typography>
-          <Button variant="outlined" disabled={!canCancelAny} onClick={onCancelAll} sx={{ height: 28, px: 1.5, fontSize: 12.5 }}>
+          <Button
+            variant="outlined"
+            disabled={!canCancelAny}
+            onClick={onCancelAll}
+            sx={{ height: 28, px: 1.5, fontSize: 12.5 }}
+          >
             Cancel all
           </Button>
         </Box>
       </Box>
 
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: '10px', bgcolor: 'background.paper', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: '10px',
+          bgcolor: 'background.paper',
+          overflow: 'hidden'
+        }}
+      >
         {jobs.map((job) => (
           <QueueRow key={job.id} job={job} onCancel={() => onCancelJob(job.id)} />
         ))}
@@ -91,7 +132,10 @@ function QueueRow({ job, onCancel }: { job: Job; onCancel: () => void }): React.
   const canCancel = job.state === 'running' || job.state === 'queued'
   const meta =
     job.state === 'running'
-      ? [job.fps != null ? `${Math.round(job.fps)} fps` : null, job.remaining_s != null ? formatSecondsCompact(job.remaining_s) : null]
+      ? [
+          job.fps != null ? `${Math.round(job.fps)} fps` : null,
+          job.remaining_s != null ? formatSecondsCompact(job.remaining_s) : null
+        ]
           .filter(Boolean)
           .join(' · ')
       : job.state === 'succeeded'
@@ -157,7 +201,15 @@ function QueueRow({ job, onCancel }: { job: Job; onCancel: () => void }): React.
         {STATUS_LABEL[job.state]}
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box sx={{ flex: 1, height: 4, borderRadius: '2px', bgcolor: 'surface.raised', overflow: 'hidden' }}>
+        <Box
+          sx={{
+            flex: 1,
+            height: 4,
+            borderRadius: '2px',
+            bgcolor: 'surface.raised',
+            overflow: 'hidden'
+          }}
+        >
           <Box
             sx={{
               width: `${pct}%`,
@@ -170,7 +222,12 @@ function QueueRow({ job, onCancel }: { job: Job; onCancel: () => void }): React.
           {job.state === 'cancelled' ? '—' : `${pct}%`}
         </Typography>
       </Box>
-      <Typography variant="mono" color="text.disabled" sx={{ fontSize: 11.5, whiteSpace: 'nowrap' }} noWrap>
+      <Typography
+        variant="mono"
+        color="text.disabled"
+        sx={{ fontSize: 11.5, whiteSpace: 'nowrap' }}
+        noWrap
+      >
         {meta}
       </Typography>
       {canCancel ? (

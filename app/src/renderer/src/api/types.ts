@@ -37,6 +37,7 @@ export type DetectionSettings = Schemas['DetectionSettings']
 export type AnalysisSettings = Schemas['AnalysisSettings']
 export type TrialWindow = Schemas['TrialWindow']
 export type TemplateRef = Schemas['TemplateRef']
+export type Calibration = Schemas['Calibration']
 export type DetectionPreview = Schemas['DetectionPreviewResponse']
 export type Observation = Schemas['ObservationView']
 

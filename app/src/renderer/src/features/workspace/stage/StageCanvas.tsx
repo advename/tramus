@@ -40,7 +40,8 @@ export function StageCanvas({
     if (!ctx) return
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    if (!bitmap || video.width === 0 || video.height === 0) return
+    // A closed bitmap reports a 0 size; drawing it would throw.
+    if (!bitmap || bitmap.width === 0 || video.width === 0 || video.height === 0) return
 
     ctx.setTransform(
       dpr * transform.scale,

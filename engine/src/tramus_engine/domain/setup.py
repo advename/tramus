@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from enum import StrEnum
 
 from pydantic import Field, model_validator
@@ -65,6 +66,30 @@ class TemplateRef(DomainModel):
     name: str
 
 
+class Calibration(DomainModel):
+    """A known-length line drawn over the video, used to convert video px to mm."""
+
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    length_mm: float = Field(gt=0, description="Real-world length the line represents.")
+
+    @model_validator(mode="after")
+    def _points_differ(self) -> Calibration:
+        if self.x1 == self.x2 and self.y1 == self.y2:
+            raise ValueError("calibration line must have two distinct points")
+        return self
+
+    @property
+    def length_px(self) -> float:
+        return math.hypot(self.x2 - self.x1, self.y2 - self.y1)
+
+    @property
+    def mm_per_px(self) -> float:
+        return self.length_mm / self.length_px
+
+
 class Setup(DomainModel):
     arena: Shape | None = None
     zones: list[Zone] = Field(default_factory=list)
@@ -73,6 +98,9 @@ class Setup(DomainModel):
     analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
     trial: TrialWindow | None = Field(None, description="None means the whole video.")
     template: TemplateRef | None = Field(None, description="Template this setup came from.")
+    calibration: Calibration | None = Field(
+        None, description="Scale reference: a line of known real-world length, in video px."
+    )
 
     @property
     def is_empty(self) -> bool:

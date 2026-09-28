@@ -11,7 +11,11 @@ export interface LoadTemplateMenuProps {
 }
 
 /** "Load template…" — lists the user's saved templates. */
-export function LoadTemplateMenu({ anchorEl, onClose, onSelect }: LoadTemplateMenuProps): React.JSX.Element {
+export function LoadTemplateMenu({
+  anchorEl,
+  onClose,
+  onSelect
+}: LoadTemplateMenuProps): React.JSX.Element {
   const templates = useTemplates()
 
   return (

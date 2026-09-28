@@ -6,11 +6,12 @@ import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 
 import type { FlagView, HistoryEntry, Results, SessionState } from '../../../api/types'
+import { ConfirmDialog } from '../../../components/ConfirmDialog'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
 import { formatDate, formatDuration, formatVideoTime } from '../../../lib/time'
-import type { SessionActions, SetupEditor } from '../data'
-import { countByStatus } from '../lib/flags'
+import { useCorrectionsEditor, type SessionActions, type SetupEditor } from '../data'
+import { countByStatus, useReopenFlag } from '../lib/flags'
 import { estimateTrackingSeconds } from '../lib/session'
 import { useWorkspaceStore, type InspectorTab, type WorkspaceStep } from '../state/workspaceStore'
 import { FlagsPanel } from './FlagsPanel'
@@ -70,6 +71,8 @@ export function Inspector({
   const currentFrame = useWorkspaceStore((s) => s.currentFrame)
   const seek = useWorkspaceStore((s) => s.seek)
   const speed = useWorkspaceStore((s) => s.speed)
+  const correctionsEditor = useCorrectionsEditor(videoId)
+  const reopenFlag = useReopenFlag(correctionsEditor)
 
   const document = session.document
   const setup = document.setup
@@ -114,7 +117,16 @@ export function Inspector({
 
   const tabs =
     step === 'review' ? (
-      <Box sx={{ display: 'flex', gap: 0.25, px: 1, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 0.25,
+          px: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0
+        }}
+      >
         {TABS.map((tab) => (
           <Box
             key={tab.key}
@@ -193,6 +205,7 @@ export function Inspector({
           selectedFlagId={selectedFlagId}
           currentFrame={currentFrame}
           onGoToFlag={goToFlag}
+          onReopenFlag={reopenFlag.request}
           onAdjustDetection={() => goToStep('setup')}
         />
       )
@@ -251,7 +264,17 @@ export function Inspector({
 
   const footer =
     step === 'setup' ? (
-      <Box sx={{ p: 1.75, borderTop: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 0.75, flexShrink: 0 }}>
+      <Box
+        sx={{
+          p: 1.75,
+          borderTop: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.75,
+          flexShrink: 0
+        }}
+      >
         <ShortcutTooltip title="Track" shortcut="mod+t">
           <Button
             variant="contained"
@@ -323,11 +346,23 @@ export function Inspector({
       {tabs}
       <Box sx={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>{body}</Box>
       {footer}
+
+      <ConfirmDialog
+        open={reopenFlag.pending != null}
+        title="Reopen flag"
+        description={reopenFlag.description}
+        confirmLabel="Reopen"
+        onConfirm={reopenFlag.confirm}
+        onCancel={reopenFlag.cancel}
+      />
     </Box>
   )
 }
 
-function trialDurationOf(setup: { trial?: { start_s: number; end_s: number } | null }, videoDurationS: number): number {
+function trialDurationOf(
+  setup: { trial?: { start_s: number; end_s: number } | null },
+  videoDurationS: number
+): number {
   if (setup.trial) return setup.trial.end_s - setup.trial.start_s
   return videoDurationS
 }
@@ -351,7 +386,11 @@ function ResultsInspectorBody({
   const video = document.video
   const trialInfo = results
     ? [
-        { key: 'Start', value: formatVideoTime(results.trial_start_s), clock: null as string | null },
+        {
+          key: 'Start',
+          value: formatVideoTime(results.trial_start_s),
+          clock: null as string | null
+        },
         { key: 'End', value: formatVideoTime(results.trial_end_s), clock: null },
         { key: 'Duration', value: formatDuration(results.trial_duration_s), clock: null }
       ]
@@ -368,7 +407,14 @@ function ResultsInspectorBody({
         {trialInfo.map((row) => (
           <Box
             key={row.key}
-            sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.25, py: 0.75, borderBottom: 1, borderColor: 'divider' }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 1.25,
+              py: 0.75,
+              borderBottom: 1,
+              borderColor: 'divider'
+            }}
           >
             <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>{row.key}</Typography>
             <Typography variant="mono" sx={{ fontSize: 12 }}>
@@ -377,7 +423,16 @@ function ResultsInspectorBody({
           </Box>
         ))}
         {video.recorded_at ? (
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.25, py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 1.25,
+              py: 0.75,
+              borderBottom: 1,
+              borderColor: 'divider'
+            }}
+          >
             <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>Recorded</Typography>
             <Typography variant="mono" sx={{ fontSize: 12 }}>
               {formatDate(video.recorded_at)}
@@ -393,9 +448,20 @@ function ResultsInspectorBody({
       </Box>
       <Box sx={{ px: 1.75 }}>
         <InfoRow label="Template" value={setupTemplateLabel(document.setup)} />
-        {results ? <InfoRow label="In-zone threshold" value={`${Math.round(results.in_zone_threshold * 100)}% of body`} /> : null}
+        {results ? (
+          <InfoRow
+            label="In-zone threshold"
+            value={`${Math.round(results.in_zone_threshold * 100)}% of body`}
+          />
+        ) : null}
         {document.track_summary ? (
-          <InfoRow label="Tracked" value={new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(document.track_summary.tracked_at))} />
+          <InfoRow
+            label="Tracked"
+            value={new Intl.DateTimeFormat(undefined, {
+              dateStyle: 'medium',
+              timeStyle: 'short'
+            }).format(new Date(document.track_summary.tracked_at))}
+          />
         ) : null}
         <InfoRow label="Corrections" value={String(document.corrections.length)} />
         <InfoRow
@@ -420,13 +486,18 @@ function ResultsInspectorBody({
           <Symbol name="flag" size={17} sx={{ color: 'warning.main', flexShrink: 0 }} />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <span>
-              {unresolvedCount} flag{unresolvedCount > 1 ? 's are' : ' is'} still unresolved. You can
-              export, but the sheet will note them.
+              {unresolvedCount} flag{unresolvedCount > 1 ? 's are' : ' is'} still unresolved. You
+              can export, but the sheet will note them.
             </span>
             <Box
               component="a"
               onClick={onReviewFlags}
-              sx={{ fontWeight: 600, color: 'text.primary', cursor: 'pointer', textDecoration: 'underline' }}
+              sx={{
+                fontWeight: 600,
+                color: 'text.primary',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
             >
               Review flags
             </Box>
@@ -441,11 +512,30 @@ function setupTemplateLabel(setup: SessionState['document']['setup']): string {
   return setup.template ? setup.template.name : 'No template applied'
 }
 
-function InfoRow({ label, value, color }: { label: string; value: string; color?: string }): React.JSX.Element {
+function InfoRow({
+  label,
+  value,
+  color
+}: {
+  label: string
+  value: string
+  color?: string
+}): React.JSX.Element {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.25, py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 1.25,
+        py: 0.75,
+        borderBottom: 1,
+        borderColor: 'divider'
+      }}
+    >
       <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>{label}</Typography>
-      <Typography sx={{ fontSize: 12, textAlign: 'right', color: color ?? 'text.primary' }}>{value}</Typography>
+      <Typography sx={{ fontSize: 12, textAlign: 'right', color: color ?? 'text.primary' }}>
+        {value}
+      </Typography>
     </Box>
   )
 }

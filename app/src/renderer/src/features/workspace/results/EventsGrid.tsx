@@ -19,14 +19,24 @@ interface EventRow extends ZoneVisit {
 }
 
 /** Review's zone-visit events grid (design: `isEvents`, `evChips`, `events`). */
-export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps): React.JSX.Element {
+export function EventsGrid({
+  results,
+  recordedAt,
+  onRowClick
+}: EventsGridProps): React.JSX.Element {
   const theme = useTheme()
   const [zoneFilter, setZoneFilter] = useState<string>('all')
 
   const zoneColor = useMemo(() => {
     const byId = new Map<string, string>()
     for (const row of results.summary) {
-      if (row.zone_id) byId.set(row.zone_id, row.color_index != null ? theme.palette.zones[row.color_index] ?? theme.palette.text.disabled : theme.palette.text.disabled)
+      if (row.zone_id)
+        byId.set(
+          row.zone_id,
+          row.color_index != null
+            ? (theme.palette.zones[row.color_index] ?? theme.palette.text.disabled)
+            : theme.palette.text.disabled
+        )
     }
     return byId
   }, [results.summary, theme])
@@ -34,7 +44,12 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
   const zoneChips = useMemo(() => {
     const zones = results.summary.filter((row) => row.kind === 'zone')
     return [
-      { key: 'all', label: 'All zones', color: theme.palette.text.disabled, count: results.visits.length },
+      {
+        key: 'all',
+        label: 'All zones',
+        color: theme.palette.text.disabled,
+        count: results.visits.length
+      },
       ...zones.map((row) => ({
         key: row.zone_id!,
         label: row.name,
@@ -48,7 +63,10 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
     () =>
       results.visits
         .filter((visit) => zoneFilter === 'all' || visit.zone_id === zoneFilter)
-        .map((visit) => ({ ...visit, color: zoneColor.get(visit.zone_id) ?? theme.palette.text.disabled })),
+        .map((visit) => ({
+          ...visit,
+          color: zoneColor.get(visit.zone_id) ?? theme.palette.text.disabled
+        })),
     [results.visits, zoneFilter, zoneColor, theme]
   )
 
@@ -61,7 +79,16 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
       minWidth: 120,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, height: '100%' }}>
-          <Box component="span" sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: params.row.color, flexShrink: 0 }} />
+          <Box
+            component="span"
+            sx={{
+              width: 10,
+              height: 10,
+              borderRadius: '2px',
+              bgcolor: params.row.color,
+              flexShrink: 0
+            }}
+          />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {params.row.zone_name}
           </span>
@@ -109,20 +136,36 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
               borderRadius: '13px',
               border: '1px solid',
               borderColor: zoneFilter === chip.key ? 'primary.main' : 'surface.lineStrong',
-              bgcolor: zoneFilter === chip.key ? alpha(theme.palette.primary.main, 0.13) : 'transparent',
+              bgcolor:
+                zoneFilter === chip.key ? alpha(theme.palette.primary.main, 0.13) : 'transparent',
               fontSize: 12
             }}
           >
-            <Box component="span" sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: chip.color }} />
+            <Box
+              component="span"
+              sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: chip.color }}
+            />
             {chip.label}
-            <Typography variant="mono" component="span" sx={{ fontSize: 11, color: 'text.disabled' }}>
+            <Typography
+              variant="mono"
+              component="span"
+              sx={{ fontSize: 11, color: 'text.disabled' }}
+            >
               {chip.count}
             </Typography>
           </ButtonBase>
         ))}
       </Box>
 
-      <Box sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: '10px', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: '10px',
+          overflow: 'hidden'
+        }}
+      >
         <DataGrid
           rows={rows}
           columns={columns}
@@ -135,7 +178,16 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
           sx={{ border: 'none', '& .MuiDataGrid-row': { cursor: 'pointer' } }}
           initialState={{ sorting: { sortModel: [{ field: 'index', sort: 'asc' }] } }}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1.75, py: 1, fontSize: 11.5, color: 'text.disabled' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            px: 1.75,
+            py: 1,
+            fontSize: 11.5,
+            color: 'text.disabled'
+          }}
+        >
           <span>{rows.length} events · click a row to jump there</span>
           <span>Video time · local clock time below</span>
         </Box>
@@ -144,7 +196,13 @@ export function EventsGrid({ results, recordedAt, onRowClick }: EventsGridProps)
   )
 }
 
-function TwoLineTime({ seconds, recordedAt }: { seconds: number; recordedAt: string | null }): React.JSX.Element {
+function TwoLineTime({
+  seconds,
+  recordedAt
+}: {
+  seconds: number
+  recordedAt: string | null
+}): React.JSX.Element {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
       <Typography variant="mono" sx={{ fontSize: 12 }}>

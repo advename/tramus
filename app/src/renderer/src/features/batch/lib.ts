@@ -5,9 +5,21 @@ import { TERMINAL_JOB_STATES } from '../../api/queries'
 export function scaleShape(shape: Shape, scaleX: number, scaleY: number): Shape {
   switch (shape.kind) {
     case 'rect':
-      return { ...shape, x: shape.x * scaleX, y: shape.y * scaleY, width: shape.width * scaleX, height: shape.height * scaleY }
+      return {
+        ...shape,
+        x: shape.x * scaleX,
+        y: shape.y * scaleY,
+        width: shape.width * scaleX,
+        height: shape.height * scaleY
+      }
     case 'ellipse':
-      return { ...shape, cx: shape.cx * scaleX, cy: shape.cy * scaleY, rx: shape.rx * scaleX, ry: shape.ry * scaleY }
+      return {
+        ...shape,
+        cx: shape.cx * scaleX,
+        cy: shape.cy * scaleY,
+        rx: shape.rx * scaleX,
+        ry: shape.ry * scaleY
+      }
     case 'polygon':
       return {
         ...shape,
@@ -83,7 +95,14 @@ export interface JobCounts {
 const DONE_STATES: ReadonlySet<JobState> = new Set(['succeeded'])
 
 export function summarizeJobs(jobs: Job[]): JobCounts {
-  const counts: JobCounts = { total: jobs.length, done: 0, running: 0, waiting: 0, cancelled: 0, failed: 0 }
+  const counts: JobCounts = {
+    total: jobs.length,
+    done: 0,
+    running: 0,
+    waiting: 0,
+    cancelled: 0,
+    failed: 0
+  }
   for (const job of jobs) {
     if (DONE_STATES.has(job.state)) counts.done += 1
     else if (job.state === 'running') counts.running += 1
@@ -101,7 +120,10 @@ export function allTerminal(jobs: Job[]): boolean {
 /** Average progress across all jobs in the batch, 0–1. */
 export function overallProgress(jobs: Job[]): number {
   if (jobs.length === 0) return 0
-  const sum = jobs.reduce((total, job) => total + (TERMINAL_JOB_STATES.has(job.state) ? 1 : job.progress), 0)
+  const sum = jobs.reduce(
+    (total, job) => total + (TERMINAL_JOB_STATES.has(job.state) ? 1 : job.progress),
+    0
+  )
   return sum / jobs.length
 }
 

@@ -82,7 +82,7 @@ The Pydantic models are the single source of truth. Key ones:
 
 | Model | Purpose |
 |---|---|
-| `Setup` | arena `Shape`, `zones`, `ImageAdjustments`, `DetectionSettings`, `AnalysisSettings`, `TrialWindow`, `TemplateRef` |
+| `Setup` | arena `Shape`, `zones`, `ImageAdjustments`, `DetectionSettings`, `AnalysisSettings`, `TrialWindow`, `TemplateRef`, `Calibration` |
 | `Track` | raw per-frame body ellipse, column-wise (`t, x, y, semi_major, semi_minor, angle_deg, area_px, status`) |
 | `Flag` | suspicious frame range found after tracking (`not_found`, `sudden_jump`, `unusual_size`) |
 | `Correction` | `set_position`, `mark_hidden`, `interpolate`, `accept_flag` — applied in list order on top of the raw track |
@@ -92,6 +92,12 @@ The Pydantic models are the single source of truth. Key ones:
 
 The raw track is never modified; corrections are an ordered, timestamped log. That keeps every
 change traceable and makes undo trivial (drop the last correction).
+
+`Setup.calibration` (`Calibration | None`) is an optional scale reference: a line `(x1, y1) →
+(x2, y2)` in video px with a known real-world `length_mm`, plus a derived `mm_per_px` property.
+It is additive — sidecars without it still load as `calibration: null` — so `SCHEMA_VERSION`
+stays 1. `Template` carries the same field; `setup_from_template` scales its endpoints with the
+shapes (`length_mm` is a physical quantity and is left unchanged).
 
 ## 5. Algorithms
 
@@ -314,8 +320,9 @@ tracking already running), 500. `detail` is written for the end user.
 * **Visits**: video, #, zone, entered/left (video time s), entered/left (UTC ISO) and (local,
   Excel datetime), duration (s).
 * **Track**: per video, frame, t, x, y, status, zones (one 0/1 column per zone).
-* **Settings**: app version, tracker + parameters, setup (zones as text), recording time,
-  fingerprint, tracked at, corrections log.
+* **Settings**: app version, tracker + parameters, setup (zones as text, sizes in mm when
+  calibrated), recording time, fingerprint, tracked at, reference length (mm), mm per px,
+  corrections log.
 `.csv`: `<name>_summary.csv` and `<name>_visits.csv` (UTF-8 with BOM, comma separated).
 Exporting sets `exported_at` on the document and saves it.
 

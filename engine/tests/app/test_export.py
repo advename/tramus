@@ -7,8 +7,8 @@ import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-from tests.app.conftest import make_document, make_track
-from tramus_engine.domain import Results, SummaryRow, SummaryRowKind, ZoneVisit
+from tests.app.conftest import make_document, make_setup, make_track
+from tramus_engine.domain import Calibration, Results, SummaryRow, SummaryRowKind, ZoneVisit
 from tramus_engine.export.csv import write_csv
 from tramus_engine.export.tables import (
     VideoExport,
@@ -77,6 +77,22 @@ def _make_export(with_zones: bool = False) -> VideoExport:
     )
 
 
+def _make_calibrated_export() -> VideoExport:
+    """A video with zones and a 1 px = 0.5 mm calibration (100 px line, 50 mm real length)."""
+    track = make_track()
+    setup = make_setup(with_zones=True).model_copy(
+        update={"calibration": Calibration(x1=0, y1=0, x2=100, y2=0, length_mm=50)}
+    )
+    document = make_document(track=track, setup=setup)
+    return VideoExport(
+        video_id="abc123",
+        file_name=document.video.file_name,
+        document=document,
+        effective_track=track,
+        results=_make_results(),
+    )
+
+
 def test_build_summary_rows() -> None:
     rows = build_summary_rows([_make_export()])
     assert [r.zone for r in rows] == ["Center", "No zone", "Not visible"]
@@ -109,6 +125,29 @@ def test_build_settings_rows() -> None:
     row = rows[0]
     assert row.tracker == "background_subtraction"
     assert row.in_zone_threshold == 0.5
+    assert row.reference_length_mm is None
+    assert row.mm_per_px is None
+
+
+def test_build_settings_rows_without_calibration_omits_mm_sizes() -> None:
+    export = _make_export()
+    export = VideoExport(
+        video_id=export.video_id,
+        file_name=export.file_name,
+        document=export.document.model_copy(update={"setup": make_setup(with_zones=True)}),
+        effective_track=export.effective_track,
+        results=export.results,
+    )
+    row = build_settings_rows([export])[0]
+    assert row.zones_text == "Center (ellipse)"
+
+
+def test_build_settings_rows_with_calibration_includes_mm() -> None:
+    row = build_settings_rows([_make_calibrated_export()])[0]
+    assert row.reference_length_mm == 50
+    assert row.mm_per_px == 0.5
+    # Zone is a 100x100 px ellipse (rx=ry=50) -> 50x50 mm at 0.5 mm/px.
+    assert row.zones_text == "Center (ellipse, 50.0 × 50.0 mm)"
 
 
 def test_write_xlsx_contains_expected_sheets(tmp_path: Path) -> None:
@@ -122,6 +161,16 @@ def test_write_xlsx_contains_expected_sheets(tmp_path: Path) -> None:
         for sheet_name in ("Summary", "Visits", "Settings"):
             assert sheet_name in workbook_xml
         assert "Track mouse.mp4" in workbook_xml
+
+
+def test_write_xlsx_settings_sheet_has_calibration_columns(tmp_path: Path) -> None:
+    out = tmp_path / "export.xlsx"
+    write_xlsx([_make_calibrated_export()], out)
+    with zipfile.ZipFile(out) as zf:
+        shared_strings = zf.read("xl/sharedStrings.xml").decode("utf-8")
+        assert "Reference length (mm)" in shared_strings
+        assert "mm per px" in shared_strings
+        assert "50.0 × 50.0 mm" in shared_strings
 
 
 def test_write_xlsx_multiple_videos_unique_track_sheets(tmp_path: Path) -> None:

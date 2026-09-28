@@ -7,9 +7,11 @@ import json
 import logging
 import logging.config
 import multiprocessing
+import os
 import socket
 import sys
 import threading
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
@@ -39,16 +41,17 @@ def _configure_logging() -> None:
     logging.config.dictConfig(_LOG_CONFIG)
 
 
-def _watch_stdin() -> None:
-    """Exits the process the moment stdin closes (the parent Electron process died)."""
+def _watch_stdin(on_eof: Callable[[], None]) -> None:
+    """Exits the process the moment stdin closes (the app quit or its process died)."""
     try:
         while sys.stdin.readline():
             pass
     except Exception:
         pass
-    import os
-
-    os._exit(0)
+    try:
+        on_eof()  # stop tracking workers before leaving
+    finally:
+        os._exit(0)
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
@@ -72,7 +75,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     sys.stdout.flush()
 
     if not args.no_stdin_watch:
-        threading.Thread(target=_watch_stdin, daemon=True).start()
+        threading.Thread(target=_watch_stdin, args=(services.shutdown,), daemon=True).start()
 
     config = uvicorn.Config(app, log_config=_LOG_CONFIG, log_level="info")
     server = uvicorn.Server(config)

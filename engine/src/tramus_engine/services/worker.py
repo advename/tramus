@@ -6,6 +6,9 @@ start method — instance methods and closures can't be pickled).
 
 from __future__ import annotations
 
+import multiprocessing
+import os
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -37,6 +40,23 @@ class WorkerResult:
     flags: list[Flag] | None = None
     error: str | None = None
     cancelled: bool = False
+
+
+def exit_with_parent() -> None:
+    """Process initializer for tracking workers and the job manager's server process.
+
+    Ends this process as soon as its parent (the engine) is gone — also when the engine was
+    killed hard and never got to shut its pool down — so no orphaned workers keep running.
+    """
+    parent = multiprocessing.parent_process()
+    if parent is None:
+        return
+
+    def wait_for_parent() -> None:
+        parent.join()
+        os._exit(0)
+
+    threading.Thread(target=wait_for_parent, name="exit-with-parent", daemon=True).start()
 
 
 def run_tracking_worker(

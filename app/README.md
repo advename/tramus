@@ -111,7 +111,7 @@ createAppTheme.ts` builds the MUI theme and augments `Palette`/`PaletteOptions` 
 ## Known gaps
 
 - No app icon yet (`build/` is empty), so `electron-builder` uses its default icon.
-- Zones can be edited but not *added* from Review's Zones tab (drawing tools are Setup-only).
+- Zones can be edited but not _added_ from Review's Zones tab (drawing tools are Setup-only).
 - Polygons: vertices can be dragged, but not inserted/removed by double-clicking an edge.
 - Templates can't be imported/exported as files from the UI yet (they live in the user config
   directory, e.g. `~/Library/Application Support/Tramus/templates/` on macOS).

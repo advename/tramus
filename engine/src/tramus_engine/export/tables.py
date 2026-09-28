@@ -17,6 +17,8 @@ from ..analysis.corrections import apply_corrections
 from ..analysis.occupancy import zone_fractions, zone_membership
 from ..analysis.results import compute_results
 from ..domain import VISIBLE_STATUSES, AnalysisDocument, Correction, Results, Track
+from ..domain.setup import Zone
+from ..domain.shapes import EllipseShape, PolygonShape, RectShape, Shape
 
 
 @dataclass(frozen=True)
@@ -172,6 +174,33 @@ class SettingsRow:
     tracked_at: datetime | None
     in_zone_threshold: float
     corrections_log: str
+    reference_length_mm: float | None
+    mm_per_px: float | None
+
+
+def _shape_size_mm_text(shape: Shape, mm_per_px: float) -> str | None:
+    """A short "W × H mm" description of a shape's size, or `None` for shapes without a simple
+    width/height (a polygon's bounding box is used instead)."""
+    if isinstance(shape, RectShape):
+        return f"{shape.width * mm_per_px:.1f} × {shape.height * mm_per_px:.1f} mm"
+    if isinstance(shape, EllipseShape):
+        return f"{2 * shape.rx * mm_per_px:.1f} × {2 * shape.ry * mm_per_px:.1f} mm"
+    if isinstance(shape, PolygonShape):
+        xs = [px for px, _ in shape.points]
+        ys = [py for _, py in shape.points]
+        width_mm = (max(xs) - min(xs)) * mm_per_px
+        height_mm = (max(ys) - min(ys)) * mm_per_px
+        return f"{width_mm:.1f} × {height_mm:.1f} mm bounding box"
+    return None
+
+
+def _zone_text(zone: Zone, mm_per_px: float | None) -> str:
+    if mm_per_px is None:
+        return f"{zone.name} ({zone.shape.kind})"
+    size = _shape_size_mm_text(zone.shape, mm_per_px)
+    return (
+        f"{zone.name} ({zone.shape.kind}, {size})" if size else f"{zone.name} ({zone.shape.kind})"
+    )
 
 
 def _describe_correction(correction: Correction) -> str:
@@ -191,7 +220,9 @@ def build_settings_rows(exports: list[VideoExport]) -> list[SettingsRow]:
     for export in exports:
         document = export.document
         track = document.track
-        zones_text = "; ".join(f"{zone.name} ({zone.shape.kind})" for zone in document.setup.zones)
+        calibration = document.setup.calibration
+        mm_per_px = calibration.mm_per_px if calibration else None
+        zones_text = "; ".join(_zone_text(zone, mm_per_px) for zone in document.setup.zones)
         rows.append(
             SettingsRow(
                 video=export.file_name,
@@ -205,6 +236,8 @@ def build_settings_rows(exports: list[VideoExport]) -> list[SettingsRow]:
                 tracked_at=track.tracked_at if track else None,
                 in_zone_threshold=document.setup.analysis.in_zone_threshold,
                 corrections_log="\n".join(_describe_correction(c) for c in document.corrections),
+                reference_length_mm=calibration.length_mm if calibration else None,
+                mm_per_px=mm_per_px,
             )
         )
     return rows

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from .base import DomainModel, UtcDateTime
-from .setup import AnalysisSettings, DetectionSettings, ImageAdjustments, Zone
+from .setup import AnalysisSettings, Calibration, DetectionSettings, ImageAdjustments, Zone
 from .shapes import Shape
 
 
@@ -23,3 +23,4 @@ class Template(DomainModel):
     detection: DetectionSettings = Field(default_factory=DetectionSettings)
     analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
     trial_duration_s: float | None = Field(None, gt=0)
+    calibration: Calibration | None = None

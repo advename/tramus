@@ -84,7 +84,10 @@ export function SettingsScreen(): React.JSX.Element {
           </SettingsGroup>
 
           <SettingsGroup title="Defaults for new analyses">
-            <SettingsRow label="Playback speed in Review" help="Speed used when a video opens in Review.">
+            <SettingsRow
+              label="Playback speed in Review"
+              help="Speed used when a video opens in Review."
+            >
               <Select
                 size="small"
                 value={settings?.review_playback_speed ?? 4}
@@ -92,7 +95,11 @@ export function SettingsScreen(): React.JSX.Element {
                 sx={{ minWidth: 90, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12.5 }}
               >
                 {PLAYBACK_SPEEDS.map((speed) => (
-                  <MenuItem key={speed} value={speed} sx={{ fontFamily: '"IBM Plex Mono", monospace' }}>
+                  <MenuItem
+                    key={speed}
+                    value={speed}
+                    sx={{ fontFamily: '"IBM Plex Mono", monospace' }}
+                  >
                     {speed}×
                   </MenuItem>
                 ))}
@@ -126,7 +133,9 @@ export function SettingsScreen(): React.JSX.Element {
               <Select
                 size="small"
                 value={settings?.default_in_zone_threshold ?? 0.5}
-                onChange={(event) => save({ default_in_zone_threshold: Number(event.target.value) })}
+                onChange={(event) =>
+                  save({ default_in_zone_threshold: Number(event.target.value) })
+                }
                 sx={{ minWidth: 90, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12.5 }}
               >
                 {IN_ZONE_THRESHOLDS.map((threshold) => (
@@ -172,7 +181,14 @@ function SettingsGroup({ title, children }: SettingsGroupProps): React.JSX.Eleme
       <Typography variant="overline" color="text.disabled" sx={{ px: 0.25 }}>
         {title}
       </Typography>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: '10px', bgcolor: 'background.paper' }}>
+      <Box
+        sx={{
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: '10px',
+          bgcolor: 'background.paper'
+        }}
+      >
         {children}
       </Box>
     </Box>

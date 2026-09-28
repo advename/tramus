@@ -13,7 +13,13 @@ export interface BatchFooterProps {
 }
 
 /** The Batch screen's shared footer: context text + Back/Next, per `designs/Screens.dc.html`. */
-export function BatchFooter({ text, onBack, nextLabel, onNext, nextDisabled }: BatchFooterProps): React.JSX.Element {
+export function BatchFooter({
+  text,
+  onBack,
+  nextLabel,
+  onNext,
+  nextDisabled
+}: BatchFooterProps): React.JSX.Element {
   return (
     <Box
       component="footer"

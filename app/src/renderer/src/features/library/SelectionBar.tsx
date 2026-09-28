@@ -38,9 +38,7 @@ export function SelectionBar({
         flex: 'none'
       }}
     >
-      <Typography sx={{ fontWeight: 600, mr: 0.75 }}>
-        {count} selected
-      </Typography>
+      <Typography sx={{ fontWeight: 600, mr: 0.75 }}>{count} selected</Typography>
       <Button
         variant="outlined"
         onClick={onApplyTemplate}

@@ -13,7 +13,7 @@ import type { Correction, Setup } from '../../../api/types'
 export type WorkspaceStep = 'setup' | 'tracking' | 'review' | 'results'
 export const WORKSPACE_STEPS: readonly WorkspaceStep[] = ['setup', 'tracking', 'review', 'results']
 
-export type SetupTool = 'select' | 'arena' | 'rect' | 'ellipse' | 'polygon' | 'pan'
+export type SetupTool = 'select' | 'arena' | 'rect' | 'ellipse' | 'polygon' | 'measure' | 'pan'
 export type ReviewTool = 'select' | 'position' | 'hidden' | 'fill' | 'pan'
 export type StageView = 'video' | 'tracker'
 export type InspectorTab = 'flags' | 'zones' | 'history'

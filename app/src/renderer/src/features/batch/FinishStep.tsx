@@ -33,7 +33,17 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
   if (counts.failed > 0) summaryParts.push(`${counts.failed} failed`)
 
   return (
-    <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0, p: 2, display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+    <Box
+      sx={{
+        flex: 1,
+        overflow: 'auto',
+        minHeight: 0,
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.75
+      }}
+    >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 240 }}>
           <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{summaryParts.join(' · ')}</Typography>
@@ -52,7 +62,15 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
         </Button>
       </Box>
 
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: '10px', bgcolor: 'background.paper', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: '10px',
+          bgcolor: 'background.paper',
+          overflow: 'hidden'
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
@@ -91,9 +109,18 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
               component="img"
               src={thumbnailUrl(job.video_id, { maxSide: 96 })}
               alt=""
-              sx={{ width: 44, height: 37, borderRadius: '4px', objectFit: 'cover', bgcolor: 'canvas' }}
+              sx={{
+                width: 44,
+                height: 37,
+                borderRadius: '4px',
+                objectFit: 'cover',
+                bgcolor: 'canvas'
+              }}
             />
-            <Typography sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }} noWrap>
+            <Typography
+              sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
+              noWrap
+            >
               {job.video_name}
             </Typography>
             <Box
@@ -140,7 +167,14 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
                     justifySelf: 'start'
                   }}
                 >
-                  <Box sx={{ width: 6, height: 6, transform: 'rotate(45deg)', bgcolor: 'warning.main' }} />
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      transform: 'rotate(45deg)',
+                      bgcolor: 'warning.main'
+                    }}
+                  />
                   {job.flag_count} {job.flag_count === 1 ? 'flag' : 'flags'}
                 </Box>
               ) : (
@@ -158,7 +192,14 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
                 variant="outlined"
                 onClick={() => void navigate(`/videos/${job.video_id}/review`)}
                 endIcon={<Symbol name="arrow_forward" size={16} />}
-                sx={{ height: 28, px: 1.25, fontSize: 12.5, fontWeight: 500, justifySelf: 'end', whiteSpace: 'nowrap' }}
+                sx={{
+                  height: 28,
+                  px: 1.25,
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  justifySelf: 'end',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 Open in Review
               </Button>

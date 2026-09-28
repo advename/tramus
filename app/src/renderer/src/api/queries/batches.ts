@@ -7,7 +7,10 @@ import type { Batch, BatchCheckItem, BatchItemRequest } from '../types'
 /** `POST /batches/check` — one `BatchCheckItem` per video, for the Batch "Check" step. */
 export function useCheckBatch() {
   return useMutation({
-    mutationFn: async (body: { template_id: string; video_ids: string[] }): Promise<BatchCheckItem[]> =>
+    mutationFn: async (body: {
+      template_id: string
+      video_ids: string[]
+    }): Promise<BatchCheckItem[]> =>
       unwrap(await getApiClient().POST('/api/batches/check', { body }))
   })
 }

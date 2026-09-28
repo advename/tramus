@@ -52,7 +52,13 @@ export function LibraryTable({
             component="img"
             src={thumbnailUrl(params.row.id, { maxSide: 128 })}
             alt=""
-            sx={{ width: 52, height: 44, borderRadius: '4px', objectFit: 'cover', bgcolor: 'canvas' }}
+            sx={{
+              width: 52,
+              height: 44,
+              borderRadius: '4px',
+              objectFit: 'cover',
+              bgcolor: 'canvas'
+            }}
           />
         )
       },
@@ -63,7 +69,10 @@ export function LibraryTable({
         minWidth: 160,
         renderCell: (params) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }} noWrap>
+            <Typography
+              sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
+              noWrap
+            >
               {params.row.file_name}
             </Typography>
             {params.row.file_changed ? (
@@ -158,7 +167,11 @@ export function LibraryTable({
         sx={{
           border: 0,
           '--DataGrid-rowBorderColor': 'transparent',
-          '& .MuiDataGrid-row': { borderBottom: '1px solid', borderColor: 'divider', cursor: 'pointer' },
+          '& .MuiDataGrid-row': {
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            cursor: 'pointer'
+          },
           '& .MuiDataGrid-columnHeaders': { borderBottom: '1px solid', borderColor: 'divider' },
           '& .MuiDataGrid-cell': { borderBottom: 'none', display: 'flex', alignItems: 'center' },
           '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': { outline: 'none' },

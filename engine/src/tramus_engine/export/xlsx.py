@@ -157,9 +157,11 @@ def _write_settings_sheet(workbook, rows: list[SettingsRow], fmt) -> None:
             "Fingerprint",
             "Tracked at (UTC)",
             "In-zone threshold",
+            "Reference length (mm)",
+            "mm per px",
             "Corrections",
         ],
-        [26, 12, 20, 14, 30, 40, 22, 40, 22, 16, 60],
+        [26, 12, 20, 14, 30, 40, 22, 40, 22, 16, 18, 12, 60],
         fmt,
     )
     for r, row in enumerate(rows, start=1):
@@ -177,4 +179,8 @@ def _write_settings_sheet(workbook, rows: list[SettingsRow], fmt) -> None:
             r, 8, row.tracked_at.isoformat().replace("+00:00", "Z") if row.tracked_at else ""
         )
         sheet.write_number(r, 9, row.in_zone_threshold, fmt["percent"])
-        sheet.write_string(r, 10, row.corrections_log)
+        if row.reference_length_mm is not None:
+            sheet.write_number(r, 10, row.reference_length_mm)
+        if row.mm_per_px is not None:
+            sheet.write_number(r, 11, row.mm_per_px)
+        sheet.write_string(r, 12, row.corrections_log)

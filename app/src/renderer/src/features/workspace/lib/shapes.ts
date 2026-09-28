@@ -28,30 +28,3 @@ export function describeShape(shape: Shape): string {
       return `${kind} · ${shape.points.length} corners`
   }
 }
-
-export interface GeometryField {
-  key: string
-  value: number
-}
-
-/** Read-only geometry readout for the selected zone's properties panel (video px). */
-export function geometryFields(shape: Shape): GeometryField[] {
-  switch (shape.kind) {
-    case 'rect':
-      return [
-        { key: 'X', value: Math.round(shape.x) },
-        { key: 'Y', value: Math.round(shape.y) },
-        { key: 'W', value: Math.round(shape.width) },
-        { key: 'H', value: Math.round(shape.height) }
-      ]
-    case 'ellipse':
-      return [
-        { key: 'CX', value: Math.round(shape.cx) },
-        { key: 'CY', value: Math.round(shape.cy) },
-        { key: 'RX', value: Math.round(shape.rx) },
-        { key: 'RY', value: Math.round(shape.ry) }
-      ]
-    case 'polygon':
-      return []
-  }
-}

@@ -21,7 +21,11 @@ export interface ResultsViewProps {
   videoId: string
 }
 
-async function runExport(videoId: string, format: 'xlsx' | 'csv', videoPath: string): Promise<void> {
+async function runExport(
+  videoId: string,
+  format: 'xlsx' | 'csv',
+  videoPath: string
+): Promise<void> {
   const defaultPath = defaultExportPath(videoPath, format)
   const path = await window.tramus.dialog.saveFile({
     defaultPath,
@@ -42,7 +46,10 @@ async function runExport(videoId: string, format: 'xlsx' | 'csv', videoPath: str
       title: 'Exported',
       message: response.files.join(', '),
       action: file
-        ? { label: 'Show in folder', onClick: () => void window.tramus.shell.showItemInFolder(file) }
+        ? {
+            label: 'Show in folder',
+            onClick: () => void window.tramus.shell.showItemInFolder(file)
+          }
         : undefined
     })
   } catch (error) {
@@ -78,9 +85,29 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
   const r = results.data
 
   return (
-    <Box sx={{ position: 'absolute', inset: 0, overflow: 'auto', p: '14px 18px 18px', display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+    <Box
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        overflow: 'auto',
+        p: '14px 18px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.75
+      }}
+    >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', gap: 0.25, p: 0.375, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: '9px' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 0.25,
+            p: 0.375,
+            bgcolor: 'background.paper',
+            border: 1,
+            borderColor: 'divider',
+            borderRadius: '9px'
+          }}
+        >
           {(['summary', 'events'] as const).map((view) => (
             <Button
               key={view}
@@ -100,7 +127,10 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
             </Button>
           ))}
         </Box>
-        <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+        <Typography
+          variant="mono"
+          sx={{ fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' }}
+        >
           Trial {formatVideoTime(r.trial_start_s)}–{formatVideoTime(r.trial_end_s)} ·{' '}
           {formatDuration(r.trial_duration_s)}
         </Typography>
@@ -116,14 +146,24 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
           </Button>
         </ShortcutTooltip>
         <ShortcutTooltip title="Export CSV" shortcut="mod+shift+e">
-          <Button variant="outlined" onClick={() => void runExport(videoId, 'csv', video.path)} sx={{ height: 30 }}>
+          <Button
+            variant="outlined"
+            onClick={() => void runExport(videoId, 'csv', video.path)}
+            sx={{ height: 30 }}
+          >
             CSV
           </Button>
         </ShortcutTooltip>
       </Box>
 
       {resultsView === 'summary' ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1.75 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: 1.75
+          }}
+        >
           <SummaryTable results={r} />
           <SummaryChart results={r} />
         </Box>
@@ -131,7 +171,15 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
         <EventsGrid results={r} recordedAt={recordedAt} onRowClick={goToVisit} />
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, fontSize: 11.5, color: 'text.disabled' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          fontSize: 11.5,
+          color: 'text.disabled'
+        }}
+      >
         <Symbol name="schedule" size={15} />
         Times are stored in UTC and shown in this computer’s time zone.
       </Box>

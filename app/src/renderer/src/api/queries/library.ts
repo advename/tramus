@@ -22,7 +22,9 @@ export function useLibrary(path: string | undefined) {
   return useQuery({
     queryKey: queryKeys.library.open(path ?? ''),
     queryFn: async (): Promise<Library> => {
-      const library = unwrap(await getApiClient().POST('/api/library/open', { body: { path: path! } }))
+      const library = unwrap(
+        await getApiClient().POST('/api/library/open', { body: { path: path! } })
+      )
       // Opening a folder bumps its place in the engine's recent-folders list — keep the Start
       // screen and AppShell's nav (both read `library.recent`) in sync without a manual refetch.
       void queryClient.invalidateQueries({ queryKey: queryKeys.library.recent() })

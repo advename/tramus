@@ -9,6 +9,13 @@ export interface TimelineTick {
 
 const NICE_STEPS_S = [0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600]
 
+/**
+ * Horizontal margin (px) reserved on each side of the track content so things drawn at 0% or
+ * 100% of the duration — the trial start/end handles, in particular — aren't flush against the
+ * scrolling track container's edge and clipped by its `overflow-x: auto`.
+ */
+export const TIMELINE_GUTTER_PX = 14
+
 /** The smallest "nice" step (seconds) that keeps ticks at least `minPxBetween` apart. */
 export function pickTickStep(pxPerSecond: number, minPxBetween: number): number {
   if (pxPerSecond <= 0) return NICE_STEPS_S[NICE_STEPS_S.length - 1]!
@@ -40,15 +47,48 @@ export function buildTicks(durationS: number, pxPerSecond: number): TimelineTick
   return ticks
 }
 
-/** `t` (seconds) → a `left` CSS percentage string within a `durationS`-wide track. */
-export function percentOfDuration(t: number, durationS: number): string {
-  if (durationS <= 0) return '0%'
-  return `${(t / durationS) * 100}%`
+/**
+ * `t` (seconds) → a `left` CSS value within a `durationS`-wide track, leaving `gutterPx` of room
+ * on each side (see `TIMELINE_GUTTER_PX`). `t = 0` lands at `gutterPx`, `t = durationS` lands at
+ * `calc(100% - gutterPx)`. Also correct as a `width` for an element already positioned at `left:
+ * 0` (e.g. the "before trial start" dim overlay) — its right edge should land exactly on this
+ * same position. For a width between two arbitrary times, use `widthOfDuration` instead: a plain
+ * position formula double-counts the gutter if used as a width.
+ */
+export function percentOfDuration(
+  t: number,
+  durationS: number,
+  gutterPx: number = TIMELINE_GUTTER_PX
+): string {
+  if (durationS <= 0) return `${gutterPx}px`
+  const fraction = Math.max(0, Math.min(1, t / durationS))
+  return `calc(${gutterPx}px + (100% - ${2 * gutterPx}px) * ${fraction})`
 }
 
-/** Pointer x (client px) → video time, clamped to `[0, durationS]`. */
-export function timeAtClientX(clientX: number, trackRect: { left: number; width: number }, durationS: number): number {
-  if (trackRect.width <= 0) return 0
-  const fraction = (clientX - trackRect.left) / trackRect.width
+/**
+ * `deltaS` (seconds, a duration rather than a point in time) → a `width` CSS value within a
+ * `durationS`-wide track that reserves `gutterPx` on each side. Unlike `percentOfDuration`, this
+ * has no constant offset — pair it with `left: percentOfDuration(startS, durationS)`.
+ */
+export function widthOfDuration(
+  deltaS: number,
+  durationS: number,
+  gutterPx: number = TIMELINE_GUTTER_PX
+): string {
+  if (durationS <= 0) return '0px'
+  const fraction = Math.max(0, Math.min(1, deltaS / durationS))
+  return `calc((100% - ${2 * gutterPx}px) * ${fraction})`
+}
+
+/** Pointer x (client px) → video time, clamped to `[0, durationS]`. Inverse of `percentOfDuration`. */
+export function timeAtClientX(
+  clientX: number,
+  trackRect: { left: number; width: number },
+  durationS: number,
+  gutterPx: number = TIMELINE_GUTTER_PX
+): number {
+  const usableWidth = trackRect.width - 2 * gutterPx
+  if (usableWidth <= 0) return 0
+  const fraction = (clientX - trackRect.left - gutterPx) / usableWidth
   return Math.max(0, Math.min(durationS, fraction * durationS))
 }

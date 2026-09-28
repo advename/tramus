@@ -5,6 +5,7 @@ import type { SessionActions, SetupEditor } from '../data'
 import type { StageSelection } from '../state/workspaceStore'
 import { DetectionSection } from './DetectionSection'
 import { ImageAdjustmentsSection } from './ImageAdjustmentsSection'
+import { ScaleSection } from './ScaleSection'
 import { TemplateSection } from './TemplateSection'
 import { ZonesList } from './ZonesList'
 
@@ -44,6 +45,8 @@ export function SetupInspectorBody({
         onAddZone={onAddZone}
       />
       <Divider sx={{ mt: 1.5 }} />
+      <ScaleSection setup={setup} editor={editor} />
+      <Divider />
       <ImageAdjustmentsSection setup={setup} editor={editor} />
       <Divider sx={{ mt: 1.75 }} />
       <DetectionSection setup={setup} editor={editor} />

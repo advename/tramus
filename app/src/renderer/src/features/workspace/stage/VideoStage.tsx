@@ -16,7 +16,8 @@ import {
 } from '../data'
 import { isVisible } from '../data/trackData'
 import { frameAtTime, timeOfFrame } from '../lib/frames'
-import { flagAtFrame } from '../lib/flags'
+import { flagAtFrame, useReopenFlag } from '../lib/flags'
+import { distance } from '../lib/geometry'
 import { formatVideoTime } from '../../../lib/time'
 import { computeStageTransform, computeViewBox, svgPointFromClient } from '../lib/stageTransform'
 import { buildHeatmapPoints, buildTrailSegments } from '../lib/trail'
@@ -26,6 +27,8 @@ import { useImageBitmap } from '../playback/useImageBitmap'
 import { usePlaybackClock } from '../playback/usePlaybackClock'
 import { useVideoTiming } from '../playback/useVideoTiming'
 import { type WorkspaceStep, useWorkspaceStore } from '../state/workspaceStore'
+import { ConfirmDialog } from '../../../components/ConfirmDialog'
+import { CalibrationPopover } from './CalibrationPopover'
 import { FlagBanner } from './FlagBanner'
 import { OverlayToggles } from './OverlayToggles'
 import { StageCanvas } from './StageCanvas'
@@ -128,7 +131,12 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   )
   const detectionEnabled =
     stageView === 'tracker' && (step === 'setup' || step === 'tracking') && Boolean(setup)
-  const detectionPreview = useDetectionPreview(videoId, currentFrame, setup ?? EMPTY_SETUP, detectionEnabled)
+  const detectionPreview = useDetectionPreview(
+    videoId,
+    currentFrame,
+    setup ?? EMPTY_SETUP,
+    detectionEnabled
+  )
   const maskBitmap = useImageBitmap(
     detectionPreview.data ? `data:image/png;base64,${detectionPreview.data.mask_png}` : null
   )
@@ -138,11 +146,17 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const tracked = isTracked && step !== 'setup'
   const needsTrailWindow = tracked && (overlays.trail || overlays.heatmap) && step === 'review'
   const trailSegments = useMemo(
-    () => (needsTrailWindow && trackData ? buildTrailSegments(trackData, currentFrame, trailLengthS) : []),
+    () =>
+      needsTrailWindow && trackData
+        ? buildTrailSegments(trackData, currentFrame, trailLengthS)
+        : [],
     [needsTrailWindow, trackData, currentFrame, trailLengthS]
   )
   const heatmapPoints = useMemo(
-    () => (needsTrailWindow && trackData ? buildHeatmapPoints(trackData, currentFrame, trailLengthS) : []),
+    () =>
+      needsTrailWindow && trackData
+        ? buildHeatmapPoints(trackData, currentFrame, trailLengthS)
+        : [],
     [needsTrailWindow, trackData, currentFrame, trailLengthS]
   )
   const bodyEllipse = useMemo(() => {
@@ -159,7 +173,8 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     const ids = new Set<string>()
     if (!results) return ids
     for (const visit of results.visits) {
-      if (currentFrame >= visit.frame_enter && currentFrame <= visit.frame_exit) ids.add(visit.zone_id)
+      if (currentFrame >= visit.frame_enter && currentFrame <= visit.frame_exit)
+        ids.add(visit.zone_id)
     }
     return ids
   }, [results, currentFrame])
@@ -178,7 +193,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   }, [step, frameTimes, correctionsEditor.corrections, currentFrame])
 
   const currentFlag = step === 'review' ? flagAtFrame(flags ?? [], currentFrame) : undefined
-  const showFlagBanner = currentFlag?.status === 'unresolved'
+  const reopenFlag = useReopenFlag(correctionsEditor)
 
   // Zone/arena editing (select, move, resize, draw, delete).
   const zoneEditing = useZoneEditing(svgRef, step, setupEditor)
@@ -206,7 +221,8 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const activeTool = zoneEditing.activeTool
   const cursor =
     panZoom.cursor ??
-    (activeTool === 'position' || ['arena', 'rect', 'ellipse', 'polygon'].includes(activeTool)
+    (activeTool === 'position' ||
+    ['arena', 'rect', 'ellipse', 'polygon', 'measure'].includes(activeTool)
       ? 'crosshair'
       : 'default')
 
@@ -244,13 +260,18 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     'a',
     () => {
       if (currentFlag?.status === 'unresolved') {
-        void correctionsEditor.add({ kind: 'accept_flag', flag_id: currentFlag.id }, 'Accepted flag')
+        void correctionsEditor.add(
+          { kind: 'accept_flag', flag_id: currentFlag.id },
+          'Accepted flag'
+        )
       }
     },
     { enabled: step === 'review' }
   )
   useShortcut('delete', () => zoneEditing.deleteSelectedZone(), { enabled: zoneEditing.editable })
-  useShortcut('backspace', () => zoneEditing.deleteSelectedZone(), { enabled: zoneEditing.editable })
+  useShortcut('backspace', () => zoneEditing.deleteSelectedZone(), {
+    enabled: zoneEditing.editable
+  })
   useShortcut('escape', () => zoneEditing.cancelDrawing(), {
     enabled: step === 'setup' || step === 'review',
     preventDefault: false
@@ -262,6 +283,8 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   useShortcut('r', () => setSetupTool('rect'), { enabled: step === 'setup' })
   useShortcut('e', () => setSetupTool('ellipse'), { enabled: step === 'setup' })
   useShortcut('g', () => setSetupTool('polygon'), { enabled: step === 'setup' })
+  // Setup-only: doesn't clash with Review's 'm' (toggle heatmap, line 241) — they're never both enabled.
+  useShortcut('m', () => setSetupTool('measure'), { enabled: step === 'setup' })
   useShortcut('h', () => (step === 'setup' ? setSetupTool('pan') : setReviewTool('pan')), {
     enabled: step === 'setup' || step === 'review'
   })
@@ -270,7 +293,13 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   return (
     <Box
       ref={outerRef}
-      sx={{ position: 'relative', width: '100%', height: '100%', bgcolor: 'canvas', overflow: 'hidden' }}
+      sx={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        bgcolor: 'canvas',
+        overflow: 'hidden'
+      }}
     >
       <Box
         ref={containerRef}
@@ -285,7 +314,13 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
         }}
       >
         <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-          <StageCanvas container={container} video={video} transform={transform} bitmap={bitmap} filter="none" />
+          <StageCanvas
+            container={container}
+            video={video}
+            transform={transform}
+            bitmap={bitmap}
+            filter="none"
+          />
           <StageOverlay
             svgRef={svgRef}
             viewBox={viewBox}
@@ -303,14 +338,19 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
             heatmapPoints={heatmapPoints}
             bodyEllipse={overlays.outline ? bodyEllipse : null}
             positionMarker={positionMarker}
-            detectionObservation={stageView === 'tracker' ? (detectionPreview.data?.observation ?? null) : null}
+            detectionObservation={
+              stageView === 'tracker' ? (detectionPreview.data?.observation ?? null) : null
+            }
             detectionBlobAreaLabel={
               detectionPreview.data?.observation
                 ? `${Math.round(detectionPreview.data.observation.area_px)} px²`
                 : null
             }
+            calibration={step === 'setup' ? (setup?.calibration ?? null) : null}
+            measureDraft={step === 'setup' ? zoneEditing.measureDraft : null}
             px={1 / transform.scale}
             onBackgroundPointerDown={handleBackgroundPointerDown}
+            onCalibrationHandlePointerDown={zoneEditing.onCalibrationHandlePointerDown}
           />
         </Box>
       </Box>
@@ -327,7 +367,9 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
         onZoomFit={() => panZoom.zoomFit()}
       />
 
-      {(step === 'setup' || step === 'tracking') && <ViewToggle view={stageView} onChange={setStageView} />}
+      {(step === 'setup' || step === 'tracking') && (
+        <ViewToggle view={stageView} onChange={setStageView} />
+      )}
 
       {step === 'review' && (
         <OverlayToggles
@@ -348,14 +390,44 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
         nominalFps={videoInfo?.nominal_fps ?? 0}
       />
 
-      {showFlagBanner && currentFlag && flags && (
+      {currentFlag && flags && (
         <FlagBanner
           flag={currentFlag}
           index={flags.findIndex((f) => f.id === currentFlag.id)}
           total={flags.length}
           timeS={currentFlag.t_start_s}
-          onAccept={() => void correctionsEditor.add({ kind: 'accept_flag', flag_id: currentFlag.id }, 'Accepted flag')}
+          onAccept={() =>
+            void correctionsEditor.add(
+              { kind: 'accept_flag', flag_id: currentFlag.id },
+              'Accepted flag'
+            )
+          }
           onSetPosition={() => setReviewTool('position')}
+          onReopen={() => reopenFlag.request(currentFlag)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={reopenFlag.pending != null}
+        title="Reopen flag"
+        description={reopenFlag.description}
+        confirmLabel="Reopen"
+        onConfirm={reopenFlag.confirm}
+        onCancel={reopenFlag.cancel}
+      />
+
+      {step === 'setup' && zoneEditing.pendingCalibration && (
+        <CalibrationPopover
+          anchorPosition={{
+            top: zoneEditing.pendingCalibration.clientY,
+            left: zoneEditing.pendingCalibration.clientX
+          }}
+          lengthPx={distance(
+            { x: zoneEditing.pendingCalibration.x1, y: zoneEditing.pendingCalibration.y1 },
+            { x: zoneEditing.pendingCalibration.x2, y: zoneEditing.pendingCalibration.y2 }
+          )}
+          onSave={zoneEditing.saveCalibration}
+          onCancel={zoneEditing.cancelPendingCalibration}
         />
       )}
 

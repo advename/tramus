@@ -37,7 +37,15 @@ export function FileChangedCard({ onKeep, onRetrack }: FileChangedCardProps): Re
           The saved track may no longer match these frames.
         </Typography>
       </Box>
-      <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 0.75,
+          flexShrink: 0,
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end'
+        }}
+      >
         <Button variant="outlined" onClick={onKeep} sx={{ height: 28 }}>
           Keep results
         </Button>

@@ -61,12 +61,22 @@ export function ApplyTemplateDialog({
                 border: 1,
                 borderColor: selectedId === template.id ? 'primary.main' : 'divider',
                 bgcolor: (theme) =>
-                  selectedId === template.id ? alpha(theme.palette.primary.main, 0.13) : 'transparent',
+                  selectedId === template.id
+                    ? alpha(theme.palette.primary.main, 0.13)
+                    : 'transparent',
                 cursor: 'pointer'
               }}
             >
               <Radio checked={selectedId === template.id} size="small" sx={{ p: 0 }} />
-              <Box sx={{ width: 56, height: 48, borderRadius: '5px', overflow: 'hidden', bgcolor: 'canvas' }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 48,
+                  borderRadius: '5px',
+                  overflow: 'hidden',
+                  bgcolor: 'canvas'
+                }}
+              >
                 <TemplatePreview template={template} />
               </Box>
               <Box sx={{ minWidth: 0 }}>
@@ -90,10 +100,7 @@ export function ApplyTemplateDialog({
           disabled={selectedId === null || applyTemplate.isPending}
           onClick={() => {
             if (selectedId === null) return
-            applyTemplate.mutate(
-              { templateId: selectedId, videoIds },
-              { onSuccess: onApplied }
-            )
+            applyTemplate.mutate({ templateId: selectedId, videoIds }, { onSuccess: onApplied })
           }}
         >
           Apply

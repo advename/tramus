@@ -71,20 +71,33 @@ export function TransportBar({
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
         <ShortcutTooltip title="Previous frame" shortcut="left">
-          <IconButton onClick={() => onStepFrame(-1)} sx={{ width: 28, height: 28, color: 'text.secondary' }}>
+          <IconButton
+            onClick={() => onStepFrame(-1)}
+            sx={{ width: 28, height: 28, color: 'text.secondary' }}
+          >
             <Symbol name="navigate_before" size={20} />
           </IconButton>
         </ShortcutTooltip>
         <ShortcutTooltip title="Play / pause" shortcut="space">
           <IconButton
             onClick={onTogglePlay}
-            sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.main' } }}
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': { bgcolor: 'primary.main' }
+            }}
           >
             <Symbol name={playing ? 'pause' : 'play_arrow'} fill size={22} />
           </IconButton>
         </ShortcutTooltip>
         <ShortcutTooltip title="Next frame" shortcut="right">
-          <IconButton onClick={() => onStepFrame(1)} sx={{ width: 28, height: 28, color: 'text.secondary' }}>
+          <IconButton
+            onClick={() => onStepFrame(1)}
+            sx={{ width: 28, height: 28, color: 'text.secondary' }}
+          >
             <Symbol name="navigate_next" size={20} />
           </IconButton>
         </ShortcutTooltip>
@@ -92,11 +105,23 @@ export function TransportBar({
           title="Playback speed 0.25×–16×"
           onClick={(e) => setSpeedAnchor(e.currentTarget)}
           endIcon={<Symbol name="expand_more" size={16} />}
-          sx={{ height: 26, ml: 0.75, px: 1, border: 1, borderColor: 'surface.lineStrong', fontFamily: '"IBM Plex Mono", monospace', fontSize: 12 }}
+          sx={{
+            height: 26,
+            ml: 0.75,
+            px: 1,
+            border: 1,
+            borderColor: 'surface.lineStrong',
+            fontFamily: '"IBM Plex Mono", monospace',
+            fontSize: 12
+          }}
         >
           {speed}×
         </Button>
-        <Menu anchorEl={speedAnchor} open={Boolean(speedAnchor)} onClose={() => setSpeedAnchor(null)}>
+        <Menu
+          anchorEl={speedAnchor}
+          open={Boolean(speedAnchor)}
+          onClose={() => setSpeedAnchor(null)}
+        >
           {SPEEDS.map((s) => (
             <MenuItem
               key={s}
@@ -112,13 +137,20 @@ export function TransportBar({
         </Menu>
       </Box>
 
-      <Box title={clockLabel ? `Local clock time ${clockLabel}` : undefined} sx={{ display: 'flex', alignItems: 'baseline', gap: 1, whiteSpace: 'nowrap' }}>
+      <Box
+        title={clockLabel ? `Local clock time ${clockLabel}` : undefined}
+        sx={{ display: 'flex', alignItems: 'baseline', gap: 1, whiteSpace: 'nowrap' }}
+      >
         <TimeText seconds={timeS} sx={{ fontSize: 16, fontWeight: 500 }} />
         <Typography variant="mono" component="span" sx={{ fontSize: 11.5, color: 'text.disabled' }}>
           / {formatDuration(durationS)}
         </Typography>
         {clockLabel && (
-          <Typography variant="mono" component="span" sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+          <Typography
+            variant="mono"
+            component="span"
+            sx={{ fontSize: 11.5, color: 'text.secondary' }}
+          >
             {clockLabel}
           </Typography>
         )}
@@ -133,7 +165,14 @@ export function TransportBar({
         <Button
           title="Set start at playhead · I"
           onClick={onSetStartHere}
-          sx={{ height: 26, px: 0.75, gap: 0.75, border: 1, borderColor: 'surface.lineStrong', color: 'text.primary' }}
+          sx={{
+            height: 26,
+            px: 0.75,
+            gap: 0.75,
+            border: 1,
+            borderColor: 'surface.lineStrong',
+            color: 'text.primary'
+          }}
         >
           <Symbol name="first_page" size={15} />
           <TimeText seconds={startS} component="span" />
@@ -142,7 +181,14 @@ export function TransportBar({
         <Button
           title="Set end at playhead · O"
           onClick={onSetEndHere}
-          sx={{ height: 26, px: 0.75, gap: 0.75, border: 1, borderColor: 'surface.lineStrong', color: 'text.primary' }}
+          sx={{
+            height: 26,
+            px: 0.75,
+            gap: 0.75,
+            border: 1,
+            borderColor: 'surface.lineStrong',
+            color: 'text.primary'
+          }}
         >
           <TimeText seconds={endS} component="span" />
           <Symbol name="last_page" size={15} />

@@ -16,7 +16,11 @@ export interface TemplateSectionProps {
 }
 
 /** "From “…”" label + Save as template / Load template (design: `Template` section). */
-export function TemplateSection({ videoId, setup, applyTemplate }: TemplateSectionProps): React.JSX.Element {
+export function TemplateSection({
+  videoId,
+  setup,
+  applyTemplate
+}: TemplateSectionProps): React.JSX.Element {
   const [saveOpen, setSaveOpen] = useState(false)
   const [loadAnchor, setLoadAnchor] = useState<HTMLElement | null>(null)
 
@@ -27,7 +31,15 @@ export function TemplateSection({ videoId, setup, applyTemplate }: TemplateSecti
           Template
         </Typography>
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: 12, color: 'text.secondary' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontSize: 12,
+          color: 'text.secondary'
+        }}
+      >
         <Symbol name="bookmarks" size={16} />
         {setup.template ? `From “${setup.template.name}”` : 'No template applied'}
       </Box>

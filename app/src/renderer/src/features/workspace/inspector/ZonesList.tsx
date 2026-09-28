@@ -19,6 +19,7 @@ import type { Setup } from '../../../api/types'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
 import { describeShape } from '../lib/shapes'
+import { nextBulkToggle } from '../lib/zones'
 import { SelectedZonePanel } from './SelectedZonePanel'
 import { ZoneRow } from './ZoneRow'
 
@@ -59,6 +60,11 @@ export function ZonesList({
     void editor.commit({ ...setup, zones: nextZones }, label)
   }
 
+  // "Next" value to assign to every zone's `visible`/`locked` flag: off if any zone currently has
+  // it on, else on — see `nextBulkToggle`.
+  const nextVisible = nextBulkToggle(zones, 'visible')
+  const nextLocked = nextBulkToggle(zones, 'locked')
+
   const handleDragEnd = (event: DragEndEvent): void => {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -74,7 +80,16 @@ export function ZonesList({
 
       {showArena ? (
         <>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.75, pt: 1.75, pb: 0.75 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 1.75,
+              pt: 1.75,
+              pb: 0.75
+            }}
+          >
             <Typography variant="overline" sx={{ color: 'text.disabled' }}>
               Arena
             </Typography>
@@ -121,32 +136,69 @@ export function ZonesList({
         </>
       ) : null}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.75, pt: 1.75, pb: 0.75 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1.75,
+          pt: 1.75,
+          pb: 0.75
+        }}
+      >
         <Typography variant="overline" sx={{ color: 'text.disabled' }}>
           Zones · {zones.length}
         </Typography>
-        {onAddZone ? (
-          <ShortcutTooltip title="Add zone" shortcut="r">
-            <ButtonBase
-              onClick={onAddZone}
-              sx={{
-                height: 24,
-                pl: 0.5,
-                pr: 1,
-                borderRadius: '5px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.25,
-                fontSize: 12,
-                color: 'text.secondary',
-                '&:hover': { bgcolor: 'surface.hover', color: 'text.primary' }
-              }}
-            >
-              <Symbol name="add" size={16} />
-              Add
-            </ButtonBase>
-          </ShortcutTooltip>
-        ) : null}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+          <IconButton
+            title={nextVisible ? 'Show all zones' : 'Hide all zones'}
+            disabled={zones.length === 0}
+            onClick={() =>
+              commitZones(
+                zones.map((z) => ({ ...z, visible: nextVisible })),
+                nextVisible ? 'Show all zones' : 'Hide all zones'
+              )
+            }
+            sx={{ color: 'text.secondary', width: 24, height: 24 }}
+          >
+            <Symbol name={nextVisible ? 'visibility_off' : 'visibility'} size={16} />
+          </IconButton>
+          <IconButton
+            title={nextLocked ? 'Lock all zones' : 'Unlock all zones'}
+            disabled={zones.length === 0}
+            onClick={() =>
+              commitZones(
+                zones.map((z) => ({ ...z, locked: nextLocked })),
+                nextLocked ? 'Lock all zones' : 'Unlock all zones'
+              )
+            }
+            sx={{ color: 'text.secondary', width: 24, height: 24 }}
+          >
+            <Symbol name={nextLocked ? 'lock_open' : 'lock'} size={16} />
+          </IconButton>
+          {onAddZone ? (
+            <ShortcutTooltip title="Add zone" shortcut="r">
+              <ButtonBase
+                onClick={onAddZone}
+                sx={{
+                  height: 24,
+                  pl: 0.5,
+                  pr: 1,
+                  borderRadius: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.25,
+                  fontSize: 12,
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'surface.hover', color: 'text.primary' }
+                }}
+              >
+                <Symbol name="add" size={16} />
+                Add
+              </ButtonBase>
+            </ShortcutTooltip>
+          ) : null}
+        </Box>
       </Box>
 
       {zones.length === 0 ? (

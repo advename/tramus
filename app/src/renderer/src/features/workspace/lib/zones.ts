@@ -25,6 +25,15 @@ export function newZoneId(): string {
   return crypto.randomUUID().replaceAll('-', '').slice(0, 12)
 }
 
+/**
+ * Bulk toggle for a zone boolean flag (`visible` or `locked`), used by the Zones list header's
+ * hide-all/show-all and lock-all/unlock-all buttons: turn the flag off for every zone if any zone
+ * currently has it on, else turn it on for every zone. Returns the value to assign to all zones.
+ */
+export function nextBulkToggle(zones: readonly Zone[], key: 'visible' | 'locked'): boolean {
+  return !zones.some((zone) => zone[key])
+}
+
 /** Topmost zone (last in list) whose shape contains `p` and that isn't hidden. */
 export function findZoneAt(
   zones: readonly Zone[],

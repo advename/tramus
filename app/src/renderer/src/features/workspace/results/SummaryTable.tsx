@@ -20,7 +20,15 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
   const theme = useTheme()
 
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: '10px', overflow: 'hidden' }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: '10px',
+        overflow: 'hidden'
+      }}
+    >
       <Box
         sx={{
           display: 'grid',
@@ -66,14 +74,24 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
                 flexShrink: 0
               }}
             />
-            <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>
+            <Typography
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: 13
+              }}
+            >
               {row.name}
             </Typography>
           </Box>
           <Typography variant="mono" sx={{ textAlign: 'right', fontSize: 12.5 }}>
             {row.time_s.toFixed(3)} s
           </Typography>
-          <Typography variant="mono" sx={{ textAlign: 'right', fontSize: 12.5, color: 'text.secondary' }}>
+          <Typography
+            variant="mono"
+            sx={{ textAlign: 'right', fontSize: 12.5, color: 'text.secondary' }}
+          >
             {(row.share_of_trial * 100).toFixed(1)} %
           </Typography>
         </Box>
@@ -91,7 +109,10 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           Total
-          <Typography component="span" sx={{ fontWeight: 400, fontSize: 11.5, color: 'text.disabled' }}>
+          <Typography
+            component="span"
+            sx={{ fontWeight: 400, fontSize: 11.5, color: 'text.disabled' }}
+          >
             = trial length
           </Typography>
         </Box>

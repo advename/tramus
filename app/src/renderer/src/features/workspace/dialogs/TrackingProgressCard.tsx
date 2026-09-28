@@ -17,7 +17,10 @@ function mmss(seconds: number): string {
 }
 
 /** Tracking in progress (design: `showProgress`). */
-export function TrackingProgressCard({ job, onCancel }: TrackingProgressCardProps): React.JSX.Element {
+export function TrackingProgressCard({
+  job,
+  onCancel
+}: TrackingProgressCardProps): React.JSX.Element {
   const percent = Math.round(job.progress * 100)
 
   return (
@@ -70,7 +73,9 @@ export function TrackingProgressCard({ job, onCancel }: TrackingProgressCardProp
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.25 }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.25 }}
+      >
         <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>
           You can look at the setup, not edit it.
         </Typography>

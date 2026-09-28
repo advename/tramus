@@ -1,12 +1,13 @@
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
 import { Symbol } from '../../../components/Symbol'
 import { TimeText } from '../../../components/TimeText'
 import type { FlagView } from '../../../api/types'
-import { flagReasonLabel } from '../lib/flags'
+import { flagReasonLabel, FLAG_STATUS_LABEL, statusChipSx } from '../lib/flags'
 
 export interface FlagBannerProps {
   flag: FlagView
@@ -15,11 +16,13 @@ export interface FlagBannerProps {
   timeS: number
   onAccept: () => void
   onSetPosition: () => void
+  onReopen: () => void
 }
 
 /**
- * The banner shown over the stage when the playhead is inside an unresolved flag (Review only).
- * "Accept" records it was fine; "Set position" switches to the position tool.
+ * The banner shown over the stage when the playhead is inside any flag (Review only) — fixed and
+ * accepted flags stay revisitable, not just unresolved ones. Actions depend on status: unresolved
+ * offers Accept/Set position, fixed/accepted offer Set position again/Reopen.
  */
 export function FlagBanner({
   flag,
@@ -27,8 +30,11 @@ export function FlagBanner({
   total,
   timeS,
   onAccept,
-  onSetPosition
+  onSetPosition,
+  onReopen
 }: FlagBannerProps): React.JSX.Element {
+  const chipSx = statusChipSx(flag.status)
+
   return (
     <Box
       sx={{
@@ -44,30 +50,67 @@ export function FlagBanner({
         pl: 1.5,
         bgcolor: 'background.paper',
         border: 1,
-        borderColor: (theme) => alpha(theme.palette.warning.main, 0.55),
+        borderColor: (theme) =>
+          alpha(
+            flag.status === 'unresolved' ? theme.palette.warning.main : theme.palette.divider,
+            0.55
+          ),
         borderRadius: 2.25,
         boxShadow: 8,
         whiteSpace: 'nowrap',
         maxWidth: 'calc(100% - 90px)'
       }}
     >
-      <Box sx={{ width: 9, height: 9, transform: 'rotate(45deg)', bgcolor: 'warning.main', flex: 'none' }} />
+      <Box
+        sx={{
+          width: 9,
+          height: 9,
+          transform: 'rotate(45deg)',
+          bgcolor: flag.status === 'unresolved' ? 'warning.main' : 'text.disabled',
+          flex: 'none'
+        }}
+      />
       <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {flagReasonLabel(flag.reason)} · {flag.detail}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <Typography sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {flagReasonLabel(flag.reason)} · {flag.detail}
+          </Typography>
+          <Chip
+            size="small"
+            label={FLAG_STATUS_LABEL[flag.status]}
+            sx={{
+              bgcolor: chipSx.bgcolor,
+              color: chipSx.color,
+              fontWeight: 500,
+              height: 18,
+              fontSize: 10.5
+            }}
+          />
+        </Box>
         <Typography variant="mono" sx={{ fontSize: 11, color: 'text.disabled' }}>
           Flag {index + 1} of {total} · <TimeText seconds={timeS} />
         </Typography>
       </Box>
-      <Button
-        title="Accept — tracking was fine · A"
-        onClick={onAccept}
-        startIcon={<Symbol name="check" size={16} />}
-        sx={{ height: 28, px: 1.25, border: 1, borderColor: 'surface.lineStrong' }}
-      >
-        Accept
-      </Button>
+
+      {flag.status === 'unresolved' ? (
+        <Button
+          title="Accept — tracking was fine · A"
+          onClick={onAccept}
+          startIcon={<Symbol name="check" size={16} />}
+          sx={{ height: 28, px: 1.25, border: 1, borderColor: 'surface.lineStrong' }}
+        >
+          Accept
+        </Button>
+      ) : (
+        <Button
+          title="Reopen — remove this flag's corrections"
+          onClick={onReopen}
+          startIcon={<Symbol name="restart_alt" size={16} />}
+          sx={{ height: 28, px: 1.25, border: 1, borderColor: 'surface.lineStrong' }}
+        >
+          Reopen
+        </Button>
+      )}
       <Button
         title="Set position · P — then click the mouse"
         onClick={onSetPosition}
@@ -75,7 +118,7 @@ export function FlagBanner({
         startIcon={<Symbol name="my_location" size={16} />}
         sx={{ height: 28, px: 1.25, fontWeight: 600 }}
       >
-        Set position
+        {flag.status === 'fixed' ? 'Set position again' : 'Set position'}
       </Button>
     </Box>
   )

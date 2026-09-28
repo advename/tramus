@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Checkbox from '@mui/material/Checkbox'
 import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
@@ -64,17 +65,31 @@ export function OverlayToggles({
           <Button
             key={item.key}
             title={item.title}
+            aria-pressed={on}
             onClick={() => onToggle(item.key)}
             sx={{
               height: 28,
-              px: 1.125,
-              gap: 0.75,
+              px: 0.75,
+              gap: 0.5,
               whiteSpace: 'nowrap',
               bgcolor: on ? 'surface.raised' : 'transparent',
               color: on ? 'text.primary' : 'text.disabled',
               fontWeight: 500
             }}
           >
+            <Checkbox
+              checked={on}
+              size="small"
+              disableRipple
+              tabIndex={-1}
+              inputProps={{ 'aria-hidden': true, tabIndex: -1 }}
+              sx={{
+                p: 0,
+                pointerEvents: 'none',
+                color: 'text.disabled',
+                '&.Mui-checked': { color: 'primary.main' }
+              }}
+            />
             <Box
               sx={{
                 width: 8,
@@ -89,7 +104,10 @@ export function OverlayToggles({
         )
       })}
       <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: '5px' }} />
-      <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.75, whiteSpace: 'nowrap' }}>
+      <Box
+        component="label"
+        sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.75, whiteSpace: 'nowrap' }}
+      >
         <Typography variant="caption" color="text.secondary">
           Trail
         </Typography>

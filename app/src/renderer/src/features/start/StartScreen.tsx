@@ -134,11 +134,7 @@ export function StartScreen(): React.JSX.Element {
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography
-            variant="overline"
-            color="text.disabled"
-            sx={{ px: 1.25, pb: 0.75 }}
-          >
+          <Typography variant="overline" color="text.disabled" sx={{ px: 1.25, pb: 0.75 }}>
             Recent folders
           </Typography>
           {isLoading ? (
@@ -185,7 +181,12 @@ function RecentFolderRow({ folder }: RecentFolderRowProps): React.JSX.Element {
         <Typography
           variant="mono"
           color="text.disabled"
-          sx={{ fontSize: 11.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          sx={{
+            fontSize: 11.5,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
         >
           {folder.path}
         </Typography>

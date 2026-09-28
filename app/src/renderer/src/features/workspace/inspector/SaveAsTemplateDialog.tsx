@@ -16,7 +16,11 @@ export interface SaveAsTemplateDialogProps {
 }
 
 /** "Save as template…" — asks for a name, then saves the open session's setup as a template. */
-export function SaveAsTemplateDialog({ open, videoId, onClose }: SaveAsTemplateDialogProps): React.JSX.Element {
+export function SaveAsTemplateDialog({
+  open,
+  videoId,
+  onClose
+}: SaveAsTemplateDialogProps): React.JSX.Element {
   const [name, setName] = useState('')
   const createTemplate = useCreateTemplate()
 

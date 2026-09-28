@@ -1,9 +1,10 @@
 import Box from '@mui/material/Box'
 import ButtonBase from '@mui/material/ButtonBase'
 import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
-import { alpha, type Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 
 import type { FlagView } from '../../../api/types'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
@@ -15,7 +16,8 @@ import {
   flagReasonLabel,
   FLAG_STATUS_LABEL,
   MANY_FLAGS_THRESHOLD,
-  nextFlag
+  nextFlag,
+  statusChipSx
 } from '../lib/flags'
 import type { FlagFilter } from '../state/workspaceStore'
 
@@ -27,6 +29,7 @@ export interface FlagsPanelProps {
   selectedFlagId: string | null
   currentFrame: number
   onGoToFlag: (flag: FlagView) => void
+  onReopenFlag: (flag: FlagView) => void
   onAdjustDetection: () => void
 }
 
@@ -38,20 +41,6 @@ const FILTER_LABEL: Record<FlagFilter, string> = {
   accepted: 'Accepted'
 }
 
-function statusChipSx(status: FlagView['status']): {
-  bgcolor: string | ((t: Theme) => string)
-  color: string
-} {
-  switch (status) {
-    case 'unresolved':
-      return { bgcolor: (t: Theme) => alpha(t.palette.warning.main, 0.15), color: 'warning.main' }
-    case 'fixed':
-      return { bgcolor: (t: Theme) => alpha(t.palette.success.main, 0.16), color: 'success.main' }
-    case 'accepted':
-      return { bgcolor: 'surface.raised', color: 'text.secondary' }
-  }
-}
-
 /** Review › Flags tab (design: `showFlags`, `flagChips`, `flagRows`). */
 export function FlagsPanel({
   flags,
@@ -61,6 +50,7 @@ export function FlagsPanel({
   selectedFlagId,
   currentFrame,
   onGoToFlag,
+  onReopenFlag,
   onAdjustDetection
 }: FlagsPanelProps): React.JSX.Element {
   const counts = countByStatus(flags)
@@ -69,7 +59,9 @@ export function FlagsPanel({
 
   return (
     <Box>
-      <Box sx={{ px: 1.75, pt: 1.5, pb: 1.25, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+      <Box
+        sx={{ px: 1.75, pt: 1.5, pb: 1.25, display: 'flex', flexDirection: 'column', gap: 1.25 }}
+      >
         {isMany ? (
           <Box
             sx={{
@@ -83,7 +75,9 @@ export function FlagsPanel({
           >
             <Symbol name="warning" size={17} sx={{ color: 'warning.main', flexShrink: 0 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              <span>This many flags usually means the detection settings don’t suit this video.</span>
+              <span>
+                This many flags usually means the detection settings don’t suit this video.
+              </span>
               <Link
                 component="button"
                 onClick={onAdjustDetection}
@@ -159,7 +153,11 @@ export function FlagsPanel({
               }}
             >
               {FILTER_LABEL[f]}
-              <Typography variant="mono" component="span" sx={{ fontSize: 11, color: 'text.disabled' }}>
+              <Typography
+                variant="mono"
+                component="span"
+                sx={{ fontSize: 11, color: 'text.disabled' }}
+              >
                 {counts[f]}
               </Typography>
             </ButtonBase>
@@ -206,7 +204,8 @@ export function FlagsPanel({
                 px: 1.75,
                 cursor: 'pointer',
                 bgcolor: current ? (t) => alpha(t.palette.primary.main, 0.13) : 'transparent',
-                '&:hover': { bgcolor: 'surface.hover' }
+                '&:hover': { bgcolor: 'surface.hover' },
+                '&:hover .flag-reopen': { opacity: 1 }
               }}
             >
               <Box
@@ -228,7 +227,12 @@ export function FlagsPanel({
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, minWidth: 0 }}>
                 <Typography
-                  sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontSize: 13
+                  }}
                 >
                   {flagReasonLabel(flag.reason)}
                 </Typography>
@@ -244,11 +248,33 @@ export function FlagsPanel({
                   {flag.detail}
                 </Typography>
               </Box>
-              <Chip
-                size="small"
-                label={FLAG_STATUS_LABEL[flag.status]}
-                sx={{ bgcolor: chipSx.bgcolor, color: chipSx.color, fontWeight: 500, height: 20 }}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.375 }}>
+                {flag.status !== 'unresolved' ? (
+                  <IconButton
+                    className="flag-reopen"
+                    title="Reopen flag"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onReopenFlag(flag)
+                    }}
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      color: 'text.disabled',
+                      opacity: 0,
+                      transition: 'opacity 0.1s',
+                      '&:hover': { color: 'text.primary' }
+                    }}
+                  >
+                    <Symbol name="restart_alt" size={15} />
+                  </IconButton>
+                ) : null}
+                <Chip
+                  size="small"
+                  label={FLAG_STATUS_LABEL[flag.status]}
+                  sx={{ bgcolor: chipSx.bgcolor, color: chipSx.color, fontWeight: 500, height: 20 }}
+                />
+              </Box>
             </Box>
           )
         })

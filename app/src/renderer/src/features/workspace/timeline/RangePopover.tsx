@@ -18,7 +18,14 @@ export interface RangePopoverProps {
  * The small toolbar shown under a Shift-dragged Review range: "Fill in between (F)" and
  * "Mouse not visible (N)" — see `docs/architecture.md` §5.3 (`interpolate` / `mark_hidden`).
  */
-export function RangePopover({ left, rangeText, editable, onFill, onHide, onClear }: RangePopoverProps): React.JSX.Element {
+export function RangePopover({
+  left,
+  rangeText,
+  editable,
+  onFill,
+  onHide,
+  onClear
+}: RangePopoverProps): React.JSX.Element {
   return (
     <Box
       data-no-drag
@@ -53,10 +60,19 @@ export function RangePopover({ left, rangeText, editable, onFill, onHide, onClea
       >
         Fill in between
       </Button>
-      <Button title="Mouse not visible · N" onClick={onHide} disabled={!editable} sx={{ height: 22, px: 0.875, fontSize: 11.5 }}>
+      <Button
+        title="Mouse not visible · N"
+        onClick={onHide}
+        disabled={!editable}
+        sx={{ height: 22, px: 0.875, fontSize: 11.5 }}
+      >
         Mouse not visible
       </Button>
-      <IconButton title="Clear selection · Esc" onClick={onClear} sx={{ width: 22, height: 22, color: 'text.secondary' }}>
+      <IconButton
+        title="Clear selection · Esc"
+        onClick={onClear}
+        sx={{ width: 22, height: 22, color: 'text.secondary' }}
+      >
         <Symbol name="close" size={15} />
       </IconButton>
     </Box>

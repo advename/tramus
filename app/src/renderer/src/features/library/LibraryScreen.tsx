@@ -52,7 +52,10 @@ export function LibraryScreen(): React.JSX.Element {
   useShortcut('mod+f', () => searchInputRef.current?.focus())
   useShortcut('mod+shift+1', () => changeViewMode('table'))
   useShortcut('mod+shift+2', () => changeViewMode('grid'))
-  useShortcut('esc', () => setSelectedIds([]), { enabled: selectedIds.length > 0, preventDefault: false })
+  useShortcut('esc', () => setSelectedIds([]), {
+    enabled: selectedIds.length > 0,
+    preventDefault: false
+  })
   useShortcut('mod+o', () => void openFolderDialog((href) => void navigate(href)))
   useShortcut(
     'mod+t',
@@ -103,7 +106,10 @@ export function LibraryScreen(): React.JSX.Element {
           notify({
             severity: 'success',
             title: 'Export complete',
-            action: { label: 'Show in folder', onClick: () => void window.tramus.shell.showItemInFolder(path) }
+            action: {
+              label: 'Show in folder',
+              onClick: () => void window.tramus.shell.showItemInFolder(path)
+            }
           })
         },
         onError: (err) => notifyError('Export failed', err)
@@ -232,7 +238,11 @@ export function LibraryScreen(): React.JSX.Element {
         }}
       />
 
-      <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
+      <Menu
+        anchorEl={exportAnchor}
+        open={exportAnchor !== null}
+        onClose={() => setExportAnchor(null)}
+      >
         <MenuItem onClick={() => void handleExport('xlsx')}>Export as Excel (.xlsx)</MenuItem>
         <MenuItem onClick={() => void handleExport('csv')}>Export as CSV</MenuItem>
       </Menu>

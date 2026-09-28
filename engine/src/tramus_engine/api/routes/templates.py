@@ -50,6 +50,7 @@ def build_router(services: Services) -> APIRouter:
             detection=setup.detection,
             analysis=setup.analysis,
             trial_duration_s=trial_duration_s,
+            calibration=setup.calibration,
         )
         return services.templates.save(template)
 

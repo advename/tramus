@@ -58,9 +58,14 @@ export function StepTabs({ step, disabledAfterSetup, onSelect }: StepTabsProps):
                 fontWeight: 500
               },
               active
-                ? { bgcolor: 'surface.raised', boxShadow: (t) => `0 0 0 1px ${t.palette.surface.lineStrong}` }
+                ? {
+                    bgcolor: 'surface.raised',
+                    boxShadow: (t) => `0 0 0 1px ${t.palette.surface.lineStrong}`
+                  }
                 : {},
-              disabled ? { color: 'text.disabled' } : { color: active ? 'text.primary' : 'text.secondary' }
+              disabled
+                ? { color: 'text.disabled' }
+                : { color: active ? 'text.primary' : 'text.secondary' }
             ]}
           >
             <Box
@@ -78,7 +83,11 @@ export function StepTabs({ step, disabledAfterSetup, onSelect }: StepTabsProps):
                   border: '1px solid'
                 },
                 active
-                  ? { bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' }
+                  ? {
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
+                      borderColor: 'primary.main'
+                    }
                   : done
                     ? (t) => ({
                         bgcolor: alpha(t.palette.primary.main, 0.13),

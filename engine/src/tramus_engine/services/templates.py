@@ -5,7 +5,7 @@ Pure geometry — no dependency on the engine core packages.
 
 from __future__ import annotations
 
-from ..domain import Setup, Shape, Template, TemplateRef, TrialWindow
+from ..domain import Calibration, Setup, Shape, Template, TemplateRef, TrialWindow
 from ..domain.shapes import EllipseShape, PolygonShape, RectShape
 
 
@@ -28,6 +28,11 @@ def setup_from_template(
         for zone in template.zones
     ]
     trial_window = TrialWindow(start_s=trial[0], end_s=trial[1]) if trial else None
+    calibration = (
+        _scale_calibration(template.calibration, scale_x, scale_y, dx, dy)
+        if template.calibration
+        else None
+    )
 
     return Setup(
         arena=arena,
@@ -37,6 +42,7 @@ def setup_from_template(
         analysis=template.analysis,
         trial=trial_window,
         template=TemplateRef(id=template.id, name=template.name),
+        calibration=calibration,
     )
 
 
@@ -55,3 +61,17 @@ def _scale_shape(shape: Shape, sx: float, sy: float, dx: float, dy: float) -> Sh
     if isinstance(shape, PolygonShape):
         return PolygonShape(points=[(px * sx + dx, py * sy + dy) for px, py in shape.points])
     raise TypeError(f"unknown shape kind: {type(shape)!r}")
+
+
+def _scale_calibration(
+    calibration: Calibration, sx: float, sy: float, dx: float, dy: float
+) -> Calibration:
+    """Scales the reference line's endpoints like the shapes; `length_mm` is unchanged (it's a
+    real-world measurement, not a video-px quantity)."""
+    return Calibration(
+        x1=calibration.x1 * sx + dx,
+        y1=calibration.y1 * sy + dy,
+        x2=calibration.x2 * sx + dx,
+        y2=calibration.y2 * sy + dy,
+        length_mm=calibration.length_mm,
+    )
