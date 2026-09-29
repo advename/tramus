@@ -29,7 +29,9 @@ changing a boundary (domain models, module interfaces, API, sidecar format).
 * Handshake: Electron starts `tramus-engine serve --port 0 --token <random>`. The engine prints
   one JSON line to stdout: `{"event": "ready", "port": 53124}`. Every request carries the token
   (`X-Tramus-Token` header, or `?token=` for `<img src>` / WebSocket URLs). The engine exits
-  when its stdin closes (Electron died) so no orphan processes are left behind.
+  when its stdin closes (app quit or Electron died), terminating its tracking workers first.
+  Workers and the job manager's helper process also exit on their own when the engine process
+  disappears (even after a hard kill), so no orphan processes are left behind.
 
 ## 2. Repository layout
 
@@ -89,7 +91,7 @@ The Pydantic models are the single source of truth. Key ones:
 | `Flag` | suspicious frame range found after tracking (`not_found`, `sudden_jump`, `unusual_size`) |
 | `Correction` | `set_position`, `mark_hidden`, `interpolate`, `accept_flag` — applied in list order on top of the raw track |
 | `AnalysisDocument` | the sidecar: video info, setup, raw track, flags, corrections, setup changes, results snapshot |
-| `Results` | summary rows (per zone + "No zone" + "Not visible"), zone visits, zone crossings (rule counts/events) and the crossing matrix |
+| `Results` | summary rows (per zone + "No zone" + "Not visible"), zone visits, zone crossings (rule counts/events), the crossing matrix and total distance travelled |
 | `Template`, `AppSettings`, `Job` | templates, preferences, background work |
 
 The raw track is never modified; corrections are an ordered, timestamped log. That keeps every
@@ -116,6 +118,13 @@ already round-trip it. Crossing rules reference zones by id, so id stability acr
 round trip matters — `setup_from_template` copies each template zone's `id` unchanged (only the
 `shape` is scaled), and template creation copies `setup.zones` (with their ids) verbatim — so a
 rule saved against one video's zones still matches after the template is applied to another.
+
+`Results.distance_mm` (`float | None`, additive) is the total distance the body centre travelled
+over the analysed time (§5.5), in mm; `None` without `Setup.calibration` (`analysis/distance.py`,
+§5.5). `AppSettings.export_layout` and `ExportRequest.layout` (both `ExportLayout`, `"wide" |
+"long"`, default `"wide"`) select the export shape (§9); `AppSettings.export_layout` only seeds
+the export dialog's default in the UI, since `ExportRequest.layout` always carries its own
+explicit value.
 
 ## 5. Algorithms
 
@@ -213,6 +222,16 @@ frame range overlaps the flag's range; else `unresolved`.
   analysed frame. `enter_utc`/`exit_utc` = `recorded_at + seconds` when `recorded_at` is known.
 * Flags entirely inside excluded time are hidden the same way flags outside the trial are:
   from the flag list (`GET .../session/flags`), `unresolved_flag_count` and `video_status`.
+* **Distance travelled** (`analysis/distance.py`, `Results.distance_mm`): the body centre's path
+  length over the analysed intervals (never bridged across an exclusion or a trial edge), from
+  the effective track, converted to mm via `Setup.calibration.mm_per_px`; `None` without a
+  calibration. Within one interval, the centre is first smoothed with a centred moving average
+  (`SMOOTH_WINDOW_FRAMES = 5`, shrinking near the edges) over each continuous visible run, to
+  remove single-frame detection jitter without smearing real locomotion (5 frames ≈ 160–200 ms
+  at the sample videos' ~25 fps). Not-visible frames strictly between two visible frames of the
+  same interval are bridged with a straight line; steps below `NOISE_FLOOR_PX = 0.5` px (after
+  smoothing) are dropped rather than summed, so a stationary-but-jittery mouse totals ≈ 0.
+  `compute_distance_mm` returns raw mm; exports show it in cm (`mm / 10`) and the app in m.
 
 ### 5.6 History (`analysis/history.py`)
 
@@ -348,6 +367,13 @@ unresolved flags → `tracked`; no unresolved flags → `reviewed`; `exported_at
   written atomically (temp file + `os.replace`), pretty-printed (indent 2). On load, a
   fingerprint mismatch marks the session `file_changed` (UI shows the amber warning).
 * Templates: `<user config dir>/templates/<id>.json`. Settings: `<user config dir>/settings.json`.
+  Batches: `<user config dir>/batches/<id>.json` — a `BatchRecord {id, created_at, template_id,
+  template_name, folder, items: [{video_id, video_path, file_name, trial, offset_x, offset_y}]}`,
+  written the same way. It's the *input* to a batch run, not its live status: job progress stays
+  in-memory only (`services.jobs.JobManager`), so after a restart each item's status is derived
+  fresh from its sidecar (`services.batch.summarize_batch`) plus any job still running for that
+  video. A batch file that fails to parse is skipped (logged warning) rather than breaking the
+  list, and reported back as `{id, error}` so the UI can offer to delete it.
   User config dir = `platformdirs.user_config_dir("Tramus")`; overridable with `TRAMUS_CONFIG_DIR`
   (tests use a temp dir).
 
@@ -378,10 +404,13 @@ unresolved flags → `tracked`; no unresolved flags → `reviewed`; `exported_at
 | `POST /videos/{id}/session/track` | start tracking with the session setup → `Job` |
 | `GET /jobs` · `GET /jobs/{id}` · `POST /jobs/{id}/cancel` | `Job` |
 | `POST /batches/check` | `{template_id, video_ids}` → `BatchCheckItem[] {video_id, file_name, duration_s, width, height, scale_x, scale_y, suggested_trial, warnings[]}` |
-| `POST /batches` | `{template_id, items: [{video_id, trial, offset_x, offset_y}]}` → `{id, jobs: Job[]}` |
+| `POST /batches` | `{template_id, items: [{video_id, trial, offset_x, offset_y}]}` → `{id, jobs: Job[]}` — also saves a `BatchRecord` |
+| `GET /batches` | → `{batches: BatchView[], broken: {id, error}[]}`, newest first; each item has its live `status`/`unresolved_flags` (from its sidecar) and `job` (if one is running) |
+| `GET /batches/{id}` | → `BatchView` (404 if unknown) |
+| `DELETE /batches/{id}` | reset: deletes the saved record only (never sidecars/videos) → 204, or 404 |
 | `GET /templates` · `POST /templates` · `GET/PUT/DELETE /templates/{id}` | `Template`; create body `{name, video_id}` (from that session's setup) |
 | `POST /templates/{id}/apply` | `{video_ids}` → `VideoSummary[]` (writes sidecars) |
-| `POST /export` | `{video_ids, format: "xlsx"|"csv", path}` → `{files: string[]}` |
+| `POST /export` | `{video_ids, format: "xlsx"|"csv", path, layout: "wide"|"long" = "wide"}` → `{files: string[]}` |
 | `WS /events` | server → client: `{"type": "job", "job": Job}`, `{"type": "session", "video_id", "state": SessionState}` |
 
 `SessionState` = `{video: VideoSummary, document: AnalysisDocument without track arrays
@@ -393,26 +422,50 @@ tracking already running), 500. `detail` is written for the end user.
 
 ## 9. Export
 
+`ExportLayout` (`domain/settings.py`) picks the shape of the three *per-video aggregate* tables —
+Summary, crossing rule counts and the crossing matrix. Visits, crossing events and Track are event
+lists, not per-video aggregates, and are **always long** in both layouts. `export/tables.py`
+builds each table's rows once, in the long shape, from `Results`/`AnalysisDocument`; the `*_wide`
+builders pivot those same long rows rather than recomputing anything, so `xlsx.py`/`csv.py` only
+choose which builder to call. Wide columns are aligned across videos **by name** (zone name, rule
+label, or ordered zone-name pair), in first-seen order; a video missing a given zone/rule/pair
+gets an empty cell for that column rather than being dropped or misaligned.
+
+* **Long** (`ExportLayout.LONG`, the original shape): one row per video and zone (Summary), per
+  video and rule (crossing counts), or a from×to grid per video (crossing matrix).
+* **Wide** (`ExportLayout.WIDE`, the default): one row per video. Summary's zone columns become
+  `"<zone> – Time (s)"` / `"<zone> – Share of analysed (%)"` pairs (zones, then "No zone", then
+  "Not visible"); crossing counts become one `"<from> → <to> – Crossings"` column per distinct
+  rule label ("Any zone" spelled out for `None`); the crossing matrix becomes one `"<from> →
+  <to>"` column per ordered zone-name pair (including the diagonal).
+
 `.xlsx` (XlsxWriter) — one workbook for one or many videos:
-* **Summary**: video, zone, time (s), share of analysed (%), trial start/end, analysed duration
-  (s), excluded duration (s), threshold.
+* **Export info**: one row stating the chosen layout, so it's obvious without counting columns.
+* **Summary** (`"Summary (wide)"` / `"Summary (long)"`): video, [zone / per-zone columns], trial
+  start/end, analysed duration (s), excluded duration (s), threshold, and (wide layout: at the
+  end) **Distance travelled (cm)** — empty without a calibration.
 * **Visits**: video, #, zone, entered/left (video time s), entered/left (UTC ISO) and (local,
-  Excel datetime), duration (s).
+  Excel datetime), duration (s). Always long.
 * **Track**: per video, frame, t, x, y, status, zones (one 0/1 column per zone; membership
-  already accounts for exclusions, §5.4).
-* **Crossings**: one row per video × rule — from, to (the rule's own labels, "Any zone" for
-  `None`) and count — followed by a table of every crossing event (video, rule, from, to
-  (concrete zones for that event), time (s), time (UTC), time (local)).
-* **Crossing matrix**: one from×to grid per video, zone names as row/column headers, in setup
-  zone order (including the diagonal).
+  already accounts for exclusions, §5.4). Always long.
+* **Crossings** (`"Crossings (wide)"` / `"Crossings (long)"`): the rule-count block (pivoted in
+  wide layout), then the always-long crossing-event table (video, rule, from, to (concrete zones
+  for that event), time (s), time (UTC), time (local)).
+* **Crossing matrix** (`"Crossing matrix (wide)"` / `"Crossing matrix (long)"`): one row per
+  video with one column per ordered zone-name pair (wide), or one from×to grid per video, zone
+  names as row/column headers in setup order (long) — both include the diagonal.
 * **Settings**: app version, tracker + parameters, setup (zones as text, sizes in mm when
   calibrated), exclusions (time range, duration, note), crossing rules (zone names or "Any
   zone"), recording time, fingerprint, tracked at, reference length (mm), mm per px, corrections
-  log.
+  log. Always one row per video, independent of layout.
 
-`.csv`: `<name>_summary.csv`, `<name>_visits.csv` and `<name>_crossings.csv` (per-rule counts,
-the from×to matrix, then events, as three blocks separated by a blank line) — UTF-8 with BOM,
-comma separated. Exporting sets `exported_at` on the document and saves it.
+`.csv`, UTF-8 with BOM, comma separated: `<name>_visits.csv` is unchanged by layout. Long layout
+writes `<name>_summary.csv` and `<name>_crossings.csv` (per-rule counts, the from×to matrix, then
+events, as three blocks separated by a blank line) — the original, backward-compatible names.
+Wide layout writes `<name>_summary_wide.csv` and `<name>_crossings_wide.csv` instead (pivoted
+rule-count and matrix blocks, then the always-long events block) — the `_wide` suffix is what
+makes the layout obvious from the file list. Exporting sets `exported_at` on the document and
+saves it, regardless of layout.
 
 ## 10. Frontend (app/)
 
@@ -429,10 +482,35 @@ comma separated. Exporting sets `exported_at` on the document and saves it.
 * **Video stage**: frames come from `GET /frames/{index}` (JPEG) drawn on a `<canvas>`;
   overlays (arena, zones, handles, trail, heatmap, body outline) are an SVG layer in video
   pixel coordinates (`viewBox="0 0 W H"`). The browser `<video>` element is not used.
-* **Playback**: a `requestAnimationFrame` clock advances video time by `dt × speed`, maps it
-  to a frame index via binary search in `frame-times`, and requests that frame if it isn't
-  already displayed or in flight (frames are dropped when decoding can't keep up).
+* **Playback** (`features/workspace/playback/`):
+  * *Clock*: a `requestAnimationFrame` loop keeps a continuous playback time (advanced by
+    `dt × speed`) and maps it to a frame via binary search in `frame-times`. It never re-derives
+    time from the current frame, or sub-frame progress is lost and 1× playback stalls.
+  * *Frames while playing*: a prefetch pipeline predicts the frames the clock will need on a
+    fixed grid (stride = ⌈fps × speed / 60⌉, about 0.6 s ahead) and keeps up to 4 requests in
+    flight at JPEG quality 70. Decoded frames go into a small LRU cache, and the newest cached
+    frame at or before the clock is drawn. Measured on the samples: every frame at 1×, every
+    2nd frame at 4×.
+  * *Frames when paused or scrubbing*: exactly `currentFrame`, at full quality, single-flight
+    and latest-wins.
+  * *Tracker view*: previews follow playback single-flight and latest-wins (one
+    `/detection-preview` in flight, then the newest frame).
+* **Frontend rules learned the hard way**:
+  * Never close an `ImageBitmap` until React has committed its replacement. Drawing a closed
+    ("detached") bitmap throws and takes the page down.
+  * TanStack Query `select` functions must have a stable identity (module-level). An inline
+    `select` rebuilds typed arrays on every render and restarts effects that depend on them.
+  * Never abort an in-flight frame request just because a newer frame is wanted. Show it,
+    then fetch the newest.
+  * The preload is built as CommonJS (`out/preload/index.cjs`): sandboxed preloads can't be ES
+    modules.
+  * Pointer maths: shapes live in video pixels. Handles and labels keep a constant screen size
+    via the `px` (= 1 / stage scale) factor, and timeline positions go through
+    `lib/timelineScale.ts` (it has a 14 px gutter at each end).
 * **Folders**:
-  `renderer/src/{app (shell, routes, providers), theme, api (client, generated schema, query
-  hooks, events), components (shared UI), features/<feature> (library, workspace, batch,
-  templates, settings), hooks, lib (time/format, shortcuts), stores}`.
+  `renderer/src/{app (shell, routes, providers), theme, api (client, generated schema,
+  `types.ts` aliases, shared `queries/`, events), components (shared UI), features/<feature>
+  (start, library, templates, batch, settings, workspace), lib (time/format, shortcuts),
+  stores (app-wide, e.g. notifications)}`. See `app/README.md` for the workspace breakdown.
+* **Tests**: Vitest covers pure helpers (`npm test`). `app/scripts/ui-smoke.mjs` drives the
+  real app (hidden window, over CDP) for screenshots and playback frame-rate measurements.

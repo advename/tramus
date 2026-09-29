@@ -5,9 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from tests.app.conftest import make_document
-from tramus_engine.domain import AppSettings, ProcessingDevice, Template, ThemePreference, utc_now
+from tramus_engine.domain import (
+    AppSettings,
+    BatchItemRecord,
+    BatchRecord,
+    ProcessingDevice,
+    Template,
+    ThemePreference,
+    utc_now,
+)
 from tramus_engine.storage import paths as storage_paths
-from tramus_engine.storage.paths import settings_path, sidecar_path, templates_dir
+from tramus_engine.storage.batches import BatchStore
+from tramus_engine.storage.paths import batches_dir, settings_path, sidecar_path, templates_dir
 from tramus_engine.storage.settings import SettingsStore
 from tramus_engine.storage.sidecar import atomic_write_text, load_sidecar, save_sidecar
 from tramus_engine.storage.templates import TemplateStore
@@ -142,3 +151,64 @@ def test_template_store_lists_newest_first(config_dir: Path) -> None:
 
 def test_templates_dir_is_under_config_dir(config_dir: Path) -> None:
     assert templates_dir().parent == config_dir
+
+
+def _batch_record(batch_id: str = "batch-1", created_at=None) -> BatchRecord:
+    return BatchRecord(
+        id=batch_id,
+        created_at=created_at or utc_now(),
+        template_id="tpl-1",
+        template_name="Three-chamber",
+        folder="/videos",
+        items=[
+            BatchItemRecord(
+                video_id="vid1",
+                video_path="/videos/mouse.mp4",
+                file_name="mouse.mp4",
+                trial=(0.0, 10.0),
+                offset_x=1.5,
+                offset_y=-2.0,
+            )
+        ],
+    )
+
+
+def test_batch_store_round_trip(config_dir: Path) -> None:
+    store = BatchStore()
+    record = _batch_record()
+    store.save(record)
+
+    assert store.get("batch-1") == record
+    assert store.get("missing") is None
+
+    assert store.delete("batch-1") is True
+    assert store.get("batch-1") is None
+    assert store.delete("batch-1") is False
+
+
+def test_batch_store_lists_newest_created_first(config_dir: Path) -> None:
+    store = BatchStore()
+    older = _batch_record("old", created_at=utc_now())
+    store.save(older)
+    newer = _batch_record("new", created_at=utc_now())
+    store.save(newer)
+
+    records, broken = store.list_all()
+    assert [r.id for r in records] == ["new", "old"]
+    assert broken == []
+
+
+def test_batch_store_skips_corrupt_file_and_reports_it(config_dir: Path) -> None:
+    store = BatchStore()
+    store.save(_batch_record("good"))
+    (batches_dir() / "corrupt.json").write_text("{not valid json", encoding="utf-8")
+
+    records, broken = store.list_all()
+    assert [r.id for r in records] == ["good"]
+    assert len(broken) == 1
+    assert broken[0].id == "corrupt"
+    assert broken[0].error  # some parser message, not asserting the exact text
+
+
+def test_batches_dir_is_under_config_dir(config_dir: Path) -> None:
+    assert batches_dir().parent == config_dir

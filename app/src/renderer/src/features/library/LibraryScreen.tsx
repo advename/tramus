@@ -2,18 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router'
 
-import { useExportVideos, useLibrary } from '../../api/queries'
+import { useLibrary } from '../../api/queries'
 import { queryKeys } from '../../api/queryKeys'
 import type { VideoSummary } from '../../api/types'
 import { EmptyState } from '../../components/EmptyState'
+import { ExportDialog, useExportDialog } from '../export'
 import { useShortcut } from '../../lib/shortcuts'
 import { useCurrentFolderStore } from '../../stores/currentFolder'
-import { notify, notifyError } from '../../stores/notifications'
+import { notify } from '../../stores/notifications'
 import { ApplyTemplateDialog } from './ApplyTemplateDialog'
 import { LibraryGrid } from './LibraryGrid'
 import { LibraryHeader, type StatusFilter } from './LibraryHeader'
@@ -45,9 +44,8 @@ export function LibraryScreen(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [applyTemplateOpen, setApplyTemplateOpen] = useState(false)
-  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const exportVideos = useExportVideos()
+  const exportDialog = useExportDialog()
 
   useShortcut('mod+f', () => searchInputRef.current?.focus())
   useShortcut('mod+shift+1', () => changeViewMode('table'))
@@ -87,34 +85,13 @@ export function LibraryScreen(): React.JSX.Element {
     void navigate(`/videos/${video.id}/${stepForStatus(video.status)}`)
   }
 
-  const handleExport = async (format: 'xlsx' | 'csv'): Promise<void> => {
-    setExportAnchor(null)
+  const openExport = (): void => {
     if (exportableIds.length === 0) return
-    const defaultName = `${data?.folder.name ?? 'results'}.${format === 'xlsx' ? 'xlsx' : 'csv'}`
-    const path = await window.tramus.dialog.saveFile({
-      defaultPath: defaultName,
-      filters:
-        format === 'xlsx'
-          ? [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
-          : [{ name: 'CSV', extensions: ['csv'] }]
+    const folderName = data?.folder.name ?? 'results'
+    exportDialog.open({
+      videoIds: exportableIds,
+      getDefaultPath: (format) => `${folderName}.${format}`
     })
-    if (!path) return
-    exportVideos.mutate(
-      { videoIds: exportableIds, format, path },
-      {
-        onSuccess: () => {
-          notify({
-            severity: 'success',
-            title: 'Export complete',
-            action: {
-              label: 'Show in folder',
-              onClick: () => void window.tramus.shell.showItemInFolder(path)
-            }
-          })
-        },
-        onError: (err) => notifyError('Export failed', err)
-      }
-    )
   }
 
   if (!folderPath) {
@@ -176,7 +153,7 @@ export function LibraryScreen(): React.JSX.Element {
           canExport={exportableIds.length > 0}
           onApplyTemplate={() => setApplyTemplateOpen(true)}
           onTrack={() => void navigate(`/batch?videos=${selectedIds.join(',')}`)}
-          onExport={setExportAnchor}
+          onExport={openExport}
           onClear={() => setSelectedIds([])}
         />
       ) : null}
@@ -238,14 +215,12 @@ export function LibraryScreen(): React.JSX.Element {
         }}
       />
 
-      <Menu
-        anchorEl={exportAnchor}
-        open={exportAnchor !== null}
-        onClose={() => setExportAnchor(null)}
-      >
-        <MenuItem onClick={() => void handleExport('xlsx')}>Export as Excel (.xlsx)</MenuItem>
-        <MenuItem onClick={() => void handleExport('csv')}>Export as CSV</MenuItem>
-      </Menu>
+      <ExportDialog
+        open={exportDialog.isOpen}
+        onClose={exportDialog.close}
+        videoIds={exportDialog.videoIds}
+        getDefaultPath={exportDialog.getDefaultPath}
+      />
     </Box>
   )
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 
 import type { Setup } from '../../../api/types'
@@ -19,7 +19,7 @@ import { isVisible } from '../data/trackData'
 import { exclusionAtTime } from '../lib/exclusions'
 import { frameAtTime, timeOfFrame } from '../lib/frames'
 import { flagAtFrame, nextUnresolvedFlag, useReopenFlag } from '../lib/flags'
-import { distance } from '../lib/geometry'
+import { distance, type Point } from '../lib/geometry'
 import { formatVideoTime } from '../../../lib/time'
 import { computeStageTransform, computeViewBox, svgPointFromClient } from '../lib/stageTransform'
 import { buildHeatmapPoints, buildTrailSegments } from '../lib/trail'
@@ -27,6 +27,7 @@ import { useElementSize } from '../lib/useElementSize'
 import { useImageBitmap } from '../playback/useImageBitmap'
 import { usePlaybackClock } from '../playback/usePlaybackClock'
 import { usePlaybackFrames } from '../playback/usePlaybackFrames'
+import { selectShownFrame } from '../playback/shownFrame'
 import { useVideoTiming } from '../playback/useVideoTiming'
 import { type WorkspaceStep, useWorkspaceStore } from '../state/workspaceStore'
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
@@ -123,7 +124,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     [container, video, stageZoom, stagePan]
   )
   const viewBox = useMemo(() => computeViewBox(transform, container), [transform, container])
-  const panZoom = useStagePanZoom(container, video)
+  const panZoom = useStagePanZoom(container, video, step)
 
   // Frame source: the video frame, or (tracker view) the detection-preview mask.
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
@@ -137,8 +138,10 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const speed = useWorkspaceStore((s) => s.speed)
   const sourceFpsHint = videoInfo?.nominal_fps || 25
   // Playing: a predictive multi-request pipeline (`usePlaybackFrames`) keeps a bounded cache of
-  // decoded frames ahead of the clock, instead of one full round trip per displayed frame.
-  const playingVideoBitmap = usePlaybackFrames({
+  // decoded frames ahead of the clock, instead of one full round trip per displayed frame. It
+  // reports *which* frame it's showing (`.frame`) — that lags `currentFrame` by design, so
+  // overlays must be keyed off it too (`shownFrame` below), not the clock.
+  const playingFrames = usePlaybackFrames({
     videoId,
     playing: stageView === 'video' && playing,
     currentFrame,
@@ -151,14 +154,24 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   })
   // Paused/scrubbing: fetch exactly `currentFrame` at full quality, single-flight latest-wins.
   // Runs continuously (not just while paused) so it's already showing the right frame the moment
-  // playback stops, and so it can stand in for `playingVideoBitmap` during the pipeline's first
-  // moment (before it has decoded anything yet) instead of a blank canvas.
+  // playback stops, and so it can stand in for `playingFrames` during the pipeline's first
+  // moment (before it has decoded anything yet) instead of a blank canvas. `exactFrame` is the
+  // frame that produced `exactVideoBitmap` — it lags `currentFrame` until that fetch resolves.
   const exactFrameUrl =
     stageView === 'video'
       ? frameUrl(videoId, currentFrame, { maxSide, brightness, contrast, quality: 82 })
       : null
-  const exactVideoBitmap = useImageBitmap(exactFrameUrl)
-  const videoBitmap = playing ? (playingVideoBitmap ?? exactVideoBitmap) : exactVideoBitmap
+  const { bitmap: exactVideoBitmap, tag: exactFrame } = useImageBitmap(exactFrameUrl, currentFrame)
+  const videoBitmap = playing ? (playingFrames?.bitmap ?? exactVideoBitmap) : exactVideoBitmap
+  // The frame every overlay/readout on the stage should reflect: whichever frame `videoBitmap`
+  // actually is, never `currentFrame` directly (see `playback/shownFrame.ts`). The timeline
+  // playhead is unaffected — it keeps following the clock (`currentFrame`) elsewhere.
+  const shownFrame = selectShownFrame(
+    playing,
+    playingFrames?.frame ?? null,
+    exactFrame,
+    currentFrame
+  )
   const detectionEnabled =
     stageView === 'tracker' && (step === 'setup' || step === 'tracking') && Boolean(setup)
   const detectionPreview = useDetectionPreview(
@@ -167,76 +180,112 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     setup ?? EMPTY_SETUP,
     detectionEnabled
   )
-  const maskBitmap = useImageBitmap(
+  const { bitmap: maskBitmap } = useImageBitmap(
     detectionPreview ? `data:image/png;base64,${detectionPreview.mask_png}` : null
   )
   const bitmap = stageView === 'tracker' ? maskBitmap : videoBitmap
 
   // Review overlays, built from the typed-array track (no per-frame allocation of big arrays).
+  // Keyed off `shownFrame` (the frame actually drawn), not `currentFrame` (the clock) — see
+  // `shownFrame`'s derivation above and `playback/shownFrame.ts`.
   const tracked = isTracked && step !== 'setup'
   const needsTrailWindow = tracked && (overlays.trail || overlays.heatmap) && step === 'review'
   const trailSegments = useMemo(
     () =>
-      needsTrailWindow && trackData
-        ? buildTrailSegments(trackData, currentFrame, trailLengthS)
-        : [],
-    [needsTrailWindow, trackData, currentFrame, trailLengthS]
+      needsTrailWindow && trackData ? buildTrailSegments(trackData, shownFrame, trailLengthS) : [],
+    [needsTrailWindow, trackData, shownFrame, trailLengthS]
   )
   const heatmapPoints = useMemo(
     () =>
-      needsTrailWindow && trackData
-        ? buildHeatmapPoints(trackData, currentFrame, trailLengthS)
-        : [],
-    [needsTrailWindow, trackData, currentFrame, trailLengthS]
+      needsTrailWindow && trackData ? buildHeatmapPoints(trackData, shownFrame, trailLengthS) : [],
+    [needsTrailWindow, trackData, shownFrame, trailLengthS]
   )
-  const bodyEllipse = useMemo(() => {
-    if (!trackData || !isVisible(trackData, currentFrame)) return null
+  const trackedBodyEllipse = useMemo(() => {
+    if (!trackData || !isVisible(trackData, shownFrame)) return null
     return {
-      x: trackData.x[currentFrame]!,
-      y: trackData.y[currentFrame]!,
-      semiMajor: trackData.semiMajor[currentFrame]!,
-      semiMinor: trackData.semiMinor[currentFrame]!,
-      angleDeg: trackData.angleDeg[currentFrame]!
+      x: trackData.x[shownFrame]!,
+      y: trackData.y[shownFrame]!,
+      semiMajor: trackData.semiMajor[shownFrame]!,
+      semiMinor: trackData.semiMinor[shownFrame]!,
+      angleDeg: trackData.angleDeg[shownFrame]!
     }
-  }, [trackData, currentFrame])
+  }, [trackData, shownFrame])
   const activeZoneIds = useMemo(() => {
     const ids = new Set<string>()
     if (!results) return ids
     for (const visit of results.visits) {
-      if (currentFrame >= visit.frame_enter && currentFrame <= visit.frame_exit)
-        ids.add(visit.zone_id)
+      if (shownFrame >= visit.frame_enter && shownFrame <= visit.frame_exit) ids.add(visit.zone_id)
     }
     return ids
-  }, [results, currentFrame])
+  }, [results, shownFrame])
 
   const positionMarker = useMemo(() => {
     if (step !== 'review' || !frameTimes) return null
     const correction = [...correctionsEditor.corrections]
       .reverse()
-      .find((c) => c.kind === 'set_position' && c.frame === currentFrame)
+      .find((c) => c.kind === 'set_position' && c.frame === shownFrame)
     if (!correction || correction.kind !== 'set_position') return null
     return {
       x: correction.x,
       y: correction.y,
-      label: `set at ${formatVideoTime(timeOfFrame(frameTimes, currentFrame))}`
+      label: `set at ${formatVideoTime(timeOfFrame(frameTimes, shownFrame))}`
     }
-  }, [step, frameTimes, correctionsEditor.corrections, currentFrame])
+  }, [step, frameTimes, correctionsEditor.corrections, shownFrame])
 
-  const currentFlag = step === 'review' ? flagAtFrame(flags ?? [], currentFrame) : undefined
+  const currentFlag = step === 'review' ? flagAtFrame(flags ?? [], shownFrame) : undefined
   const reopenFlag = useReopenFlag(correctionsEditor)
 
   // Zone/arena editing (select, move, resize, draw, delete).
   const zoneEditing = useZoneEditing(svgRef, step, setupEditor)
   const showHandles = step === 'setup' || (step === 'review' && inspectorTab === 'zones')
 
+  // Set position (Review): a live drag preview of the body outline while a gesture is in
+  // progress — `null` the rest of the time, in which case the overlay shows `trackedBodyEllipse`
+  // (the real tracked/corrected position at `shownFrame`) as usual.
+  const [positionDragPoint, setPositionDragPoint] = useState<Point | null>(null)
+  const bodyEllipse = useMemo(
+    () =>
+      positionDragPoint && trackedBodyEllipse
+        ? { ...trackedBodyEllipse, x: positionDragPoint.x, y: positionDragPoint.y }
+        : trackedBodyEllipse,
+    [trackedBodyEllipse, positionDragPoint]
+  )
+
+  const commitSetPosition = (p: Point): void => {
+    void correctionsEditor.add(
+      { kind: 'set_position', frame: shownFrame, x: Math.round(p.x), y: Math.round(p.y) },
+      'Set position'
+    )
+  }
+
+  /** A click (no/negligible movement) sets the body centre at the click point. */
   const handlePositionClick = (e: React.PointerEvent<SVGSVGElement>): void => {
     const svg = svgRef.current
     if (!svg) return
-    const p = svgPointFromClient(svg, e.clientX, e.clientY)
-    void correctionsEditor.add(
-      { kind: 'set_position', frame: currentFrame, x: Math.round(p.x), y: Math.round(p.y) },
-      'Set position'
-    )
+    commitSetPosition(svgPointFromClient(svg, e.clientX, e.clientY))
+  }
+
+  /** Press-and-drag starting on the body outline itself: previews the ellipse live under the
+   * pointer and commits a single `set_position` on release, at wherever the pointer ends up
+   * (same result as a plain click when the pointer never actually moved). */
+  const handleBodyPointerDown = (e: React.PointerEvent): void => {
+    const svg = svgRef.current
+    if (!svg) return
+    e.stopPropagation()
+    e.preventDefault()
+    const toPoint = (ev: { clientX: number; clientY: number }): Point =>
+      svgPointFromClient(svg, ev.clientX, ev.clientY)
+    setPositionDragPoint(toPoint(e))
+    const onMove = (ev: PointerEvent): void => setPositionDragPoint(toPoint(ev))
+    const onUp = (ev: PointerEvent): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      const p = toPoint(ev)
+      setPositionDragPoint(null)
+      commitSetPosition(p)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
   }
 
   const handleBackgroundPointerDown = (e: React.PointerEvent<SVGSVGElement>): void => {
@@ -378,6 +427,9 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
             trailSegments={trailSegments}
             heatmapPoints={heatmapPoints}
             bodyEllipse={overlays.outline ? bodyEllipse : null}
+            onBodyPointerDown={
+              step === 'review' && reviewTool === 'position' ? handleBodyPointerDown : undefined
+            }
             positionMarker={positionMarker}
             detectionObservation={
               stageView === 'tracker' ? (detectionPreview?.observation ?? null) : null
@@ -425,7 +477,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
       <StatusBar
         svgRef={svgRef}
         zoomPercent={Math.round(stageZoom * 100)}
-        frame={currentFrame}
+        frame={shownFrame}
         frameCount={frameCount}
         videoWidth={video.width}
         videoHeight={video.height}

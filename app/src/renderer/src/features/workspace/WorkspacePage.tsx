@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 
-import { useFrameTimes, useSettings } from '../../api/queries'
+import { useBatch, useFrameTimes, useSettings } from '../../api/queries'
 import { EmptyState } from '../../components/EmptyState'
 import { formatDate } from '../../lib/time'
 import { useShortcut } from '../../lib/shortcuts'
@@ -49,21 +49,29 @@ export function WorkspacePage(): React.JSX.Element {
   const { videoId, step: rawStep } = useParams<{ videoId: string; step: WorkspaceStep }>()
   const step: WorkspaceStep = rawStep ?? 'setup'
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const batchId = searchParams.get('batch')
 
   if (!videoId) {
     return <EmptyState icon="movie" title="No video selected" />
   }
 
-  return <OpenWorkspace videoId={videoId} step={step} navigate={navigate} />
+  return <OpenWorkspace videoId={videoId} step={step} navigate={navigate} batchId={batchId} />
 }
 
 interface OpenWorkspaceProps {
   videoId: string
   step: WorkspaceStep
   navigate: ReturnType<typeof useNavigate>
+  batchId: string | null
 }
 
-function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.JSX.Element {
+function OpenWorkspace({
+  videoId,
+  step,
+  navigate,
+  batchId
+}: OpenWorkspaceProps): React.JSX.Element {
   const settings = useSettings()
   const session = useSession(videoId)
   const frameTimes = useFrameTimes(videoId)
@@ -72,6 +80,7 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
   const flags = useFlags(videoId)
   const history = useHistory(videoId)
   const results = useResults(videoId)
+  const batch = useBatch(batchId ?? undefined)
 
   const setupEditor = useSetupEditor(videoId)
   const sessionActions = useSessionActions(videoId)
@@ -253,6 +262,19 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
     { enabled: step === 'tracking' }
   )
 
+  // Batch review mode: `?batch=<id>` puts a compact "Batch · N of M" navigator in the top bar
+  // (opened from the Batch screen's Finish step — see `features/batch/FinishStep.tsx`).
+  const batchItems = batch.data?.items ?? []
+  const batchIndex = batchId ? batchItems.findIndex((item) => item.video_id === videoId) : -1
+  const goToBatchOffset = (delta: number): void => {
+    if (!batchId || batchIndex === -1) return
+    const nextItem = batchItems[batchIndex + delta]
+    if (!nextItem) return
+    void navigate(`/videos/${nextItem.video_id}/review?batch=${batchId}`)
+  }
+  useShortcut('mod+[', () => goToBatchOffset(-1), { enabled: Boolean(batchId) })
+  useShortcut('mod+]', () => goToBatchOffset(1), { enabled: Boolean(batchId) })
+
   if (session.isError) {
     return (
       <EmptyState
@@ -330,10 +352,23 @@ function OpenWorkspace({ videoId, step, navigate }: OpenWorkspaceProps): React.J
         recordedAt={sessionData.document.video.recorded_at}
         step={step}
         disabledAfterSetup={setupEmpty}
-        onSelectStep={(s) => void navigate(`/videos/${videoId}/${s}`)}
+        onSelectStep={(s) =>
+          void navigate(`/videos/${videoId}/${s}${batchId ? `?batch=${batchId}` : ''}`)
+        }
         save={saveLabel(sessionData)}
         onSave={() => void onSave()}
         saving={saving}
+        batchNav={
+          batchId
+            ? {
+                index: batchIndex === -1 ? null : batchIndex,
+                total: batchItems.length,
+                onPrev: () => goToBatchOffset(-1),
+                onNext: () => goToBatchOffset(1),
+                onBackToBatch: () => void navigate('/batch')
+              }
+            : undefined
+        }
       />
       <Box
         sx={{

@@ -3,6 +3,7 @@ TypeScript types via the OpenAPI schema. Changing a model here changes the sidec
 the API contract — bump `SCHEMA_VERSION` and add a migration when the sidecar changes shape."""
 
 from .base import DomainModel, UtcDateTime, new_id, utc_now
+from .batches import BatchItemRecord, BatchRecord
 from .document import SCHEMA_VERSION, AnalysisDocument, HistoryEntry, HistoryKind, SetupChange
 from .jobs import Job, JobState
 from .results import (
@@ -17,6 +18,7 @@ from .results import (
 from .settings import (
     PLAYBACK_SPEEDS,
     AppSettings,
+    ExportLayout,
     ProcessingDevice,
     RecentFolder,
     ThemePreference,
@@ -62,6 +64,8 @@ __all__ = [
     "AnalysisDocument",
     "AnalysisSettings",
     "AppSettings",
+    "BatchItemRecord",
+    "BatchRecord",
     "Calibration",
     "Correction",
     "CrossingEvent",
@@ -71,6 +75,7 @@ __all__ = [
     "DomainModel",
     "EllipseShape",
     "Exclusion",
+    "ExportLayout",
     "Flag",
     "FlagReason",
     "FlagStatus",

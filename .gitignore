@@ -30,6 +30,7 @@ node_modules/
 app/out/
 app/dist/
 app/release/
+app/test-results/
 app/resources/engine/
 *.tsbuildinfo
 

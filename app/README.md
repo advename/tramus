@@ -32,13 +32,24 @@ app/
             ├── main.tsx          entry point: imports fonts/icons, mounts <App>
             ├── app/              App.tsx, providers.tsx, routes.tsx, AppShell.tsx
             ├── theme/            design tokens → MUI theme (dark/light)
-            ├── api/              typed engine client, query keys, WS events, EngineProvider
-            ├── components/       shared UI: Symbol, Kbd, ShortcutTooltip, StatusChip, …
+            ├── api/              typed client, `types.ts` (API type aliases), shared `queries/`,
+            │                     query keys, WebSocket events, EngineProvider
+            ├── components/       shared UI: Symbol, Kbd, ShortcutTooltip, StatusChip, NotificationHost, …
             ├── lib/              time formatting, keyboard shortcuts, platform, sx helper
-            ├── stores/           (empty) — feature-local Zustand stores go here
+            ├── stores/           app-wide Zustand stores (notifications, current folder)
             └── features/
-                ├── start/ library/ templates/ batch/ settings/ workspace/
-                └── each exports a placeholder screen from index.tsx today
+                ├── start/ library/ templates/ batch/ settings/
+                └── workspace/    the per-video Setup → Track → Review → Results screen
+                    ├── WorkspacePage.tsx  layout, step routing, page-wide shortcuts
+                    ├── data/       session queries + editors (optimistic, ordered, undoable)
+                    ├── state/      workspaceStore: UI state (frame, tools, selection, …)
+                    ├── stage/      frame canvas + SVG overlay, zone/arena/measure editing
+                    ├── playback/   clock, prefetch pipeline, bitmap loading
+                    ├── timeline/   transport, trial handles, lanes, exclusions, range popover
+                    ├── inspector/  per-step side panel (setup sections, flags, history)
+                    ├── results/    summary, events, crossings (rules + matrix)
+                    ├── topbar/ dialogs/
+                    └── lib/        pure helpers (geometry, units, flags, crossings, …) + tests
 ```
 
 ## Scripts
@@ -49,7 +60,8 @@ app/
 | `npm run build`                   | Builds main/preload/renderer into `out/`.                                                              |
 | `npm run typecheck`               | `tsc --noEmit` for both the node (`main`/`preload`/`shared`) and web (`renderer`) TypeScript projects. |
 | `npm run lint`                    | ESLint (flat config), zero warnings allowed.                                                           |
-| `npm test`                        | Vitest unit tests for pure helpers (geometry, stage transform, trail windowing, timeline scale).       |
+| `npm test`                        | Vitest unit tests for pure helpers (`features/**/lib`, `playback/`).                                    |
+| `npm run smoke`                   | Drives the real app in a hidden window: screenshots + playback frame rates (see below).                |
 | `npm run format` / `format:check` | Prettier.                                                                                              |
 | `npm run gen:api`                 | Regenerates `src/renderer/src/api/schema.d.ts` from the engine's live OpenAPI schema (see below).      |
 | `npm run dist`                    | `build` + `electron-builder` — produces installers in `release/`.                                      |
@@ -77,15 +89,28 @@ engine binary — see `docs/architecture.md` §1 and `src/main/engine.ts`'s comm
      calls, `api/queryKeys.ts` for TanStack Query keys, `api/urls.ts` for frame/thumbnail image
      URLs, `api/events.ts`'s `useEngineEvents()` (already mounted once in `AppShell`) for
      live job/session updates.
-4. If a feature needs UI-only state that doesn't belong in TanStack Query (e.g. "which tool is
-   selected"), add a Zustand store under `src/renderer/src/stores/`.
+4. API types: import them from `api/types.ts` only (aliases of the generated schema, already
+   shaped the way openapi-fetch returns them). Hooks used by several features go in
+   `api/queries/`; feature-only hooks stay in the feature.
+5. UI-only state that doesn't belong in TanStack Query (e.g. "which tool is selected") goes in a
+   Zustand store: feature-local (`features/<name>/state/`) or app-wide (`stores/`).
 
 ## `api/schema.d.ts`
 
-**Generated**, not a placeholder — `npm run gen:api` was run successfully against the engine's
-real `tramus-engine openapi` output once the engine's API layer existed, so this file reflects
-the actual FastAPI schema (all paths are under `/api/...`, matching `docs/architecture.md` §8).
-Re-run `npm run gen:api` whenever the engine's API changes; never hand-edit this file.
+Generated from the engine's OpenAPI schema by `npm run gen:api`. Never hand-edit it. The flow
+for any API or data-model change is: change the engine's Pydantic models or routes, then run
+`npm run gen:api`, then fix the type errors in the UI.
+
+## UI smoke test
+
+`npm run build && npm run smoke` launches the built app with a hidden window
+(`TRAMUS_HIDDEN_WINDOW=1`) in a throwaway profile and engine config dir, so it never touches
+real settings, templates or batches and works while `npm run dev` is running. It connects over
+the Chrome DevTools Protocol with Playwright, and runs
+a list of steps. It opens a folder's first video, screenshots Setup, plays for a few seconds and
+reports canvas draws per second. Screenshots go to `test-results/smoke/`. Custom steps:
+`node scripts/ui-smoke.mjs --folder <videos> setup:0 key:Space wait:2 shot:playing` (see the
+header of the script for all step kinds).
 
 ## Theme
 
@@ -111,7 +136,10 @@ createAppTheme.ts` builds the MUI theme and augments `Palette`/`PaletteOptions` 
 ## Known gaps
 
 - No app icon yet (`build/` is empty), so `electron-builder` uses its default icon.
-- Zones can be edited but not _added_ from Review's Zones tab (drawing tools are Setup-only).
+- Zones can be edited but not *added* from Review's Zones tab (drawing tools are Setup-only).
 - Polygons: vertices can be dragged, but not inserted/removed by double-clicking an edge.
+- Shapes can be drawn partly outside the video frame (harmless for results; not clamped).
 - Templates can't be imported/exported as files from the UI yet (they live in the user config
   directory, e.g. `~/Library/Application Support/Tramus/templates/` on macOS).
+- Crossing markers on the timeline use one colour for all rules; the crossing matrix hasn't been
+  tried with many (6+) zones.

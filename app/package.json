@@ -1,7 +1,7 @@
 {
   "name": "tramus",
   "version": "0.1.0",
-  "description": "Tramus — track a mouse in top-down lab videos and measure time spent in zones.",
+  "description": "Tramus \u2014 track a mouse in top-down lab videos and measure time spent in zones.",
   "author": "Tramus",
   "private": true,
   "type": "module",
@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gen:api": "node scripts/gen-api.mjs",
+    "smoke": "node scripts/ui-smoke.mjs",
     "postinstall": "electron-builder install-app-deps",
     "dist": "npm run build && electron-builder",
     "test": "vitest run",

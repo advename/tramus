@@ -52,6 +52,10 @@ export interface StageOverlayProps {
   trailSegments: readonly TrailSegment[]
   heatmapPoints: readonly TrailPoint[]
   bodyEllipse: BodyEllipse | null
+  /** Set only while the Review "Set position" tool is active — starts a press-and-drag that
+   * moves the body outline live (`VideoStage.tsx`'s `handleBodyPointerDown`). Undefined the rest
+   * of the time, so the outline isn't grabbable (and shows no `move` cursor) otherwise. */
+  onBodyPointerDown?: (e: React.PointerEvent) => void
   positionMarker: PositionMarker | null
   detectionObservation: Observation | null
   detectionBlobAreaLabel: string | null
@@ -93,6 +97,7 @@ export function StageOverlay({
   trailSegments,
   heatmapPoints,
   bodyEllipse,
+  onBodyPointerDown,
   positionMarker,
   detectionObservation,
   detectionBlobAreaLabel,
@@ -300,6 +305,25 @@ export function StageOverlay({
             vectorEffect="non-scaling-stroke"
             pointerEvents="none"
           />
+          {onBodyPointerDown && (
+            // A wide invisible hit stroke, like the arena/zone outlines above — the visible
+            // stroke is too thin to reliably grab. Set position only: lets a press-and-drag
+            // started on the outline move it live (VideoStage's `handleBodyPointerDown`).
+            <ellipse
+              cx={bodyEllipse.x}
+              cy={bodyEllipse.y}
+              rx={bodyEllipse.semiMajor}
+              ry={bodyEllipse.semiMinor}
+              transform={`rotate(${bodyEllipse.angleDeg} ${bodyEllipse.x} ${bodyEllipse.y})`}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={10 * px}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="stroke"
+              style={{ cursor: 'move' }}
+              onPointerDown={onBodyPointerDown}
+            />
+          )}
           <circle
             cx={bodyEllipse.x}
             cy={bodyEllipse.y}

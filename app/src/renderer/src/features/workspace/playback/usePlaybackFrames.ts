@@ -41,7 +41,7 @@ export interface PlaybackFrameParams {
   contrast: number
 }
 
-interface Display {
+export interface PlaybackDisplayFrame {
   frame: number
   bitmap: ImageBitmap
 }
@@ -61,11 +61,15 @@ interface Display {
  *
  * The displayed bitmap is pushed into state only when the newest-at-or-before-the-clock cached
  * frame actually changes (`frameSchedule.ts#pickDisplayFrame`) — at the rate of displayed
- * frames, not network arrivals or clock ticks — and each push carries just an `ImageBitmap`
- * reference. Only meaningful while `playing`; pause/scrub uses the exact single-flight path in
- * `VideoStage.tsx` instead (`useImageBitmap` fetching `currentFrame` directly).
+ * frames, not network arrivals or clock ticks. The returned `frame` is *which* cached frame that
+ * bitmap answers (it lags `currentFrame` by design — see `pickDisplayFrame`), so callers can
+ * drive frame-dependent overlays off the frame actually drawn instead of the clock (that
+ * mismatch used to make the trail/heatmap/body outline visibly run ahead of the video — see
+ * `VideoStage.tsx`'s `shownFrame`). Only meaningful while `playing`; pause/scrub uses the exact
+ * single-flight path in `VideoStage.tsx` instead (`useImageBitmap` fetching `currentFrame`
+ * directly).
  */
-export function usePlaybackFrames(params: PlaybackFrameParams): ImageBitmap | null {
+export function usePlaybackFrames(params: PlaybackFrameParams): PlaybackDisplayFrame | null {
   const {
     videoId,
     playing,
@@ -78,8 +82,8 @@ export function usePlaybackFrames(params: PlaybackFrameParams): ImageBitmap | nu
     contrast
   } = params
 
-  const [display, setDisplay] = useState<Display | null>(null)
-  const displayRef = useRef<Display | null>(null)
+  const [display, setDisplay] = useState<PlaybackDisplayFrame | null>(null)
+  const displayRef = useRef<PlaybackDisplayFrame | null>(null)
   const currentFrameRef = useRef(currentFrame)
 
   const cacheRef = useRef(new LruMap<number, ImageBitmap>(CACHE_CAPACITY))
@@ -222,7 +226,7 @@ export function usePlaybackFrames(params: PlaybackFrameParams): ImageBitmap | nu
     }
   }, [])
 
-  return playing ? (display?.bitmap ?? null) : null
+  return playing ? display : null
 }
 
 function wakeAll(wakers: Set<() => void>): void {

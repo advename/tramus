@@ -1,4 +1,11 @@
-import type { AppSettings, BatchCheckItem, Job, JobState, Shape } from '../../api/types'
+import type {
+  AppSettings,
+  BatchCheckItem,
+  BatchItemView,
+  Job,
+  JobState,
+  Shape
+} from '../../api/types'
 import { TERMINAL_JOB_STATES } from '../../api/queries'
 
 /** Maps a template shape (drawn in reference-frame px) into a specific video's px space. */
@@ -139,4 +146,56 @@ export function deviceLabel(device: AppSettings['device'], gpuName: string | und
   const usesGpu = device === 'gpu' || (device === 'auto' && Boolean(gpuName))
   if (usesGpu) return gpuName ? `GPU · ${gpuName}` : 'GPU'
   return 'CPU'
+}
+
+/** The largest frame index whose time is `<= t` (binary search; `frameTimes` is sorted). Frame 0
+ * for `t <= frameTimes[0]`, the last frame for `t >= frameTimes[frameTimes.length - 1]`. */
+export function indexAtTime(frameTimes: Float64Array, t: number): number {
+  if (frameTimes.length === 0) return 0
+  let lo = 0
+  let hi = frameTimes.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (frameTimes[mid]! <= t) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+/** A saved batch's per-video row status for the Finish overview — one of a handful of mutually
+ * exclusive states, in priority order: a live job (still queued/running/just failed/cancelled)
+ * wins over the sidecar-derived `status`, since it's the more current signal. */
+export type BatchRowStatus =
+  | { kind: 'queued' }
+  | { kind: 'tracking'; progress: number; fps: number | null; remainingS: number | null }
+  | { kind: 'failed'; error: string | null }
+  | { kind: 'cancelled' }
+  | { kind: 'flags'; count: number }
+  | { kind: 'reviewed' }
+  | { kind: 'not_tracked' }
+
+export function batchRowStatus(item: BatchItemView): BatchRowStatus {
+  const job = item.job
+  if (job) {
+    if (job.state === 'queued') return { kind: 'queued' }
+    if (job.state === 'running') {
+      return {
+        kind: 'tracking',
+        progress: job.progress,
+        fps: job.fps ?? null,
+        remainingS: job.remaining_s ?? null
+      }
+    }
+    if (job.state === 'failed') return { kind: 'failed', error: job.error ?? null }
+    if (job.state === 'cancelled') return { kind: 'cancelled' }
+  }
+  if (item.status === 'tracked') return { kind: 'flags', count: item.unresolved_flags }
+  if (item.status === 'reviewed' || item.status === 'exported') return { kind: 'reviewed' }
+  return { kind: 'not_tracked' }
+}
+
+/** Whether any item in a saved batch still has a job that hasn't reached a terminal state — the
+ * Batch screen shows Run while this is true, Finish otherwise. */
+export function batchIsRunning(items: BatchItemView[]): boolean {
+  return items.some((item) => item.job != null && !TERMINAL_JOB_STATES.has(item.job.state))
 }

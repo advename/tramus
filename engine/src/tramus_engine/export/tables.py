@@ -4,6 +4,14 @@ Turns one or more `AnalysisDocument`s into flat rows: Summary (time per zone), V
 enter/exit events), Track (per-frame position and zone membership), Crossings (rule counts and
 events), Crossing matrix (from×to grid) and Settings (setup + corrections log, for provenance).
 Kept independent of the output format so `xlsx.py` and `csv.py` only deal with layout.
+
+Export layout (§9, `ExportLayout`): every builder above produces the "long" shape — one row per
+video and zone/rule/pair. For "wide" (one row per video), the three per-video *aggregate* tables
+(Summary, crossing rule counts, crossing matrix) have `*_wide` builders below that pivot those
+same long rows rather than recomputing anything — zones/rules/pairs are matched across videos by
+name, in first-seen order, and a video missing one gets an empty cell rather than a row. Visits,
+crossing events and Track are event lists, not per-video aggregates, so they have no wide form and
+stay long in both layouts.
 """
 
 from __future__ import annotations
@@ -69,6 +77,7 @@ class SummaryRow:
     analysed_duration_s: float
     excluded_duration_s: float
     threshold: float
+    distance_mm: float | None = None
 
 
 def build_summary_rows(exports: list[VideoExport]) -> list[SummaryRow]:
@@ -89,8 +98,69 @@ def build_summary_rows(exports: list[VideoExport]) -> list[SummaryRow]:
                     analysed_duration_s=results.analysed_duration_s,
                     excluded_duration_s=results.excluded_duration_s,
                     threshold=results.in_zone_threshold,
+                    distance_mm=results.distance_mm,
                 )
             )
+    return rows
+
+
+def _ordered_zone_names(exports: list[VideoExport]) -> list[str]:
+    """Zone names across `exports`, first-seen order — how wide columns are aligned across videos
+    with different zone sets (§9)."""
+    names: list[str] = []
+    seen: set[str] = set()
+    for export in exports:
+        for zone in export.document.setup.zones:
+            if zone.name not in seen:
+                seen.add(zone.name)
+                names.append(zone.name)
+    return names
+
+
+@dataclass(frozen=True)
+class WideSummaryRow:
+    """One row per video: Summary pivoted so each zone (matched by name across videos, plus "No
+    zone" and "Not visible") becomes a pair of Time/Share columns. `time_by_zone` and
+    `share_by_zone` are ordered dicts covering every column name seen across `exports`; a video
+    without a given zone has `None` there rather than a row."""
+
+    video: str
+    trial_start_s: float
+    trial_end_s: float
+    analysed_duration_s: float
+    excluded_duration_s: float
+    threshold: float
+    time_by_zone: dict[str, float | None]
+    share_by_zone: dict[str, float | None]
+    distance_mm: float | None
+
+
+def build_summary_rows_wide(exports: list[VideoExport]) -> list[WideSummaryRow]:
+    columns = [*_ordered_zone_names(exports), "No zone", "Not visible"]
+    rows: list[WideSummaryRow] = []
+    for export in exports:
+        results = export.results
+        if results is None:
+            continue
+        by_name = {row.name: row for row in results.summary}
+        rows.append(
+            WideSummaryRow(
+                video=export.file_name,
+                trial_start_s=results.trial_start_s,
+                trial_end_s=results.trial_end_s,
+                analysed_duration_s=results.analysed_duration_s,
+                excluded_duration_s=results.excluded_duration_s,
+                threshold=results.in_zone_threshold,
+                time_by_zone={
+                    name: (by_name[name].time_s if name in by_name else None) for name in columns
+                },
+                share_by_zone={
+                    name: (by_name[name].share_of_analysed if name in by_name else None)
+                    for name in columns
+                },
+                distance_mm=results.distance_mm,
+            )
+        )
     return rows
 
 
@@ -328,6 +398,42 @@ def build_crossing_rule_rows(exports: list[VideoExport]) -> list[CrossingRuleRow
 
 
 @dataclass(frozen=True)
+class WideCrossingRow:
+    """One row per video: crossing-rule counts pivoted, one column per distinct rule label
+    (`"<from> → <to> – Crossings"`, "Any zone" spelled out for `None`), first-seen order across
+    `exports`. A video without a given rule has `None` there."""
+
+    video: str
+    counts_by_rule: dict[str, int | None]
+
+
+def build_crossing_rule_rows_wide(exports: list[VideoExport]) -> list[WideCrossingRow]:
+    long_rows = build_crossing_rule_rows(exports)
+    labels: list[str] = []
+    seen: set[str] = set()
+    by_video: dict[str, dict[str, int]] = {}
+    for row in long_rows:
+        label = f"{row.rule_from} → {row.rule_to} – Crossings"
+        if label not in seen:
+            seen.add(label)
+            labels.append(label)
+        by_video.setdefault(row.video, {})[label] = row.count
+
+    rows: list[WideCrossingRow] = []
+    for export in exports:
+        if export.results is None:
+            continue
+        counts = by_video.get(export.file_name, {})
+        rows.append(
+            WideCrossingRow(
+                video=export.file_name,
+                counts_by_rule={label: counts.get(label) for label in labels},
+            )
+        )
+    return rows
+
+
+@dataclass(frozen=True)
 class CrossingEventRow:
     """One event: which rule matched it (its from/to labels) and the concrete zones crossed."""
 
@@ -401,3 +507,43 @@ def build_crossing_matrix_grids(exports: list[VideoExport]) -> list[CrossingMatr
             )
         )
     return grids
+
+
+@dataclass(frozen=True)
+class WideMatrixRow:
+    """One row per video: the crossing matrix pivoted, one column per ordered zone-name pair
+    (`"<from> → <to>"`, including the diagonal), first-seen order across `exports`. A video
+    missing either zone of a pair has `None` there."""
+
+    video: str
+    counts_by_pair: dict[str, int | None]
+
+
+def build_crossing_matrix_rows_wide(exports: list[VideoExport]) -> list[WideMatrixRow]:
+    grids = build_crossing_matrix_grids(exports)
+    labels: list[str] = []
+    seen: set[str] = set()
+    by_video: dict[str, dict[str, int]] = {}
+    for grid in grids:
+        counts: dict[str, int] = {}
+        for ri, from_name in enumerate(grid.zone_names):
+            for ci, to_name in enumerate(grid.zone_names):
+                label = f"{from_name} → {to_name}"
+                if label not in seen:
+                    seen.add(label)
+                    labels.append(label)
+                counts[label] = grid.counts[ri][ci]
+        by_video[grid.video] = counts
+
+    rows: list[WideMatrixRow] = []
+    for export in exports:
+        if export.results is None:
+            continue
+        counts = by_video.get(export.file_name, {})
+        rows.append(
+            WideMatrixRow(
+                video=export.file_name,
+                counts_by_pair={label: counts.get(label) for label in labels},
+            )
+        )
+    return rows

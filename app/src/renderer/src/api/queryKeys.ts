@@ -43,5 +43,9 @@ export const queryKeys = {
   templates: {
     all: () => ['templates'] as const,
     detail: (templateId: string) => ['templates', templateId] as const
+  },
+  batches: {
+    all: () => ['batches'] as const,
+    detail: (batchId: string) => ['batches', batchId] as const
   }
 } as const

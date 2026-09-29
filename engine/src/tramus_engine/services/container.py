@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..storage.batches import BatchStore
 from ..storage.settings import SettingsStore
 from ..storage.templates import TemplateStore
 from .frames import FrameService
@@ -19,6 +20,7 @@ class Services:
 
     settings: SettingsStore
     templates: TemplateStore
+    batches: BatchStore
     library: LibraryService
     sessions: SessionManager
     jobs: JobManager
@@ -37,6 +39,7 @@ def create_services() -> Services:
     version = app_version()
     settings = SettingsStore()
     templates = TemplateStore()
+    batches = BatchStore()
     library = LibraryService()
     app_settings = settings.load()
     sessions = SessionManager(version, lambda: settings.load().default_in_zone_threshold)
@@ -45,6 +48,7 @@ def create_services() -> Services:
     return Services(
         settings=settings,
         templates=templates,
+        batches=batches,
         library=library,
         sessions=sessions,
         jobs=jobs,

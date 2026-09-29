@@ -93,3 +93,10 @@ class Results(DomainModel):
     crossing_matrix: list[MatrixCell] = Field(
         default_factory=list, description="Every ordered zone pair, in setup zone order."
     )
+    distance_mm: float | None = Field(
+        None,
+        description=(
+            "Distance travelled by the body centre over the analysed time (§5.5 analysed"
+            " intervals), in mm. `None` without a calibration (`Setup.calibration`)."
+        ),
+    )

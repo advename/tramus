@@ -47,7 +47,21 @@ export default tseslint.config(
         process: 'readonly',
         console: 'readonly',
         URL: 'readonly',
-        __dirname: 'readonly'
+        __dirname: 'readonly',
+        setTimeout: 'readonly'
+      }
+    }
+  },
+  {
+    // The UI smoke test also passes callbacks that Playwright runs inside the app's page.
+    files: ['scripts/ui-smoke.mjs'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        location: 'writable',
+        fetch: 'readonly',
+        performance: 'readonly',
+        CanvasRenderingContext2D: 'readonly'
       }
     }
   },

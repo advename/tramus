@@ -29,6 +29,12 @@ function handleJobEvent(queryClient: QueryClient, job: Job): void {
   void queryClient.invalidateQueries({ queryKey: queryKeys.video.detail(job.video_id) })
   void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   void queryClient.invalidateQueries({ queryKey: queryKeys.session.detail(job.video_id) })
+  if (job.batch_id) {
+    // The batch's per-item status (`GET /batches/{id}`) is derived from the video's sidecar, so
+    // it needs a refetch too — it doesn't come from the job event itself.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.batches.all() })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.batches.detail(job.batch_id) })
+  }
 }
 
 function handleSessionEvent(queryClient: QueryClient, videoId: string, state: SessionState): void {

@@ -149,6 +149,19 @@ export function SettingsScreen(): React.JSX.Element {
                 ))}
               </Select>
             </SettingsRow>
+            <SettingsRow
+              label="Export layout"
+              help="Default offered by the export dialog: wide is one row per video, long is one row per video and zone."
+            >
+              <SegmentedControl
+                value={settings?.export_layout ?? 'wide'}
+                options={[
+                  { value: 'wide', label: 'Wide' },
+                  { value: 'long', label: 'Long' }
+                ]}
+                onChange={(value) => save({ export_layout: value })}
+              />
+            </SettingsRow>
           </SettingsGroup>
 
           <SettingsGroup title="Appearance">

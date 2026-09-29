@@ -6,17 +6,20 @@ import Typography from '@mui/material/Typography'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import {
+  useBatches,
   useCancelJob,
   useCheckBatch,
   useCreateBatch,
-  useExportVideos,
+  useDeleteBatch,
   useJobs,
   useLibrary,
   useSettings,
   useSystemInfo,
   useTemplates
 } from '../../api/queries'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { EmptyState } from '../../components/EmptyState'
+import { ExportDialog, useExportDialog } from '../export'
 import { formatClockTime, formatDate } from '../../lib/time'
 import { useCurrentFolderStore } from '../../stores/currentFolder'
 import { notify, notifyError } from '../../stores/notifications'
@@ -29,7 +32,10 @@ import { RunStep } from './RunStep'
 import { allTerminal, buildCheckDraft, deviceLabel, type BatchStep, type CheckDraft } from './lib'
 import { useBatchStore } from './state/batchStore'
 
-/** The Batch screen: Choose → Check → Run → Finish — `designs/Screens.dc.html` §isBatch. */
+/** The Batch screen: Choose → Check → Run → Finish — `designs/Screens.dc.html` §isBatch.
+ *
+ * Batches are persisted by the engine, so opening `/batch` reopens the most recently saved one
+ * (Run while any of its jobs are still going, otherwise Finish) instead of starting empty. */
 export function BatchScreen(): React.JSX.Element {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -42,13 +48,17 @@ export function BatchScreen(): React.JSX.Element {
   const settingsQuery = useSettings()
   const systemQuery = useSystemInfo()
   const jobsQuery = useJobs()
+  const batchesQuery = useBatches()
   const cancelJob = useCancelJob()
   const checkBatch = useCheckBatch()
   const createBatch = useCreateBatch()
-  const exportVideos = useExportVideos()
+  const deleteBatch = useDeleteBatch()
+  const exportDialog = useExportDialog()
 
-  const activeBatchId = useBatchStore((state) => state.activeBatchId)
-  const setActiveBatch = useBatchStore((state) => state.setActiveBatch)
+  const selectedBatchId = useBatchStore((state) => state.selectedBatchId)
+  const startingNew = useBatchStore((state) => state.startingNew)
+  const selectBatch = useBatchStore((state) => state.selectBatch)
+  const startNewBatch = useBatchStore((state) => state.startNewBatch)
 
   const [localStep, setLocalStep] = useState<'choose' | 'check'>('choose')
   // `null` means "no explicit choice yet" — the video list and template fall back to a computed
@@ -60,9 +70,17 @@ export function BatchScreen(): React.JSX.Element {
   })
   const [selectedTemplateIdState, setSelectedTemplateIdState] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<CheckDraft[] | null>(null)
-  const [exporting, setExporting] = useState(false)
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
   const templates = templatesQuery.data ?? []
+  const savedBatches = batchesQuery.data?.batches ?? []
+  const brokenBatches = batchesQuery.data?.broken ?? []
+  const mostRecentBatchId = savedBatches[0]?.id ?? null
+  const activeBatchId = selectedBatchId ?? mostRecentBatchId
+  const activeBatch = activeBatchId
+    ? (savedBatches.find((b) => b.id === activeBatchId) ?? null)
+    : null
+
   const defaultVideoIds = useMemo(
     () =>
       (library.data?.videos ?? [])
@@ -81,7 +99,8 @@ export function BatchScreen(): React.JSX.Element {
     [jobsQuery.data, activeBatchId]
   )
   const batchDone = activeBatchId !== null && allTerminal(jobs)
-  const step: BatchStep = activeBatchId ? (batchDone ? 'finish' : 'run') : localStep
+  const showingExisting = !startingNew && activeBatch !== null
+  const step: BatchStep = showingExisting ? (batchDone ? 'finish' : 'run') : localStep
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? null
 
@@ -125,19 +144,31 @@ export function BatchScreen(): React.JSX.Element {
       { template_id: selectedTemplateId, items },
       {
         onSuccess: (batch) => {
-          setActiveBatch({ batchId: batch.id, templateId: selectedTemplateId })
+          selectBatch(batch.id)
           setDrafts(null)
+          setLocalStep('choose')
         },
         onError: (error) => notifyError('Could not start tracking', error)
       }
     )
   }
 
-  const startNewBatch = (): void => {
-    setActiveBatch(null)
+  const startNewBatchClick = (): void => {
+    startNewBatch()
     setLocalStep('choose')
     setSelectedVideoIdsState(null)
     setDrafts(null)
+  }
+
+  const resetBatch = (targetId: string): void => {
+    deleteBatch.mutate(targetId, {
+      onSuccess: () => {
+        notify({ severity: 'success', title: 'Batch removed from the list' })
+        startNewBatchClick()
+      },
+      onError: (error) => notifyError('Could not reset this batch', error)
+    })
+    setConfirmingReset(false)
   }
 
   const cancelAllJobs = (): void => {
@@ -146,32 +177,19 @@ export function BatchScreen(): React.JSX.Element {
     }
   }
 
-  const exportAll = async (): Promise<void> => {
+  const openExportAll = (): void => {
     const succeededIds = jobs.filter((j) => j.state === 'succeeded').map((j) => j.video_id)
-    if (succeededIds.length === 0) return
-    const path = await window.tramus.dialog.saveFile({
-      defaultPath: 'batch-results.xlsx',
-      filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
+    const reviewableIds =
+      succeededIds.length > 0
+        ? succeededIds
+        : (activeBatch?.items ?? [])
+            .filter((item) => item.status === 'tracked' || item.status === 'reviewed')
+            .map((item) => item.video_id)
+    if (reviewableIds.length === 0) return
+    exportDialog.open({
+      videoIds: reviewableIds,
+      getDefaultPath: (format) => `batch-results.${format}`
     })
-    if (!path) return
-    setExporting(true)
-    exportVideos.mutate(
-      { videoIds: succeededIds, format: 'xlsx', path },
-      {
-        onSuccess: () => {
-          notify({
-            severity: 'success',
-            title: 'Export complete',
-            action: {
-              label: 'Show in folder',
-              onClick: () => void window.tramus.shell.showItemInFolder(path)
-            }
-          })
-        },
-        onError: (error) => notifyError('Export failed', error),
-        onSettled: () => setExporting(false)
-      }
-    )
   }
 
   const includedCount = drafts?.filter((d) => d.included).length ?? 0
@@ -210,6 +228,8 @@ export function BatchScreen(): React.JSX.Element {
       : ''
   }
 
+  const resetTarget = showingExisting ? activeBatchId : (brokenBatches[0]?.id ?? null)
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
       <Box
@@ -234,11 +254,28 @@ export function BatchScreen(): React.JSX.Element {
           </Typography>
         </Box>
         <BatchStepper step={step} />
-        <Box sx={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end' }}>
+        <Box
+          sx={{
+            flex: '1 1 0',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 1
+          }}
+        >
+          {resetTarget ? (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setConfirmingReset(true)}
+              sx={{ height: 28, px: 1.5, fontSize: 12.5 }}
+            >
+              Reset batch
+            </Button>
+          ) : null}
           {step === 'finish' ? (
             <Button
               variant="outlined"
-              onClick={startNewBatch}
+              onClick={startNewBatchClick}
               sx={{ height: 28, px: 1.5, fontSize: 12.5 }}
             >
               Start a new batch
@@ -258,25 +295,70 @@ export function BatchScreen(): React.JSX.Element {
             </Button>
           }
         />
+      ) : step === 'choose' &&
+        !showingExisting &&
+        brokenBatches.length > 0 &&
+        savedBatches.length === 0 ? (
+        <EmptyState
+          icon="error"
+          title="A saved batch couldn't be read"
+          description={`${brokenBatches[0]!.id}: ${brokenBatches[0]!.error}`}
+          action={
+            <Button variant="outlined" color="error" onClick={() => setConfirmingReset(true)}>
+              Reset it
+            </Button>
+          }
+        />
       ) : step === 'choose' ? (
-        library.isLoading ? (
-          <CenteredSpinner />
-        ) : library.isError ? (
-          <EmptyState
-            icon="error"
-            title="Couldn't load this folder"
-            description={library.error instanceof Error ? library.error.message : undefined}
-          />
-        ) : (
-          <ChooseStep
-            videos={library.data?.videos ?? []}
-            selectedVideoIds={selectedVideoIds}
-            onChangeSelected={setSelectedVideoIds}
-            templates={templates}
-            selectedTemplateId={selectedTemplateId}
-            onChangeTemplate={setSelectedTemplateId}
-          />
-        )
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
+          {brokenBatches.length > 0 ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 2,
+                py: 1,
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: (theme) => `${theme.palette.warning.main}1a`,
+                fontSize: 12.5
+              }}
+            >
+              <span>
+                {brokenBatches.length} saved {brokenBatches.length === 1 ? 'batch' : 'batches'}{' '}
+                couldn't be read.
+              </span>
+              <Button
+                variant="text"
+                size="small"
+                color="warning"
+                onClick={() => setConfirmingReset(true)}
+                sx={{ minWidth: 0, fontSize: 12.5 }}
+              >
+                Reset {brokenBatches[0]!.id}
+              </Button>
+            </Box>
+          ) : null}
+          {library.isLoading ? (
+            <CenteredSpinner />
+          ) : library.isError ? (
+            <EmptyState
+              icon="error"
+              title="Couldn't load this folder"
+              description={library.error instanceof Error ? library.error.message : undefined}
+            />
+          ) : (
+            <ChooseStep
+              videos={library.data?.videos ?? []}
+              selectedVideoIds={selectedVideoIds}
+              onChangeSelected={setSelectedVideoIds}
+              templates={templates}
+              selectedTemplateId={selectedTemplateId}
+              onChangeTemplate={setSelectedTemplateId}
+            />
+          )}
+        </Box>
       ) : step === 'check' ? (
         drafts ? (
           <CheckStep
@@ -300,8 +382,14 @@ export function BatchScreen(): React.JSX.Element {
           onCancelAll={cancelAllJobs}
           onCancelJob={(jobId) => cancelJob.mutate(jobId)}
         />
+      ) : activeBatch ? (
+        <FinishStep
+          batchId={activeBatch.id}
+          items={activeBatch.items}
+          onExportAll={openExportAll}
+        />
       ) : (
-        <FinishStep jobs={jobs} onExportAll={() => void exportAll()} exporting={exporting} />
+        <CenteredSpinner />
       )}
 
       {folderPath && (step === 'choose' || step === 'check') ? (
@@ -315,6 +403,25 @@ export function BatchScreen(): React.JSX.Element {
       ) : folderPath ? (
         <BatchFooter text={footerText} />
       ) : null}
+
+      <ConfirmDialog
+        open={confirmingReset}
+        title="Reset this batch?"
+        description="Removes this batch from the list. Tracking results and analysis files are kept."
+        confirmLabel="Reset"
+        destructive
+        onConfirm={() => {
+          if (resetTarget) resetBatch(resetTarget)
+        }}
+        onCancel={() => setConfirmingReset(false)}
+      />
+
+      <ExportDialog
+        open={exportDialog.isOpen}
+        onClose={exportDialog.close}
+        videoIds={exportDialog.videoIds}
+        getDefaultPath={exportDialog.getDefaultPath}
+      />
     </Box>
   )
 }

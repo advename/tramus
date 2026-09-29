@@ -3,14 +3,42 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from tests.conftest import SyntheticVideo
-from tramus_engine.domain import Template, utc_now
-from tramus_engine.services.container import Services
+from tramus_engine.domain import (
+    BatchItemRecord,
+    BatchRecord,
+    JobState,
+    ProcessingDevice,
+    RectShape,
+    Template,
+    VideoStatus,
+    utc_now,
+)
+from tramus_engine.services import batch as batch_service
+from tramus_engine.services.container import Services, create_services
+from tramus_engine.services.templates import setup_from_template
+from tramus_engine.storage.paths import batches_dir
 
 from .conftest import AUTH_HEADERS
+
+_TERMINAL_JOB_STATES = ("succeeded", "failed", "cancelled")
+
+
+def _wait_for_job(client: TestClient, job_id: str, *, timeout_s: float = 60.0) -> dict:
+    deadline = time.monotonic() + timeout_s
+    job: dict = {}
+    while time.monotonic() < deadline:
+        resp = client.get(f"/api/jobs/{job_id}", headers=AUTH_HEADERS)
+        assert resp.status_code == 200
+        job = resp.json()
+        if job["state"] in _TERMINAL_JOB_STATES:
+            return job
+        time.sleep(0.25)
+    return job
 
 
 def test_health_requires_token(client: TestClient) -> None:
@@ -274,3 +302,200 @@ def test_batch_check_unknown_template_is_404(client: TestClient, video_id: str) 
         json={"template_id": "nope", "video_ids": [video_id]},
     )
     assert resp.status_code == 404
+
+
+def _save_template_for_batch(
+    services: Services, template_id: str, synthetic_video: SyntheticVideo
+) -> Template:
+    """An arena is required — an empty setup (`Setup.is_empty`) keeps `video_status` at "new"
+    forever, even once a track exists, so a batch template needs one for status to progress."""
+    now = utc_now()
+    template = Template(
+        id=template_id,
+        name=f"Batch template {template_id}",
+        created_at=now,
+        updated_at=now,
+        created_by="tester",
+        reference_width=synthetic_video.width,
+        reference_height=synthetic_video.height,
+        arena=RectShape(x=0, y=0, width=synthetic_video.width, height=synthetic_video.height),
+    )
+    services.templates.save(template)
+    return template
+
+
+def test_create_batch_persists_record(
+    client: TestClient, services: Services, video_id: str, synthetic_video: SyntheticVideo
+) -> None:
+    _save_template_for_batch(services, "tpl-persist", synthetic_video)
+
+    resp = client.post(
+        "/api/batches",
+        headers=AUTH_HEADERS,
+        json={
+            "template_id": "tpl-persist",
+            "items": [
+                {"video_id": video_id, "trial": [0.0, 2.0], "offset_x": 3.0, "offset_y": -1.0}
+            ],
+        },
+    )
+    assert resp.status_code == 200
+    batch = resp.json()
+    batch_id = batch["id"]
+    assert len(batch["jobs"]) == 1
+
+    # Listed, newest first, item summary built from the record.
+    resp = client.get("/api/batches", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["broken"] == []
+    assert body["batches"][0]["id"] == batch_id
+    assert body["batches"][0]["template_name"] == "Batch template tpl-persist"
+    item = body["batches"][0]["items"][0]
+    assert item["video_id"] == video_id
+    assert item["file_name"] == synthetic_video.path.name
+    assert item["trial"] == [0.0, 2.0]
+    assert item["offset_x"] == 3.0
+    assert item["offset_y"] == -1.0
+    # Status before the job finishes is either "new" (no sidecar yet) or already past that if
+    # tracking raced ahead of this request — either is fine, it's asserted properly below.
+    assert item["status"] in ("new", "tracked", "reviewed")
+
+    # Fetched individually too.
+    resp = client.get(f"/api/batches/{batch_id}", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert resp.json()["folder"] == str(synthetic_video.path.parent)
+
+    job = _wait_for_job(client, batch["jobs"][0]["id"])
+    assert job["state"] == "succeeded", job
+
+    resp = client.get(f"/api/batches/{batch_id}", headers=AUTH_HEADERS)
+    item = resp.json()["items"][0]
+    assert item["status"] in ("tracked", "reviewed")
+    assert item["job"] is None  # terminal jobs aren't reported as "running"
+
+
+def test_get_batch_unknown_id_is_404(client: TestClient) -> None:
+    resp = client.get("/api/batches/unknown", headers=AUTH_HEADERS)
+    assert resp.status_code == 404
+
+
+def test_delete_batch_removes_record_but_keeps_sidecar(
+    client: TestClient, services: Services, video_id: str, synthetic_video: SyntheticVideo
+) -> None:
+    _save_template_for_batch(services, "tpl-reset", synthetic_video)
+    resp = client.post(
+        "/api/batches",
+        headers=AUTH_HEADERS,
+        json={"template_id": "tpl-reset", "items": [{"video_id": video_id}]},
+    )
+    batch_id = resp.json()["id"]
+    job = _wait_for_job(client, resp.json()["jobs"][0]["id"])
+    assert job["state"] == "succeeded", job
+
+    sidecar = synthetic_video.path.with_name(synthetic_video.path.name + ".tramus.json")
+    assert sidecar.exists()
+
+    resp = client.delete(f"/api/batches/{batch_id}", headers=AUTH_HEADERS)
+    assert resp.status_code == 204
+    assert sidecar.exists()  # reset never touches sidecars or videos
+
+    assert client.get(f"/api/batches/{batch_id}", headers=AUTH_HEADERS).status_code == 404
+    assert client.delete(f"/api/batches/{batch_id}", headers=AUTH_HEADERS).status_code == 404
+
+
+def test_delete_unknown_batch_is_404(client: TestClient) -> None:
+    resp = client.delete("/api/batches/unknown", headers=AUTH_HEADERS)
+    assert resp.status_code == 404
+
+
+def test_list_batches_reports_broken_file_without_breaking_the_list(
+    client: TestClient, services: Services, video_id: str, synthetic_video: SyntheticVideo
+) -> None:
+    _save_template_for_batch(services, "tpl-broken", synthetic_video)
+    client.post(
+        "/api/batches",
+        headers=AUTH_HEADERS,
+        json={"template_id": "tpl-broken", "items": [{"video_id": video_id}]},
+    )
+    (batches_dir() / "not-json.json").write_text("{this is not valid json", encoding="utf-8")
+
+    resp = client.get("/api/batches", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["batches"]) == 1  # the good batch is still listed
+    assert [b["id"] for b in body["broken"]] == ["not-json"]
+    assert body["broken"][0]["error"]
+
+
+def test_batch_summary_survives_restart_with_a_fresh_services_instance(
+    config_dir: Path, synthetic_video: SyntheticVideo
+) -> None:
+    """No `TestClient`/app here on purpose: a fresh `Services()` is exactly what happens on an
+    app restart — an empty in-memory library registry and no jobs, with everything about the
+    batch's status coming back from disk (the saved record + the video's sidecar)."""
+    services1 = create_services()
+    try:
+        video_id = services1.library.register(synthetic_video.path)
+        template = _save_template_for_batch(services1, "tpl-restart", synthetic_video)
+        video_info = services1.library.probe(synthetic_video.path)
+        setup = setup_from_template(template, video_info.width, video_info.height)
+        job = batch_service.submit_batch_job(
+            job_manager=services1.jobs,
+            sessions=services1.sessions,
+            video_id=video_id,
+            video_path=synthetic_video.path,
+            video_info=video_info,
+            setup=setup,
+            requested_device=ProcessingDevice.CPU,
+            batch_id="batch-restart",
+            app_version=services1.app_version,
+        )
+        deadline = time.monotonic() + 60
+        finished = services1.jobs.get(job.id)
+        while time.monotonic() < deadline:
+            finished = services1.jobs.get(job.id)
+            if finished and finished.state in (
+                JobState.SUCCEEDED,
+                JobState.FAILED,
+                JobState.CANCELLED,
+            ):
+                break
+            time.sleep(0.1)
+        assert finished is not None and finished.state == JobState.SUCCEEDED
+
+        services1.batches.save(
+            BatchRecord(
+                id="batch-restart",
+                created_at=utc_now(),
+                template_id=template.id,
+                template_name=template.name,
+                folder=str(synthetic_video.path.parent),
+                items=[
+                    BatchItemRecord(
+                        video_id=video_id,
+                        video_path=str(synthetic_video.path),
+                        file_name=synthetic_video.path.name,
+                    )
+                ],
+            )
+        )
+    finally:
+        services1.shutdown()
+
+    services2 = create_services()
+    try:
+        assert services2.library.path_for(video_id) is None  # nothing registered yet
+
+        records, broken = services2.batches.list_all()
+        assert broken == []
+        record = next(r for r in records if r.id == "batch-restart")
+
+        summary = batch_service.summarize_batch(
+            record, library=services2.library, jobs=services2.jobs
+        )
+        assert summary.items[0].job is None  # the job manager forgot everything on "restart"
+        assert summary.items[0].status in (VideoStatus.TRACKED, VideoStatus.REVIEWED)
+        assert services2.library.path_for(video_id) is not None  # now resolvable again
+    finally:
+        services2.shutdown()

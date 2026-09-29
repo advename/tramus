@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 
+interface Wanted<T> {
+  url: string
+  tag: T
+}
+
+export interface ImageBitmapResult<T> {
+  bitmap: ImageBitmap | null
+  /** Whatever `tag` was passed alongside the `url` that produced `bitmap` (e.g. a frame index) —
+   * lags the latest requested `tag` while a newer fetch is still in flight, exactly like `bitmap`
+   * lags the latest requested `url`. `null` before anything has loaded. Lets a caller know which
+   * request the currently-shown bitmap actually answers, instead of assuming it's the latest one
+   * asked for (see `VideoStage.tsx`'s `shownFrame`). */
+  tag: T | null
+}
+
 /**
  * Loads `url` as an `ImageBitmap`: at most one request in flight. While a request is pending,
  * further `url` changes just update what's "wanted" — nothing is aborted, so an in-flight
@@ -11,13 +26,16 @@ import { useEffect, useRef, useState } from 'react'
  * Bitmaps that stop being displayed are closed; the real network request is aborted only when
  * the component unmounts. Used for both video frames (`frameUrl`) and the tracker's
  * detection-preview mask.
+ *
+ * `tag` is an arbitrary caller value carried alongside `url` (e.g. the frame index the URL was
+ * built from) and returned next to the bitmap it produced — see `ImageBitmapResult`.
  */
-export function useImageBitmap(url: string | null): ImageBitmap | null {
-  const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
+export function useImageBitmap<T = undefined>(url: string | null, tag?: T): ImageBitmapResult<T> {
+  const [result, setResult] = useState<ImageBitmapResult<T>>({ bitmap: null, tag: null })
   const currentRef = useRef<ImageBitmap | null>(null)
   /** Superseded bitmaps, closed only after React has committed their replacement. */
   const retiredRef = useRef<ImageBitmap[]>([])
-  const wantedUrlRef = useRef(url)
+  const wantedRef = useRef<Wanted<T> | null>(url ? { url, tag: tag as T } : null)
   // Set while the fetch loop (below) is parked between requests; resolves it once a wanted URL
   // becomes available again. Null while a request is in flight (nothing to wake).
   const wakeRef = useRef<(() => void) | null>(null)
@@ -25,9 +43,9 @@ export function useImageBitmap(url: string | null): ImageBitmap | null {
   // Every render keeps the "latest wanted" ref current; the fetch loop (mount-only effect below)
   // always reads from it, so this never needs to restart the loop itself.
   useEffect(() => {
-    wantedUrlRef.current = url
+    wantedRef.current = url ? { url, tag: tag as T } : null
     wakeRef.current?.()
-  }, [url])
+  }, [url, tag])
 
   useEffect(() => {
     let stopped = false
@@ -40,13 +58,13 @@ export function useImageBitmap(url: string | null): ImageBitmap | null {
 
     void (async () => {
       while (!stopped) {
-        const target = wantedUrlRef.current
+        const target = wantedRef.current
         if (!target) {
           await waitForWake()
           continue
         }
         try {
-          const response = await fetch(target, { signal: controller.signal })
+          const response = await fetch(target.url, { signal: controller.signal })
           if (response.ok) {
             const blob = await response.blob()
             const nextBitmap = await createImageBitmap(blob)
@@ -56,14 +74,14 @@ export function useImageBitmap(url: string | null): ImageBitmap | null {
             }
             if (currentRef.current) retiredRef.current.push(currentRef.current)
             currentRef.current = nextBitmap
-            setBitmap(nextBitmap)
+            setResult({ bitmap: nextBitmap, tag: target.tag })
           }
         } catch {
           if (stopped) break
           // Fetch or decode failed for another reason — drop it and try whatever's wanted now.
         }
         // Nothing newer arrived while we were fetching `target` — wait for the next change.
-        if (wantedUrlRef.current === target) await waitForWake()
+        if (wantedRef.current === target) await waitForWake()
       }
     })()
 
@@ -84,8 +102,8 @@ export function useImageBitmap(url: string | null): ImageBitmap | null {
   useEffect(() => {
     const retired = retiredRef.current
     retiredRef.current = []
-    for (const old of retired) if (old !== bitmap) old.close()
-  }, [bitmap])
+    for (const old of retired) if (old !== result.bitmap) old.close()
+  }, [result.bitmap])
 
-  return bitmap
+  return result
 }

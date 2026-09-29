@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict
 from ..domain import (
     AnalysisDocument,
     Correction,
+    ExportLayout,
     Flag,
     FlagStatus,
     Job,
@@ -24,6 +25,8 @@ from ..domain import (
     VideoInfo,
     VideoStatus,
 )
+from ..services.batch import BatchItemSummary, BatchSummary
+from ..storage.batches import BrokenBatch
 
 
 class ApiModel(BaseModel):
@@ -243,6 +246,71 @@ class Batch(ApiModel):
     jobs: list[Job]
 
 
+class BatchItemView(ApiModel):
+    """One video's current status within a saved batch — combines the persisted record (path,
+    trial, offset) with live status derived from its sidecar plus any running job."""
+
+    video_id: str
+    video_path: str
+    file_name: str
+    trial: tuple[float, float] | None
+    offset_x: float
+    offset_y: float
+    status: VideoStatus
+    unresolved_flags: int
+    job: Job | None
+
+
+class BatchView(ApiModel):
+    id: str
+    created_at: UtcDateTime
+    template_id: str
+    template_name: str
+    folder: str
+    items: list[BatchItemView]
+
+
+class BrokenBatchView(ApiModel):
+    """A saved batch file that couldn't be parsed — the UI offers to reset (delete) it."""
+
+    id: str
+    error: str
+
+
+class BatchListResponse(ApiModel):
+    batches: list[BatchView]
+    broken: list[BrokenBatchView]
+
+
+def build_batch_item_view(item: BatchItemSummary) -> BatchItemView:
+    return BatchItemView(
+        video_id=item.video_id,
+        video_path=item.video_path,
+        file_name=item.file_name,
+        trial=item.trial,
+        offset_x=item.offset_x,
+        offset_y=item.offset_y,
+        status=item.status,
+        unresolved_flags=item.unresolved_flags,
+        job=item.job,
+    )
+
+
+def build_batch_view(summary: BatchSummary) -> BatchView:
+    return BatchView(
+        id=summary.id,
+        created_at=summary.created_at,
+        template_id=summary.template_id,
+        template_name=summary.template_name,
+        folder=summary.folder,
+        items=[build_batch_item_view(item) for item in summary.items],
+    )
+
+
+def build_broken_batch_view(broken: BrokenBatch) -> BrokenBatchView:
+    return BrokenBatchView(id=broken.id, error=broken.error)
+
+
 # ---- templates ------------------------------------------------------------------------------
 
 
@@ -262,6 +330,7 @@ class ExportRequest(ApiModel):
     video_ids: list[str]
     format: Literal["xlsx", "csv"]
     path: str
+    layout: ExportLayout = ExportLayout.WIDE
 
 
 class ExportResponse(ApiModel):

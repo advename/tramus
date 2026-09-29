@@ -19,6 +19,7 @@ from ..domain import (
 from ..domain.base import utc_now
 from .corrections import apply_corrections
 from .crossings import compute_crossings
+from .distance import compute_distance_mm
 from .exclusions import analysed_intervals, frame_interval_overlap, frame_is_excluded
 from .occupancy import zone_fractions, zone_membership
 
@@ -84,6 +85,7 @@ def compute_results(document: AnalysisDocument, effective: Track | None = None) 
         visits=visits,
         crossings=crossings,
         crossing_matrix=crossing_matrix,
+        distance_mm=compute_distance_mm(document, track),
     )
 
 

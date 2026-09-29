@@ -7,7 +7,7 @@ import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-from tests.app.conftest import make_document, make_setup, make_track
+from tests.app.conftest import make_document, make_setup, make_track, make_video_info
 from tramus_engine.domain import (
     AnalysisSettings,
     Calibration,
@@ -15,6 +15,7 @@ from tramus_engine.domain import (
     CrossingResult,
     CrossingRule,
     Exclusion,
+    ExportLayout,
     MatrixCell,
     Results,
     Setup,
@@ -29,9 +30,12 @@ from tramus_engine.export.tables import (
     VideoExport,
     build_crossing_event_rows,
     build_crossing_matrix_grids,
+    build_crossing_matrix_rows_wide,
     build_crossing_rule_rows,
+    build_crossing_rule_rows_wide,
     build_settings_rows,
     build_summary_rows,
+    build_summary_rows_wide,
     build_track_rows,
     build_visit_rows,
 )
@@ -300,7 +304,7 @@ def test_write_xlsx_contains_expected_sheets(tmp_path: Path) -> None:
 
 def test_write_xlsx_crossing_matrix_sheet_has_zone_names(tmp_path: Path) -> None:
     out = tmp_path / "export.xlsx"
-    write_xlsx([_make_crossing_export()], out)
+    write_xlsx([_make_crossing_export()], out, layout=ExportLayout.LONG)
     with zipfile.ZipFile(out) as zf:
         shared_strings = zf.read("xl/sharedStrings.xml").decode("utf-8")
         assert "From \\ To" in shared_strings
@@ -331,7 +335,7 @@ def test_write_xlsx_multiple_videos_unique_track_sheets(tmp_path: Path) -> None:
 
 def test_write_csv_summary_and_visits(tmp_path: Path) -> None:
     out_base = tmp_path / "export"
-    paths = write_csv([_make_export()], out_base)
+    paths = write_csv([_make_export()], out_base, layout=ExportLayout.LONG)
     assert [p.name for p in paths] == [
         "export_summary.csv",
         "export_visits.csv",
@@ -352,9 +356,11 @@ def test_write_csv_summary_and_visits(tmp_path: Path) -> None:
         "Analysed duration (s)",
         "Excluded duration (s)",
         "Threshold",
+        "Distance travelled (cm)",
     ]
     assert rows[1][0] == "mouse.mp4"
     assert rows[1][1] == "Center"
+    assert rows[1][9] == ""  # no calibration -> empty distance cell
 
     with paths[1].open(encoding="utf-8-sig", newline="") as handle:
         visit_rows = list(csv.reader(handle))
@@ -364,7 +370,7 @@ def test_write_csv_summary_and_visits(tmp_path: Path) -> None:
 
 def test_write_csv_crossings(tmp_path: Path) -> None:
     out_base = tmp_path / "export"
-    paths = write_csv([_make_crossing_export()], out_base)
+    paths = write_csv([_make_crossing_export()], out_base, layout=ExportLayout.LONG)
     crossings_path = paths[2]
     assert crossings_path.name == "export_crossings.csv"
 
@@ -384,3 +390,309 @@ def test_write_csv_crossings(tmp_path: Path) -> None:
     assert rows[10][1] == "Left → Right"
     assert rows[10][2] == "Left"
     assert rows[10][3] == "Right"
+
+
+# ---- wide layout: builders --------------------------------------------------------------------
+
+
+def _summary_result(
+    rows: list[tuple[str, float, float]], *, distance_mm: float | None = None
+) -> Results:
+    """A minimal `Results` with a custom set of summary rows (name, time_s, share_of_analysed)."""
+    return Results(
+        computed_at=datetime.now(UTC),
+        trial_start_s=0.0,
+        trial_end_s=4.0,
+        trial_duration_s=4.0,
+        analysed_duration_s=4.0,
+        excluded_duration_s=0.0,
+        in_zone_threshold=0.5,
+        summary=[
+            SummaryRow(
+                kind=SummaryRowKind.ZONE
+                if name not in ("No zone", "Not visible")
+                else (SummaryRowKind.NO_ZONE if name == "No zone" else SummaryRowKind.NOT_VISIBLE),
+                name=name,
+                time_s=time_s,
+                share_of_analysed=share,
+            )
+            for name, time_s, share in rows
+        ],
+        visits=[],
+        distance_mm=distance_mm,
+    )
+
+
+def _wide_export(
+    file_name: str, zone_names: list[str], rows: list[tuple[str, float, float]], **result_kwargs
+) -> VideoExport:
+    zones = [
+        Zone(
+            id=f"{file_name}-{name}",
+            name=name,
+            color_index=i,
+            shape=EllipseShape(cx=0, cy=0, rx=1, ry=1),
+        )
+        for i, name in enumerate(zone_names)
+    ]
+    setup = Setup(zones=zones)
+    video = make_video_info(file_name=file_name)
+    document = make_document(video=video, setup=setup, track=make_track())
+    return VideoExport(
+        video_id=file_name,
+        file_name=file_name,
+        document=document,
+        effective_track=document.track,
+        results=_summary_result(rows, **result_kwargs),
+    )
+
+
+def test_build_summary_rows_wide_aligns_zones_by_name_across_videos() -> None:
+    export_a = _wide_export(
+        "a.mp4",
+        ["Left", "Right"],
+        [
+            ("Left", 1.0, 0.25),
+            ("Right", 2.0, 0.5),
+            ("No zone", 0.5, 0.125),
+            ("Not visible", 0.5, 0.125),
+        ],
+        distance_mm=1234.0,
+    )
+    export_b = _wide_export(
+        "b.mp4",
+        ["Right", "Extra"],
+        [
+            ("Right", 3.0, 0.75),
+            ("Extra", 0.5, 0.125),
+            ("No zone", 0.3, 0.075),
+            ("Not visible", 0.2, 0.05),
+        ],
+    )
+
+    rows = build_summary_rows_wide([export_a, export_b])
+    assert len(rows) == 2
+    # Columns are the union of zone names in first-seen order, then the fixed "No zone"/"Not
+    # visible" columns.
+    assert list(rows[0].time_by_zone.keys()) == ["Left", "Right", "Extra", "No zone", "Not visible"]
+
+    a, b = rows
+    assert a.video == "a.mp4"
+    assert a.time_by_zone["Left"] == 1.0
+    assert a.time_by_zone["Right"] == 2.0
+    assert a.time_by_zone["Extra"] is None  # video a has no "Extra" zone
+    assert a.distance_mm == 1234.0
+
+    assert b.video == "b.mp4"
+    assert b.time_by_zone["Left"] is None  # video b has no "Left" zone
+    assert b.time_by_zone["Right"] == 3.0
+    assert b.time_by_zone["Extra"] == 0.5
+    assert b.distance_mm is None
+
+
+def test_build_crossing_rule_rows_wide_aligns_by_rule_label() -> None:
+    left_a = Zone(
+        id="a-left", name="Left", color_index=0, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    right_a = Zone(
+        id="a-right", name="Right", color_index=1, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    right_b = Zone(
+        id="b-right", name="Right", color_index=0, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    extra_b = Zone(
+        id="b-extra", name="Extra", color_index=1, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+
+    results_a = _summary_result(
+        [("Left", 1.0, 0.5), ("No zone", 0.0, 0.0), ("Not visible", 0.0, 0.0)]
+    )
+    results_a = results_a.model_copy(
+        update={
+            "crossings": [
+                CrossingResult(rule_id="r1", from_zone_id="a-left", to_zone_id="a-right", count=2)
+            ]
+        }
+    )
+    results_b = _summary_result(
+        [("Right", 1.0, 0.5), ("No zone", 0.0, 0.0), ("Not visible", 0.0, 0.0)]
+    )
+    results_b = results_b.model_copy(
+        update={
+            "crossings": [
+                CrossingResult(rule_id="r2", from_zone_id=None, to_zone_id="b-extra", count=1)
+            ]
+        }
+    )
+
+    export_a = VideoExport(
+        video_id="a",
+        file_name="a.mp4",
+        document=make_document(
+            video=make_video_info(file_name="a.mp4"),
+            setup=Setup(zones=[left_a, right_a]),
+            track=make_track(),
+        ),
+        effective_track=make_track(),
+        results=results_a,
+    )
+    export_b = VideoExport(
+        video_id="b",
+        file_name="b.mp4",
+        document=make_document(
+            video=make_video_info(file_name="b.mp4"),
+            setup=Setup(zones=[right_b, extra_b]),
+            track=make_track(),
+        ),
+        effective_track=make_track(),
+        results=results_b,
+    )
+
+    rows = build_crossing_rule_rows_wide([export_a, export_b])
+    assert len(rows) == 2
+    labels = list(rows[0].counts_by_rule.keys())
+    assert labels == ["Left → Right – Crossings", "Any zone → Extra – Crossings"]
+    assert rows[0].counts_by_rule["Left → Right – Crossings"] == 2
+    assert rows[0].counts_by_rule["Any zone → Extra – Crossings"] is None
+    assert rows[1].counts_by_rule["Left → Right – Crossings"] is None
+    assert rows[1].counts_by_rule["Any zone → Extra – Crossings"] == 1
+
+
+def test_build_crossing_matrix_rows_wide_aligns_by_pair_label() -> None:
+    left_a = Zone(
+        id="a-left", name="Left", color_index=0, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    right_a = Zone(
+        id="a-right", name="Right", color_index=1, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    right_b = Zone(
+        id="b-right", name="Right", color_index=0, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+    extra_b = Zone(
+        id="b-extra", name="Extra", color_index=1, shape=EllipseShape(cx=0, cy=0, rx=1, ry=1)
+    )
+
+    results_a = _summary_result(
+        [("Left", 1.0, 0.5), ("No zone", 0.0, 0.0), ("Not visible", 0.0, 0.0)]
+    )
+    results_a = results_a.model_copy(
+        update={
+            "crossing_matrix": [
+                MatrixCell(from_zone_id="a-left", to_zone_id="a-left", count=0),
+                MatrixCell(from_zone_id="a-left", to_zone_id="a-right", count=3),
+                MatrixCell(from_zone_id="a-right", to_zone_id="a-left", count=0),
+                MatrixCell(from_zone_id="a-right", to_zone_id="a-right", count=0),
+            ]
+        }
+    )
+    results_b = _summary_result(
+        [("Right", 1.0, 0.5), ("No zone", 0.0, 0.0), ("Not visible", 0.0, 0.0)]
+    )
+    results_b = results_b.model_copy(
+        update={
+            "crossing_matrix": [
+                MatrixCell(from_zone_id="b-right", to_zone_id="b-right", count=0),
+                MatrixCell(from_zone_id="b-right", to_zone_id="b-extra", count=1),
+                MatrixCell(from_zone_id="b-extra", to_zone_id="b-right", count=0),
+                MatrixCell(from_zone_id="b-extra", to_zone_id="b-extra", count=0),
+            ]
+        }
+    )
+
+    export_a = VideoExport(
+        video_id="a",
+        file_name="a.mp4",
+        document=make_document(
+            video=make_video_info(file_name="a.mp4"),
+            setup=Setup(zones=[left_a, right_a]),
+            track=make_track(),
+        ),
+        effective_track=make_track(),
+        results=results_a,
+    )
+    export_b = VideoExport(
+        video_id="b",
+        file_name="b.mp4",
+        document=make_document(
+            video=make_video_info(file_name="b.mp4"),
+            setup=Setup(zones=[right_b, extra_b]),
+            track=make_track(),
+        ),
+        effective_track=make_track(),
+        results=results_b,
+    )
+
+    rows = build_crossing_matrix_rows_wide([export_a, export_b])
+    labels = list(rows[0].counts_by_pair.keys())
+    assert labels == [
+        "Left → Left",
+        "Left → Right",
+        "Right → Left",
+        "Right → Right",
+        "Right → Extra",
+        "Extra → Right",
+        "Extra → Extra",
+    ]
+    assert rows[0].counts_by_pair["Left → Right"] == 3
+    assert rows[0].counts_by_pair["Right → Extra"] is None  # video a has no "Extra" zone
+    assert rows[1].counts_by_pair["Right → Extra"] == 1
+    assert rows[1].counts_by_pair["Left → Right"] is None  # video b has no "Left" zone
+
+
+# ---- wide layout: writers -----------------------------------------------------------------
+
+
+def test_write_xlsx_default_layout_is_wide(tmp_path: Path) -> None:
+    out = tmp_path / "export.xlsx"
+    write_xlsx([_make_crossing_export()], out)
+    with zipfile.ZipFile(out) as zf:
+        workbook_xml = zf.read("xl/workbook.xml").decode("utf-8")
+        assert "Export info" in workbook_xml
+        assert "Summary (wide)" in workbook_xml
+        assert "Crossings (wide)" in workbook_xml
+        assert "Crossing matrix (wide)" in workbook_xml
+        shared_strings = zf.read("xl/sharedStrings.xml").decode("utf-8")
+        assert "wide" in shared_strings
+        assert "Distance travelled (cm)" in shared_strings
+
+
+def test_write_xlsx_long_layout_keeps_original_sheet_shape(tmp_path: Path) -> None:
+    out = tmp_path / "export.xlsx"
+    write_xlsx([_make_crossing_export()], out, layout=ExportLayout.LONG)
+    with zipfile.ZipFile(out) as zf:
+        workbook_xml = zf.read("xl/workbook.xml").decode("utf-8")
+        assert "Summary (long)" in workbook_xml
+        assert "Crossings (long)" in workbook_xml
+        assert "Crossing matrix (long)" in workbook_xml
+
+
+def test_write_csv_wide_layout_file_names_and_summary_header(tmp_path: Path) -> None:
+    out_base = tmp_path / "export"
+    paths = write_csv([_make_crossing_export()], out_base)
+    assert [p.name for p in paths] == [
+        "export_summary_wide.csv",
+        "export_visits.csv",
+        "export_crossings_wide.csv",
+    ]
+    with paths[0].open(encoding="utf-8-sig", newline="") as handle:
+        header = next(csv.reader(handle))
+    assert header[0] == "Video"
+    assert header[-1] == "Distance travelled (cm)"
+    assert "Left – Time (s)" in header
+    assert "Right – Share of analysed (%)" in header
+
+
+def test_write_csv_wide_crossings_has_pivoted_and_event_blocks(tmp_path: Path) -> None:
+    out_base = tmp_path / "export"
+    paths = write_csv([_make_crossing_export()], out_base)
+    crossings_path = paths[2]
+    with crossings_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.reader(handle))
+    assert rows[0] == ["Video", "Left → Right – Crossings"]
+    assert rows[1] == ["mouse.mp4", "1"]
+    assert rows[2] == []
+    assert rows[3] == ["Video", "Left → Left", "Left → Right", "Right → Left", "Right → Right"]
+    assert rows[4] == ["mouse.mp4", "0", "1", "0", "0"]
+    assert rows[5] == []
+    assert rows[6] == ["Video", "Rule", "From", "To", "Time (s)", "Time (UTC)", "Time (local)"]
+    assert rows[7][1] == "Left → Right"

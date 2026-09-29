@@ -10,7 +10,7 @@ export interface SelectionBarProps {
   canExport: boolean
   onApplyTemplate: () => void
   onTrack: () => void
-  onExport: (anchor: HTMLElement) => void
+  onExport: () => void
   onClear: () => void
 }
 
@@ -60,7 +60,7 @@ export function SelectionBar({
       <Button
         variant="outlined"
         disabled={!canExport}
-        onClick={(event) => onExport(event.currentTarget)}
+        onClick={onExport}
         startIcon={<Symbol name="download" size={16} />}
         sx={{ height: 28, px: 1.5, fontSize: 12.5, fontWeight: 500 }}
       >

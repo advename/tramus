@@ -3,6 +3,7 @@ track."""
 
 from .corrections import apply_corrections, flag_statuses
 from .crossings import compute_crossings
+from .distance import compute_distance_mm
 from .exclusions import (
     analysed_intervals,
     clipped_exclusions,
@@ -22,6 +23,7 @@ __all__ = [
     "build_history",
     "clipped_exclusions",
     "compute_crossings",
+    "compute_distance_mm",
     "compute_results",
     "excluded_duration_s",
     "flag_statuses",

@@ -2,10 +2,29 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Point } from '../lib/geometry'
 import { clampPan, type Size, zoomAroundPoint } from '../lib/stageTransform'
-import { STAGE_ZOOM_MAX, STAGE_ZOOM_MIN, useWorkspaceStore } from '../state/workspaceStore'
+import {
+  type ReviewTool,
+  type SetupTool,
+  STAGE_ZOOM_MAX,
+  STAGE_ZOOM_MIN,
+  useWorkspaceStore,
+  type WorkspaceStep
+} from '../state/workspaceStore'
 
 function clampZoom(zoom: number): number {
   return Math.min(STAGE_ZOOM_MAX, Math.max(STAGE_ZOOM_MIN, zoom))
+}
+
+/** The tool actually live on the stage for `step` — mirrors `useZoneEditing`'s `activeTool`.
+ * Setup and Review each keep their own tool selection (`setupTool`/`reviewTool`) even while the
+ * other step is showing, so reading either one directly (regardless of `step`) is what let Pan
+ * left selected in Setup silently pan every Review click, whatever tool Review had selected. */
+function activeToolFor(
+  step: WorkspaceStep,
+  setupTool: SetupTool,
+  reviewTool: ReviewTool
+): SetupTool | ReviewTool {
+  return step === 'setup' ? setupTool : step === 'review' ? reviewTool : 'select'
 }
 
 export interface StagePanZoomApi {
@@ -23,12 +42,17 @@ export interface StagePanZoomApi {
 }
 
 /**
- * Pan (drag) and zoom (1–8×, around the cursor) for the video stage. Space held down or the "pan"
- * tool arms panning on the next drag; middle-mouse always pans. Space is also the play/pause
- * shortcut (registered separately) — holding it to start a pan also toggles playback once, a
- * minor known overlap rather than tracking a full "was this tap or a drag" state machine.
+ * Pan (drag) and zoom (1–8×, around the cursor) for the video stage. Space held down or the
+ * current step's "pan" tool arms panning on the next drag; middle-mouse always pans. Space is
+ * also the play/pause shortcut (registered separately) — holding it to start a pan also toggles
+ * playback once, a minor known overlap rather than tracking a full "was this tap or a drag" state
+ * machine.
  */
-export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
+export function useStagePanZoom(
+  container: Size,
+  video: Size,
+  step: WorkspaceStep
+): StagePanZoomApi {
   const zoom = useWorkspaceStore((s) => s.stageZoom)
   const pan = useWorkspaceStore((s) => s.stagePan)
   const setStageZoom = useWorkspaceStore((s) => s.setStageZoom)
@@ -56,11 +80,25 @@ export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
       spaceHeldRef.current = false
       setSpaceHeld(false)
     }
+    // A keyup missed while the window/tab wasn't focused (e.g. Space held while switching apps,
+    // or a dev-tools/OS shortcut stealing focus) would otherwise leave `spaceHeld` stuck true —
+    // the stage would keep panning and showing the grab cursor forever.
+    const onReset = (): void => {
+      spaceHeldRef.current = false
+      setSpaceHeld(false)
+    }
+    const onVisibilityChange = (): void => {
+      if (document.hidden) onReset()
+    }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onReset)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onReset)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])
 
@@ -98,7 +136,7 @@ export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
   const tryStartPan = useCallback(
     (e: React.PointerEvent<Element>): boolean => {
       const { setupTool, reviewTool } = useWorkspaceStore.getState()
-      const toolIsPan = setupTool === 'pan' || reviewTool === 'pan'
+      const toolIsPan = activeToolFor(step, setupTool, reviewTool) === 'pan'
       const shouldPan = toolIsPan || spaceHeldRef.current || e.button === 1
       if (!shouldPan) return false
       e.preventDefault()
@@ -125,10 +163,12 @@ export function useStagePanZoom(container: Size, video: Size): StagePanZoomApi {
       window.addEventListener('pointerup', onUp)
       return true
     },
-    [pan, container, video, zoom, setStagePan]
+    [pan, container, video, zoom, setStagePan, step]
   )
 
-  const toolIsPan = useWorkspaceStore((s) => s.setupTool === 'pan' || s.reviewTool === 'pan')
+  const toolIsPan = useWorkspaceStore(
+    (s) => activeToolFor(step, s.setupTool, s.reviewTool) === 'pan'
+  )
   const cursor = isPanning ? 'grabbing' : toolIsPan || spaceHeld ? 'grab' : undefined
 
   return { isPanning, cursor, onWheel, tryStartPan, zoomBy, zoomFit }

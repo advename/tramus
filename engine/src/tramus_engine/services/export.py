@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..domain import utc_now
+from ..domain import ExportLayout, utc_now
 from ..export.csv import write_csv
 from ..export.tables import VideoExport, build_video_export
 from ..export.xlsx import write_xlsx
@@ -25,6 +25,7 @@ def export_videos(
     video_ids: list[str],
     format: str,
     path: Path,
+    layout: ExportLayout = ExportLayout.WIDE,
 ) -> list[Path]:
     """Exports `video_ids` to `path`. Uses each video's open session if there is one, otherwise
     its sidecar; skips videos with neither. Sets `exported_at` and saves the source document."""
@@ -48,8 +49,8 @@ def export_videos(
         raise NoAnalysisToExportError("none of the requested videos have an analysis to export")
 
     if format == "xlsx":
-        write_xlsx(exports, path)
+        write_xlsx(exports, path, layout=layout)
         return [path]
     if format == "csv":
-        return write_csv(exports, path)
+        return write_csv(exports, path, layout=layout)
     raise ValueError(f"unknown export format: {format!r}")

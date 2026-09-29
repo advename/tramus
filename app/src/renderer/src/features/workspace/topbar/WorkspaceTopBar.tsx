@@ -5,6 +5,7 @@ import type { VideoInfo } from '../../../api/types'
 import { formatDate } from '../../../lib/time'
 import type { SaveLabelInfo } from '../lib/session'
 import type { WorkspaceStep } from '../state/workspaceStore'
+import { BatchNav, type BatchNavProps } from './BatchNav'
 import { Breadcrumb } from './Breadcrumb'
 import { SaveControl } from './SaveControl'
 import { StepTabs } from './StepTabs'
@@ -19,6 +20,8 @@ export interface WorkspaceTopBarProps {
   save: SaveLabelInfo
   onSave: () => void
   saving: boolean
+  /** Shown instead of the recorded-time readout while `?batch=` is in the URL. */
+  batchNav?: BatchNavProps
 }
 
 /** The 48 px top bar: breadcrumb, workflow steps, recorded time, and save state. */
@@ -31,7 +34,8 @@ export function WorkspaceTopBar({
   onSelectStep,
   save,
   onSave,
-  saving
+  saving,
+  batchNav
 }: WorkspaceTopBarProps): React.JSX.Element {
   return (
     <Box
@@ -52,6 +56,7 @@ export function WorkspaceTopBar({
     >
       <Breadcrumb videoPath={videoPath} fileName={fileName} />
       <StepTabs step={step} disabledAfterSetup={disabledAfterSetup} onSelect={onSelectStep} />
+      {batchNav ? <BatchNav {...batchNav} /> : null}
       <Box
         sx={{
           flex: '1 1 0',

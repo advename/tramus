@@ -23,6 +23,15 @@ class ThemePreference(StrEnum):
     SYSTEM = "system"
 
 
+class ExportLayout(StrEnum):
+    """§9: `WIDE` is one row per video (per-video aggregates grouped by measure); `LONG` is one
+    row per video and zone, the original shape. Visits, crossing events and Track stay long in
+    both layouts — only Summary, crossing rule counts and the crossing matrix are pivoted."""
+
+    WIDE = "wide"
+    LONG = "long"
+
+
 class RecentFolder(DomainModel):
     path: str
     name: str
@@ -37,4 +46,11 @@ class AppSettings(DomainModel):
     trail_length_s: float = Field(10.0, ge=5, le=30)
     default_in_zone_threshold: float = Field(0.5, ge=0.05, le=0.95)
     theme: ThemePreference = ThemePreference.DARK
+    export_layout: ExportLayout = Field(
+        ExportLayout.WIDE,
+        description=(
+            "Preferred export layout, used by the UI to seed the export dialog's default (the"
+            " export request itself always carries its own explicit layout)."
+        ),
+    )
     recent_folders: list[RecentFolder] = Field(default_factory=list, max_length=12)

@@ -1,18 +1,18 @@
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 
-import { getApiClient, unwrap } from '../../../api/client'
+import { useBatch } from '../../../api/queries'
 import type { ZoneVisit } from '../../../api/types'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
+import { ExportDialog, useExportDialog } from '../../export'
 import { useResults, useSession } from '../data'
 import { defaultExportPath } from '../lib/exportPath'
 import { trialSummaryText } from '../lib/session'
 import { useWorkspaceStore, type ResultsView as ResultsViewKind } from '../state/workspaceStore'
-import { notify, notifyError } from '../../../stores/notifications'
 import { CrossingsView } from './CrossingsView'
 import { EventsGrid } from './EventsGrid'
 import { SummaryChart } from './SummaryChart'
@@ -28,42 +28,6 @@ const RESULTS_VIEW_LABEL: Record<ResultsViewKind, string> = {
   crossings: 'Crossings'
 }
 
-async function runExport(
-  videoId: string,
-  format: 'xlsx' | 'csv',
-  videoPath: string
-): Promise<void> {
-  const defaultPath = defaultExportPath(videoPath, format)
-  const path = await window.tramus.dialog.saveFile({
-    defaultPath,
-    filters: [
-      format === 'xlsx'
-        ? { name: 'Excel Workbook', extensions: ['xlsx'] }
-        : { name: 'CSV', extensions: ['csv'] }
-    ]
-  })
-  if (!path) return
-  try {
-    const response = unwrap(
-      await getApiClient().POST('/api/export', { body: { video_ids: [videoId], format, path } })
-    )
-    const file = response.files[0]
-    notify({
-      severity: 'success',
-      title: 'Exported',
-      message: response.files.join(', '),
-      action: file
-        ? {
-            label: 'Show in folder',
-            onClick: () => void window.tramus.shell.showItemInFolder(file)
-          }
-        : undefined
-    })
-  } catch (error) {
-    notifyError('Couldn’t export', error)
-  }
-}
-
 /** The stage-area replacement for the Results step (design: `isResults` block). */
 export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
   const navigate = useNavigate()
@@ -72,6 +36,16 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
   const resultsView = useWorkspaceStore((s) => s.resultsView)
   const setResultsView = useWorkspaceStore((s) => s.setResultsView)
   const seek = useWorkspaceStore((s) => s.seek)
+  const exportDialog = useExportDialog()
+
+  // Batch review mode (`?batch=<id>`, set by `features/batch/FinishStep.tsx`'s "Open in Review"):
+  // a "Next video" action alongside Export, stepping to the batch's next item.
+  const [searchParams] = useSearchParams()
+  const batchId = searchParams.get('batch')
+  const batch = useBatch(batchId ?? undefined)
+  const batchItems = batch.data?.items ?? []
+  const batchIndex = batchId ? batchItems.findIndex((item) => item.video_id === videoId) : -1
+  const nextBatchItem = batchIndex === -1 ? null : (batchItems[batchIndex + 1] ?? null)
 
   const video = session.data?.video
   const setup = session.data?.document.setup
@@ -142,38 +116,56 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
           {trialSummaryText(r)}
         </Typography>
         <Box sx={{ flex: 1 }} />
-        <ShortcutTooltip title="Export to Excel" shortcut="mod+e">
+        {batchId && nextBatchItem ? (
+          <Button
+            variant="outlined"
+            onClick={() =>
+              void navigate(`/videos/${nextBatchItem.video_id}/review?batch=${batchId}`)
+            }
+            endIcon={<Symbol name="arrow_forward" size={16} />}
+            sx={{ height: 30, fontWeight: 500 }}
+          >
+            Next video
+          </Button>
+        ) : null}
+        <ShortcutTooltip title="Export" shortcut="mod+e">
           <Button
             variant="contained"
-            onClick={() => void runExport(videoId, 'xlsx', video.path)}
+            onClick={() =>
+              exportDialog.open({
+                videoIds: [videoId],
+                getDefaultPath: (format) => defaultExportPath(video.path, format)
+              })
+            }
             startIcon={<Symbol name="download" size={16} />}
             sx={{ height: 30, fontWeight: 600 }}
           >
-            Excel (.xlsx)
-          </Button>
-        </ShortcutTooltip>
-        <ShortcutTooltip title="Export CSV" shortcut="mod+shift+e">
-          <Button
-            variant="outlined"
-            onClick={() => void runExport(videoId, 'csv', video.path)}
-            sx={{ height: 30 }}
-          >
-            CSV
+            Export…
           </Button>
         </ShortcutTooltip>
       </Box>
 
+      <ExportDialog
+        open={exportDialog.isOpen}
+        onClose={exportDialog.close}
+        videoIds={exportDialog.videoIds}
+        getDefaultPath={exportDialog.getDefaultPath}
+      />
+
       {resultsView === 'summary' ? (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 1.75
-          }}
-        >
-          <SummaryTable results={r} />
-          <SummaryChart results={r} />
-        </Box>
+        <>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: 1.75
+            }}
+          >
+            <SummaryTable results={r} />
+            <SummaryChart results={r} />
+          </Box>
+          <DistanceTravelled distanceMm={r.distance_mm ?? null} />
+        </>
       ) : resultsView === 'events' ? (
         <EventsGrid results={r} recordedAt={recordedAt} onRowClick={goToVisit} />
       ) : (
@@ -192,6 +184,38 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
         <Symbol name="schedule" size={15} />
         Times are stored in UTC and shown in this computer’s time zone.
       </Box>
+    </Box>
+  )
+}
+
+interface DistanceTravelledProps {
+  /** `Results.distance_mm` — `null` without a calibration (`Setup.calibration`, §5.5). */
+  distanceMm: number | null
+}
+
+/** "Distance travelled · 12.34 m", or a hint to set a scale — design: Summary view footnote. */
+function DistanceTravelled({ distanceMm }: DistanceTravelledProps): React.JSX.Element {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.75,
+        fontSize: 12.5,
+        color: distanceMm != null ? 'text.secondary' : 'text.disabled'
+      }}
+    >
+      <Symbol name="route" size={16} />
+      {distanceMm != null ? (
+        <>
+          Distance travelled ·{' '}
+          <Typography component="span" variant="mono" sx={{ fontSize: 12.5 }}>
+            {(distanceMm / 1000).toFixed(2)} m
+          </Typography>
+        </>
+      ) : (
+        'Set a scale with the Measure tool to see distance'
+      )}
     </Box>
   )
 }

@@ -4,10 +4,15 @@ Tramus tracks a single mouse in top-down lab videos and measures how long it spe
 draw — e.g. the three chambers of a sociability box. It runs on Windows, macOS and Linux, works
 offline, and keeps every analysis in a JSON file next to the video so results are reproducible.
 
-**Workflow:** open a folder → pick a video → draw the arena and zones, set the trial start/end →
-**Track** → review at 4× with a movement trail and fix flagged frames → results (time per zone and
-every zone visit) → export to Excel/CSV. A setup can be saved as a template and applied to a whole
+**Workflow:** open a folder → pick a video → draw the arena and zones (optionally measure a known
+distance so sizes show in cm), set the trial start/end and exclude disturbed periods → **Track** →
+review at 4× with a movement trail and fix flagged frames (hotkeys: A accept, P set position, ]
+next) → results → export to Excel/CSV. A setup can be saved as a template and applied to a whole
 batch of videos recorded with the same camera.
+
+**Results:** time per zone (as a share of the analysed time), every zone visit, and **zone
+crossings**: counts for from→to rules you define (e.g. Left → Center, or "any zone") plus a full
+from×to matrix, with every crossing's time.
 
 ## How it works
 
@@ -20,6 +25,10 @@ batch of videos recorded with the same camera.
   times are stored in UTC from the video's metadata and shown in your local time zone.
 * **Corrections** are stored as a log on top of the raw tracking, so every change is traceable
   and included in exports.
+* **Excluded periods** (e.g. a hand in the arena) are cut out of the analysis only: the whole
+  video stays tracked, so exclusions can change without re-tracking.
+* **Crossings** count X→Y when the mouse leaves X and the next zone it enters is Y. Time on
+  unzoned floor or out of sight in between doesn't break a crossing; an excluded period does.
 
 See [docs/architecture.md](docs/architecture.md) for the design, algorithms and API.
 
@@ -30,7 +39,7 @@ See [docs/architecture.md](docs/architecture.md) for the design, algorithms and 
 | `engine/` | Python engine: decoding (PyAV), tracking (OpenCV), analysis, sidecar files, export, local HTTP API (FastAPI), CLI |
 | `app/` | Desktop app: Electron + React + MUI |
 | `docs/` | Architecture and contracts |
-| `designs/` | UI design source (Claude Design) |
+| `designs/` | UI design source (Claude Design): the visual baseline; later features follow its style |
 | `scripts/` | Build helpers |
 
 ## Development
@@ -50,6 +59,7 @@ npm install
 npm run gen:api                            # regenerate API types after engine API changes
 npm run dev
 npm run typecheck && npm run lint && npm test
+npm run build && npm run smoke              # drives the real app (hidden window): screenshots + playback fps
 ```
 
 Headless use: `engine/.venv/bin/tramus-engine track <folder> --template <id>` and

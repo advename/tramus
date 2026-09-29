@@ -1,36 +1,72 @@
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import { useNavigate } from 'react-router'
 
-import type { Job } from '../../api/types'
+import type { BatchItemView } from '../../api/types'
 import { thumbnailUrl } from '../../api/urls'
 import { Symbol } from '../../components/Symbol'
-import { summarizeJobs } from './lib'
+import { batchRowStatus, type BatchRowStatus } from './lib'
 
 export interface FinishStepProps {
-  jobs: Job[]
+  batchId: string
+  items: BatchItemView[]
   onExportAll: () => void
-  exporting: boolean
 }
 
-const STATUS_LABEL: Record<Job['state'], string> = {
-  queued: 'Waiting',
-  running: 'Tracking',
-  succeeded: 'Tracked',
-  failed: 'Failed',
-  cancelled: 'Cancelled'
+function rowStatusLabel(status: BatchRowStatus): string {
+  switch (status.kind) {
+    case 'queued':
+      return 'Waiting'
+    case 'tracking':
+      return `Tracking ${Math.round(status.progress * 100)}%`
+    case 'failed':
+      return 'Failed'
+    case 'cancelled':
+      return 'Cancelled'
+    case 'flags':
+      return status.count > 0
+        ? `${status.count} ${status.count === 1 ? 'flag' : 'flags'} left`
+        : 'No flags'
+    case 'reviewed':
+      return 'Reviewed'
+    case 'not_tracked':
+      return 'Not tracked'
+  }
 }
 
-/** Batch step 4: per-video outcome + a one-workbook export — `designs/Screens.dc.html` §isFinish. */
-export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): React.JSX.Element {
+function rowStatusColor(
+  status: BatchRowStatus
+): 'success.main' | 'warning.main' | 'error.main' | 'text.disabled' {
+  switch (status.kind) {
+    case 'reviewed':
+      return 'success.main'
+    case 'flags':
+      return status.count > 0 ? 'warning.main' : 'success.main'
+    case 'failed':
+      return 'error.main'
+    default:
+      return 'text.disabled'
+  }
+}
+
+/** Batch step 4: a per-video overview + a one-workbook export — `designs/Screens.dc.html` §isFinish. */
+export function FinishStep({ batchId, items, onExportAll }: FinishStepProps): React.JSX.Element {
   const navigate = useNavigate()
-  const counts = summarizeJobs(jobs)
-  const succeeded = jobs.filter((j) => j.state === 'succeeded')
+  const statuses = items.map((item) => ({ item, status: batchRowStatus(item) }))
+  const reviewedCount = statuses.filter(({ status }) => status.kind === 'reviewed').length
+  const flagsRemaining = statuses.reduce(
+    (total, { status }) => total + (status.kind === 'flags' ? status.count : 0),
+    0
+  )
+  const failedCount = statuses.filter(({ status }) => status.kind === 'failed').length
+  const exportable = statuses.some(
+    ({ status }) => status.kind === 'flags' || status.kind === 'reviewed'
+  )
 
-  const summaryParts = [`${counts.done} ${counts.done === 1 ? 'video' : 'videos'} tracked`]
-  if (counts.cancelled > 0) summaryParts.push(`${counts.cancelled} cancelled`)
-  if (counts.failed > 0) summaryParts.push(`${counts.failed} failed`)
+  const summaryParts = [`${reviewedCount} of ${items.length} reviewed`]
+  if (failedCount > 0) summaryParts.push(`${failedCount} failed`)
 
   return (
     <Box
@@ -53,7 +89,7 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
         </Box>
         <Button
           variant="contained"
-          disabled={succeeded.length === 0 || exporting}
+          disabled={!exportable}
           onClick={onExportAll}
           startIcon={<Symbol name="download" size={17} />}
           sx={{ height: 34, px: 1.75, fontWeight: 600, whiteSpace: 'nowrap' }}
@@ -61,6 +97,26 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
           Export all to one workbook
         </Button>
       </Box>
+
+      {flagsRemaining > 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.875,
+            borderRadius: '8px',
+            bgcolor: (theme) => `${theme.palette.warning.main}26`,
+            color: 'warning.main',
+            fontSize: 12.5
+          }}
+        >
+          <Symbol name="warning" size={16} />
+          {flagsRemaining} {flagsRemaining === 1 ? 'flag' : 'flags'} still need review across this
+          batch.
+        </Box>
+      ) : null}
 
       <Box
         sx={{
@@ -74,7 +130,7 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '44px minmax(140px, 1fr) 112px 130px 150px',
+            gridTemplateColumns: '44px minmax(140px, 1fr) 160px 150px',
             gap: 1.5,
             alignItems: 'center',
             px: 1.75,
@@ -88,126 +144,86 @@ export function FinishStep({ jobs, onExportAll, exporting }: FinishStepProps): R
           <span />
           <span>Video</span>
           <span>Status</span>
-          <span>Flags to review</span>
           <span />
         </Box>
-        {jobs.map((job) => (
-          <Box
-            key={job.id}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '44px minmax(140px, 1fr) 112px 130px 150px',
-              gap: 1.5,
-              alignItems: 'center',
-              px: 1.75,
-              py: 1,
-              borderBottom: 1,
-              borderColor: 'divider'
-            }}
-          >
+        {items.map(({ video_id: videoId, file_name: fileName }) => {
+          const { status } = statuses.find((s) => s.item.video_id === videoId)!
+          const canReview = status.kind === 'flags' || status.kind === 'reviewed'
+          return (
             <Box
-              component="img"
-              src={thumbnailUrl(job.video_id, { maxSide: 96 })}
-              alt=""
+              key={videoId}
               sx={{
-                width: 44,
-                height: 37,
-                borderRadius: '4px',
-                objectFit: 'cover',
-                bgcolor: 'canvas'
-              }}
-            />
-            <Typography
-              sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
-              noWrap
-            >
-              {job.video_name}
-            </Typography>
-            <Box
-              sx={{
-                display: 'inline-flex',
+                display: 'grid',
+                gridTemplateColumns: '44px minmax(140px, 1fr) 160px 150px',
+                gap: 1.5,
                 alignItems: 'center',
-                gap: 0.75,
-                height: 22,
-                px: 1,
-                border: 1,
-                borderColor: 'surface.lineStrong',
-                borderRadius: '11px',
-                fontSize: 11.5,
-                fontWeight: 500,
-                justifySelf: 'start',
-                whiteSpace: 'nowrap'
+                px: 1.75,
+                py: 1,
+                borderBottom: 1,
+                borderColor: 'divider'
               }}
             >
               <Box
+                component="img"
+                src={thumbnailUrl(videoId, { maxSide: 96 })}
+                alt=""
                 sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  bgcolor: job.state === 'succeeded' ? 'primary.main' : 'text.disabled'
+                  width: 44,
+                  height: 37,
+                  borderRadius: '4px',
+                  objectFit: 'cover',
+                  bgcolor: 'canvas'
                 }}
               />
-              {STATUS_LABEL[job.state]}
-            </Box>
-            {job.state === 'succeeded' ? (
-              (job.flag_count ?? 0) > 0 ? (
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.625,
-                    height: 22,
-                    px: 1,
-                    borderRadius: '11px',
-                    bgcolor: (theme) => `${theme.palette.warning.main}26`,
-                    color: 'warning.main',
-                    fontFamily: '"IBM Plex Mono", monospace',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    justifySelf: 'start'
-                  }}
-                >
+              <Typography
+                sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                noWrap
+              >
+                {fileName}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                {status.kind === 'tracking' ? (
+                  <CircularProgress size={13} value={status.progress * 100} variant="determinate" />
+                ) : (
                   <Box
                     sx={{
-                      width: 6,
-                      height: 6,
-                      transform: 'rotate(45deg)',
-                      bgcolor: 'warning.main'
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      bgcolor: rowStatusColor(status)
                     }}
                   />
-                  {job.flag_count} {job.flag_count === 1 ? 'flag' : 'flags'}
-                </Box>
-              ) : (
-                <Typography variant="caption" color="text.disabled">
-                  None
+                )}
+                <Typography
+                  variant="mono"
+                  sx={{ fontSize: 12, color: rowStatusColor(status) }}
+                  title={status.kind === 'failed' ? (status.error ?? undefined) : undefined}
+                >
+                  {rowStatusLabel(status)}
                 </Typography>
-              )
-            ) : (
-              <Typography variant="caption" color="text.disabled">
-                Not tracked
-              </Typography>
-            )}
-            {job.state === 'succeeded' ? (
-              <Button
-                variant="outlined"
-                onClick={() => void navigate(`/videos/${job.video_id}/review`)}
-                endIcon={<Symbol name="arrow_forward" size={16} />}
-                sx={{
-                  height: 28,
-                  px: 1.25,
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  justifySelf: 'end',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Open in Review
-              </Button>
-            ) : (
-              <Box />
-            )}
-          </Box>
-        ))}
+              </Box>
+              {canReview ? (
+                <Button
+                  variant="outlined"
+                  onClick={() => void navigate(`/videos/${videoId}/review?batch=${batchId}`)}
+                  endIcon={<Symbol name="arrow_forward" size={16} />}
+                  sx={{
+                    height: 28,
+                    px: 1.25,
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                    justifySelf: 'end',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Open in Review
+                </Button>
+              ) : (
+                <Box />
+              )}
+            </Box>
+          )
+        })}
       </Box>
     </Box>
   )

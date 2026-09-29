@@ -23,6 +23,7 @@ def build_router(services: Services) -> APIRouter:
                 video_ids=body.video_ids,
                 format=body.format,
                 path=Path(body.path),
+                layout=body.layout,
             )
         except KeyError as exc:
             raise HTTPException(

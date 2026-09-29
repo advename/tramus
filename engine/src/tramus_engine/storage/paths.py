@@ -28,6 +28,12 @@ def templates_dir() -> Path:
     return path
 
 
+def batches_dir() -> Path:
+    path = config_dir() / "batches"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def settings_path() -> Path:
     return config_dir() / "settings.json"
 

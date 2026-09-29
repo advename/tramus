@@ -1,17 +1,22 @@
-import { type PointerEvent as ReactPointerEvent, useRef, useState } from 'react'
+import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Checkbox from '@mui/material/Checkbox'
 import IconButton from '@mui/material/IconButton'
 import { useTheme } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 
+import { useFrameTimes } from '../../api/queries'
 import type { Shape, Zone } from '../../api/types'
-import { thumbnailUrl } from '../../api/urls'
+import { frameUrl, thumbnailUrl } from '../../api/urls'
 import { ShortcutTooltip } from '../../components/ShortcutTooltip'
 import { Symbol } from '../../components/Symbol'
 import { formatVideoTime } from '../../lib/time'
 import { shapeElement } from '../templates/shapeSvg'
-import { clamp, formatOffset, scaleShape, type CheckDraft } from './lib'
+import { clamp, formatOffset, indexAtTime, scaleShape, type CheckDraft } from './lib'
+
+/** Low-res mini-player frame rate for the Check card preview — a compromise between smooth
+ * enough to judge overlay alignment and light enough to run one per visible card. */
+const PREVIEW_FPS = 9
 
 export interface CheckCardProps {
   draft: CheckDraft
@@ -26,9 +31,41 @@ export interface CheckCardProps {
  */
 export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): React.JSX.Element {
   const theme = useTheme()
-  const [previewStart, setPreviewStart] = useState(false)
   const overlayRef = useRef<HTMLDivElement>(null)
   const hasWarning = draft.warnings.length > 0
+  const offsetIsZero = Math.round(draft.offsetX) === 0 && Math.round(draft.offsetY) === 0
+
+  // Mini player: cycles real frames from the trial start to the trial end at a fixed low fps.
+  // `frameIndex === null` means "not playing" — the card shows the default thumbnail.
+  const frameTimes = useFrameTimes(draft.videoId)
+  const [playing, setPlaying] = useState(false)
+  const [frameIndex, setFrameIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!playing || !frameTimes.data) return
+    const times = frameTimes.data
+    const endIndex = indexAtTime(times, draft.trialEnd)
+    const id = window.setInterval(() => {
+      setFrameIndex((current) => {
+        const next = (current ?? indexAtTime(times, draft.trialStart)) + 1
+        if (next >= endIndex) {
+          setPlaying(false)
+          return endIndex
+        }
+        return next
+      })
+    }, 1000 / PREVIEW_FPS)
+    return () => window.clearInterval(id)
+  }, [playing, frameTimes.data, draft.trialStart, draft.trialEnd])
+
+  const togglePlay = (): void => {
+    const times = frameTimes.data
+    if (!times) return
+    if (!playing) {
+      setFrameIndex((current) => current ?? indexAtTime(times, draft.trialStart))
+    }
+    setPlaying((prev) => !prev)
+  }
 
   const handleNudgeStart = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const box = overlayRef.current
@@ -94,10 +131,11 @@ export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): Re
       >
         <Box
           component="img"
-          src={thumbnailUrl(draft.videoId, {
-            maxSide: 420,
-            t: previewStart ? draft.trialStart : undefined
-          })}
+          src={
+            frameIndex !== null
+              ? frameUrl(draft.videoId, frameIndex, { maxSide: 480, quality: 70 })
+              : thumbnailUrl(draft.videoId, { maxSide: 420 })
+          }
           alt=""
           sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           draggable={false}
@@ -172,19 +210,22 @@ export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): Re
       ) : null}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.25, py: 1.125 }}>
-        <ShortcutTooltip title="Preview at trial start" shortcut="space">
-          <IconButton
-            onClick={() => setPreviewStart((prev) => !prev)}
-            sx={{
-              width: 26,
-              height: 26,
-              bgcolor: previewStart ? 'primary.main' : 'surface.raised',
-              color: previewStart ? 'primary.contrastText' : 'text.primary',
-              '&:hover': { bgcolor: previewStart ? 'primary.main' : 'surface.hover' }
-            }}
-          >
-            <Symbol name={previewStart ? 'pause' : 'play_arrow'} size={17} fill />
-          </IconButton>
+        <ShortcutTooltip title={playing ? 'Pause' : 'Play from trial start'} shortcut="space">
+          <span>
+            <IconButton
+              onClick={togglePlay}
+              disabled={!frameTimes.data}
+              sx={{
+                width: 26,
+                height: 26,
+                bgcolor: playing ? 'primary.main' : 'surface.raised',
+                color: playing ? 'primary.contrastText' : 'text.primary',
+                '&:hover': { bgcolor: playing ? 'primary.main' : 'surface.hover' }
+              }}
+            >
+              <Symbol name={playing ? 'pause' : 'play_arrow'} size={17} fill />
+            </IconButton>
+          </span>
         </ShortcutTooltip>
         <TrimBar
           durationS={draft.durationS}
@@ -192,6 +233,17 @@ export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): Re
           end={draft.trialEnd}
           onChange={(start, end) => onChange({ trialStart: start, trialEnd: end })}
         />
+        <ShortcutTooltip title="Reset position">
+          <span>
+            <IconButton
+              onClick={() => onChange({ offsetX: 0, offsetY: 0 })}
+              disabled={offsetIsZero}
+              sx={{ width: 26, height: 26, color: 'text.secondary' }}
+            >
+              <Symbol name="restart_alt" size={17} />
+            </IconButton>
+          </span>
+        </ShortcutTooltip>
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1.25, pb: 1.25 }}>
         <Typography variant="mono" color="text.secondary" sx={{ fontSize: 11 }}>

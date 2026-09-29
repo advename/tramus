@@ -422,11 +422,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Batches */
+        get: operations["list_batches"];
         put?: never;
         /** Create Batch */
         post: operations["create_batch"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Batch */
+        get: operations["get_batch"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Batch
+         * @description Reset: removes the saved batch record only — never the sidecars or videos it tracked.
+         */
+        delete: operations["delete_batch"];
         options?: never;
         head?: never;
         patch?: never;
@@ -575,6 +597,11 @@ export interface components {
             default_in_zone_threshold: number;
             /** @default dark */
             theme: components["schemas"]["ThemePreference"];
+            /**
+             * @description Preferred export layout, used by the UI to seed the export dialog's default (the export request itself always carries its own explicit layout).
+             * @default wide
+             */
+            export_layout: components["schemas"]["ExportLayout"];
             /** Recent Folders */
             recent_folders?: components["schemas"]["RecentFolder-Input"][];
         };
@@ -604,6 +631,11 @@ export interface components {
             default_in_zone_threshold: number;
             /** @default dark */
             theme: components["schemas"]["ThemePreference"];
+            /**
+             * @description Preferred export layout, used by the UI to seed the export dialog's default (the export request itself always carries its own explicit layout).
+             * @default wide
+             */
+            export_layout: components["schemas"]["ExportLayout"];
             /** Recent Folders */
             recent_folders?: components["schemas"]["RecentFolder-Output"][];
         };
@@ -681,6 +713,64 @@ export interface components {
              * @default 0
              */
             offset_y: number;
+        };
+        /**
+         * BatchItemView
+         * @description One video's current status within a saved batch — combines the persisted record (path,
+         *     trial, offset) with live status derived from its sidecar plus any running job.
+         */
+        BatchItemView: {
+            /** Video Id */
+            video_id: string;
+            /** Video Path */
+            video_path: string;
+            /** File Name */
+            file_name: string;
+            /** Trial */
+            trial: [
+                number,
+                number
+            ] | null;
+            /** Offset X */
+            offset_x: number;
+            /** Offset Y */
+            offset_y: number;
+            status: components["schemas"]["VideoStatus"];
+            /** Unresolved Flags */
+            unresolved_flags: number;
+            job: components["schemas"]["Job"] | null;
+        };
+        /** BatchListResponse */
+        BatchListResponse: {
+            /** Batches */
+            batches: components["schemas"]["BatchView"][];
+            /** Broken */
+            broken: components["schemas"]["BrokenBatchView"][];
+        };
+        /** BatchView */
+        BatchView: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Template Id */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** Folder */
+            folder: string;
+            /** Items */
+            items: components["schemas"]["BatchItemView"][];
+        };
+        /**
+         * BrokenBatchView
+         * @description A saved batch file that couldn't be parsed — the UI offers to reset (delete) it.
+         */
+        BrokenBatchView: {
+            /** Id */
+            id: string;
+            /** Error */
+            error: string;
         };
         /**
          * Calibration
@@ -849,6 +939,14 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * ExportLayout
+         * @description §9: `WIDE` is one row per video (per-video aggregates grouped by measure); `LONG` is one
+         *     row per video and zone, the original shape. Visits, crossing events and Track stay long in
+         *     both layouts — only Summary, crossing rule counts and the crossing matrix are pivoted.
+         * @enum {string}
+         */
+        ExportLayout: "wide" | "long";
         /** ExportRequest */
         ExportRequest: {
             /** Video Ids */
@@ -860,6 +958,8 @@ export interface components {
             format: "xlsx" | "csv";
             /** Path */
             path: string;
+            /** @default wide */
+            layout: components["schemas"]["ExportLayout"];
         };
         /** ExportResponse */
         ExportResponse: {
@@ -1280,6 +1380,11 @@ export interface components {
              * @description Every ordered zone pair, in setup zone order.
              */
             crossing_matrix?: components["schemas"]["MatrixCell"][];
+            /**
+             * Distance Mm
+             * @description Distance travelled by the body centre over the analysed time (§5.5 analysed intervals), in mm. `None` without a calibration (`Setup.calibration`).
+             */
+            distance_mm?: number | null;
         };
         /** SessionState */
         SessionState: {
@@ -2666,6 +2771,39 @@ export interface operations {
             };
         };
     };
+    list_batches: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: {
+                "X-Tramus-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_batch: {
         parameters: {
             query?: {
@@ -2691,6 +2829,74 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Batch"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_batch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: {
+                "X-Tramus-Token"?: string | null;
+            };
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_batch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: {
+                "X-Tramus-Token"?: string | null;
+            };
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
