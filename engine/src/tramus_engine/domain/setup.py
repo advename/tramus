@@ -41,10 +41,19 @@ class DetectionSettings(DomainModel):
     min_mouse_area_px: int = Field(300, ge=1, description="Minimum body area in video px².")
 
 
+class CrossingRule(DomainModel):
+    """A zone-to-zone transition to count. `None` on either side means "Any zone"."""
+
+    id: str
+    from_zone_id: str | None = None
+    to_zone_id: str | None = None
+
+
 class AnalysisSettings(DomainModel):
     in_zone_threshold: float = Field(
         0.5, ge=0.05, le=0.95, description="Share of the body that must be inside a zone."
     )
+    crossing_rules: list[CrossingRule] = Field(default_factory=list)
 
 
 class TrialWindow(DomainModel):
@@ -58,6 +67,22 @@ class TrialWindow(DomainModel):
     def _end_after_start(self) -> TrialWindow:
         if self.end_s <= self.start_s:
             raise ValueError("trial end must be after trial start")
+        return self
+
+
+class Exclusion(DomainModel):
+    """A period subtracted from the trial window before computing results (§5.5). Per video —
+    not stored in templates."""
+
+    id: str
+    start_s: float = Field(ge=0)
+    end_s: float
+    note: str | None = None
+
+    @model_validator(mode="after")
+    def _end_after_start(self) -> Exclusion:
+        if self.end_s <= self.start_s:
+            raise ValueError("exclusion end must be after exclusion start")
         return self
 
 
@@ -100,6 +125,9 @@ class Setup(DomainModel):
     template: TemplateRef | None = Field(None, description="Template this setup came from.")
     calibration: Calibration | None = Field(
         None, description="Scale reference: a line of known real-world length, in video px."
+    )
+    exclusions: list[Exclusion] = Field(
+        default_factory=list, description="Periods subtracted from the trial before analysis."
     )
 
     @property

@@ -8,17 +8,24 @@ import { getApiClient, unwrap } from '../../../api/client'
 import type { ZoneVisit } from '../../../api/types'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
-import { formatDuration, formatVideoTime } from '../../../lib/time'
 import { useResults, useSession } from '../data'
 import { defaultExportPath } from '../lib/exportPath'
-import { useWorkspaceStore } from '../state/workspaceStore'
+import { trialSummaryText } from '../lib/session'
+import { useWorkspaceStore, type ResultsView as ResultsViewKind } from '../state/workspaceStore'
 import { notify, notifyError } from '../../../stores/notifications'
+import { CrossingsView } from './CrossingsView'
 import { EventsGrid } from './EventsGrid'
 import { SummaryChart } from './SummaryChart'
 import { SummaryTable } from './SummaryTable'
 
 export interface ResultsViewProps {
   videoId: string
+}
+
+const RESULTS_VIEW_LABEL: Record<ResultsViewKind, string> = {
+  summary: 'Summary',
+  events: 'Events',
+  crossings: 'Crossings'
 }
 
 async function runExport(
@@ -67,6 +74,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
   const seek = useWorkspaceStore((s) => s.seek)
 
   const video = session.data?.video
+  const setup = session.data?.document.setup
   const recordedAt = session.data?.document.video.recorded_at ?? null
 
   const goToVisit = (visit: ZoneVisit): void => {
@@ -74,7 +82,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
     seek(visit.frame_enter)
   }
 
-  if (!results.data || !video) {
+  if (!results.data || !video || !setup) {
     return (
       <Box sx={{ display: 'grid', placeItems: 'center', height: '100%' }}>
         <CircularProgress size={28} />
@@ -108,7 +116,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
             borderRadius: '9px'
           }}
         >
-          {(['summary', 'events'] as const).map((view) => (
+          {(['summary', 'events', 'crossings'] as const).map((view) => (
             <Button
               key={view}
               onClick={() => setResultsView(view)}
@@ -123,7 +131,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
                 '&:hover': { bgcolor: resultsView === view ? 'surface.raised' : 'surface.hover' }
               }}
             >
-              {view === 'summary' ? 'Summary' : 'Events'}
+              {RESULTS_VIEW_LABEL[view]}
             </Button>
           ))}
         </Box>
@@ -131,8 +139,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
           variant="mono"
           sx={{ fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' }}
         >
-          Trial {formatVideoTime(r.trial_start_s)}–{formatVideoTime(r.trial_end_s)} ·{' '}
-          {formatDuration(r.trial_duration_s)}
+          {trialSummaryText(r)}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <ShortcutTooltip title="Export to Excel" shortcut="mod+e">
@@ -167,8 +174,10 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
           <SummaryTable results={r} />
           <SummaryChart results={r} />
         </Box>
-      ) : (
+      ) : resultsView === 'events' ? (
         <EventsGrid results={r} recordedAt={recordedAt} onRowClick={goToVisit} />
+      ) : (
+        <CrossingsView videoId={videoId} setup={setup} results={r} recordedAt={recordedAt} />
       )}
 
       <Box

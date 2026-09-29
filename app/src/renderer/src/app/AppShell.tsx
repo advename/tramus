@@ -10,6 +10,7 @@ import { useRecentFolders } from '../api/queries'
 import { NotificationHost } from '../components/NotificationHost'
 import { ShortcutTooltip } from '../components/ShortcutTooltip'
 import { Symbol } from '../components/Symbol'
+import { TramusLogo } from '../components/TramusLogo'
 import { useShortcut } from '../lib/shortcuts'
 
 interface NavItem {
@@ -78,22 +79,8 @@ export function AppShell(): React.JSX.Element {
           borderColor: 'divider'
         }}
       >
-        <Box
-          sx={{
-            width: 28,
-            height: 28,
-            borderRadius: '7px',
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
-            display: 'grid',
-            placeItems: 'center',
-            fontWeight: 600,
-            fontSize: 14,
-            mb: 1.5,
-            flexShrink: 0
-          }}
-        >
-          T
+        <Box sx={{ mb: 1.5, flexShrink: 0 }}>
+          <TramusLogo size={28} />
         </Box>
 
         <List sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%' }}>

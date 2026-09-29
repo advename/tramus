@@ -546,6 +546,8 @@ export interface components {
              * @default 0.5
              */
             in_zone_threshold: number;
+            /** Crossing Rules */
+            crossing_rules?: components["schemas"]["CrossingRule"][];
         };
         /** AppSettings */
         "AppSettings-Input": {
@@ -699,6 +701,62 @@ export interface components {
              */
             length_mm: number;
         };
+        /**
+         * CrossingEvent
+         * @description One rule-matching (or matrix-counted) zone-to-zone transition (§5.4).
+         */
+        CrossingEvent: {
+            /**
+             * Frame
+             * @description Frame the destination zone was entered on.
+             */
+            frame: number;
+            /** Time S */
+            time_s: number;
+            /** Time Utc */
+            time_utc?: string | null;
+            /** From Zone Id */
+            from_zone_id: string;
+            /** To Zone Id */
+            to_zone_id: string;
+        };
+        /**
+         * CrossingResult
+         * @description The events matching one `CrossingRule`.
+         */
+        CrossingResult: {
+            /** Rule Id */
+            rule_id: string;
+            /**
+             * From Zone Id
+             * @description `None` means the rule matches any zone.
+             */
+            from_zone_id?: string | null;
+            /**
+             * To Zone Id
+             * @description `None` means the rule matches any zone.
+             */
+            to_zone_id?: string | null;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Events */
+            events?: components["schemas"]["CrossingEvent"][];
+        };
+        /**
+         * CrossingRule
+         * @description A zone-to-zone transition to count. `None` on either side means "Any zone".
+         */
+        CrossingRule: {
+            /** Id */
+            id: string;
+            /** From Zone Id */
+            from_zone_id?: string | null;
+            /** To Zone Id */
+            to_zone_id?: string | null;
+        };
         /** DetectionPreviewRequest */
         DetectionPreviewRequest: {
             /** Frame Index */
@@ -775,6 +833,21 @@ export interface components {
             rx: number;
             /** Ry */
             ry: number;
+        };
+        /**
+         * Exclusion
+         * @description A period subtracted from the trial window before computing results (§5.5). Per video —
+         *     not stored in templates.
+         */
+        Exclusion: {
+            /** Id */
+            id: string;
+            /** Start S */
+            start_s: number;
+            /** End S */
+            end_s: number;
+            /** Note */
+            note?: string | null;
         };
         /** ExportRequest */
         ExportRequest: {
@@ -1076,6 +1149,18 @@ export interface components {
              */
             frame_end: number;
         };
+        /**
+         * MatrixCell
+         * @description One ordered zone pair's crossing count (including the diagonal, i.e. re-entries).
+         */
+        MatrixCell: {
+            /** From Zone Id */
+            from_zone_id: string;
+            /** To Zone Id */
+            to_zone_id: string;
+            /** Count */
+            count: number;
+        };
         /** ObservationView */
         ObservationView: {
             /** X */
@@ -1170,12 +1255,31 @@ export interface components {
             trial_end_s: number;
             /** Trial Duration S */
             trial_duration_s: number;
+            /**
+             * Analysed Duration S
+             * @description Trial duration minus excluded time. Additive; defaults to 0 for older snapshots (re-derived on next save).
+             * @default 0
+             */
+            analysed_duration_s: number;
+            /**
+             * Excluded Duration S
+             * @description Excluded periods, clipped to the trial.
+             * @default 0
+             */
+            excluded_duration_s: number;
             /** In Zone Threshold */
             in_zone_threshold: number;
             /** Summary */
             summary: components["schemas"]["SummaryRow"][];
             /** Visits */
             visits: components["schemas"]["ZoneVisit"][];
+            /** Crossings */
+            crossings?: components["schemas"]["CrossingResult"][];
+            /**
+             * Crossing Matrix
+             * @description Every ordered zone pair, in setup zone order.
+             */
+            crossing_matrix?: components["schemas"]["MatrixCell"][];
         };
         /** SessionState */
         SessionState: {
@@ -1245,6 +1349,11 @@ export interface components {
             template?: components["schemas"]["TemplateRef"] | null;
             /** @description Scale reference: a line of known real-world length, in video px. */
             calibration?: components["schemas"]["Calibration"] | null;
+            /**
+             * Exclusions
+             * @description Periods subtracted from the trial before analysis.
+             */
+            exclusions?: components["schemas"]["Exclusion"][];
         };
         /**
          * SetupChange
@@ -1272,10 +1381,11 @@ export interface components {
             /** Time S */
             time_s: number;
             /**
-             * Share Of Trial
-             * @description 0–1.
+             * Share Of Analysed
+             * @description 0–1, share of the analysed duration. Renamed from `share_of_trial`; defaults for sidecars saved before the rename (re-derived on next save).
+             * @default 0
              */
-            share_of_trial: number;
+            share_of_analysed: number;
         };
         /**
          * SummaryRowKind

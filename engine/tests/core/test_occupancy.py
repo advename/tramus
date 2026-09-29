@@ -29,11 +29,12 @@ def _membership(
     semi_major: float = 5.0,
     semi_minor: float = 3.0,
     threshold: float = 0.5,
+    excluded: np.ndarray | None = None,
 ) -> np.ndarray:
     track = make_track(n=len(x), x=x, y=[y] * len(x), semi_major=semi_major, semi_minor=semi_minor)
     fractions, outside = zone_fractions(track, zones, width=100, height=100)
     visible = np.array([status in VISIBLE_STATUSES for status in track.status])
-    return zone_membership(fractions, outside, visible, threshold)
+    return zone_membership(fractions, outside, visible, threshold, excluded=excluded)
 
 
 def test_first_frame_assigns_the_qualifying_zone() -> None:
@@ -83,3 +84,39 @@ def test_missing_and_hidden_frames_are_in_no_zone() -> None:
     assert not membership[2].any()
     assert membership[0, 0]
     assert membership[3, 0]
+
+
+def test_excluded_frames_are_in_no_zone_even_though_visible() -> None:
+    # Body stays firmly inside Left the whole time; frame 1 is excluded.
+    excluded = np.array([False, True, False, False])
+    membership = _membership([25.0] * 4, [_LEFT, _RIGHT], excluded=excluded)
+    assert membership[0, 0]
+    assert not membership[1].any()  # excluded, despite being visible and inside Left
+    assert membership[2, 0]
+    assert membership[3, 0]
+
+
+def test_excluded_frame_forces_no_zone_and_resets_continuity() -> None:
+    # Hand-crafted fractions isolate the hysteresis reset from geometry: frame 1's ambiguous
+    # split (neither zone nor "none" reaches the threshold) is kept in A by continuity, but the
+    # identical split at frame 3 — the first analysed frame after the excluded frame 2 — uses
+    # the first-frame rule instead, and lands in B (the larger fraction).
+    threshold = 0.5
+    fractions = np.array(
+        [
+            [0.8, 0.1],  # frame 0: clearly in A (first frame of the track)
+            [0.3, 0.1],  # frame 1: ambiguous; hysteresis keeps A
+            [0.3, 0.4],  # frame 2: excluded — value is irrelevant
+            [0.3, 0.4],  # frame 3: same split as frame 1, but first frame after the exclusion
+        ]
+    )
+    outside = np.array([0.1, 0.4, 0.3, 0.3])
+    visible = np.ones(4, dtype=bool)
+    excluded = np.array([False, False, True, False])
+
+    membership = zone_membership(fractions, outside, visible, threshold, excluded=excluded)
+
+    assert membership[0].tolist() == [True, False]
+    assert membership[1].tolist() == [True, False]
+    assert not membership[2].any()
+    assert membership[3].tolist() == [False, True]

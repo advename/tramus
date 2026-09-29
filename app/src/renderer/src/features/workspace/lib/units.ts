@@ -50,3 +50,23 @@ export function measureUnitToMm(value: number, unit: MeasureUnit): number {
 export function roundForUnit(value: number, unit: ZoneUnit): number {
   return unit === 'px' ? Math.round(value) : Math.round(value * 100) / 100
 }
+
+/**
+ * A video-px² area in the given display unit (unchanged if `unit` is `'px'` or uncalibrated) —
+ * used by the "Minimum mouse size" slider (`DetectionSection`). cm² = px² × (mm/px)² / 100.
+ */
+export function pxAreaToUnit(pxArea: number, unit: ZoneUnit, mmPerPx: number | null): number {
+  if (unit === 'px' || mmPerPx == null) return pxArea
+  return (pxArea * mmPerPx * mmPerPx) / 100
+}
+
+/** The inverse of `pxAreaToUnit`: a display-unit area back to video px². */
+export function unitAreaToPx(value: number, unit: ZoneUnit, mmPerPx: number | null): number {
+  if (unit === 'px' || mmPerPx == null) return value
+  return (value * 100) / (mmPerPx * mmPerPx)
+}
+
+/** Rounds a display area: whole px², or cm² to 0.01. */
+export function roundForAreaUnit(value: number, unit: ZoneUnit): number {
+  return unit === 'px' ? Math.round(value) : Math.round(value * 100) / 100
+}

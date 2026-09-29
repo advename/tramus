@@ -38,6 +38,8 @@ export type AnalysisSettings = Schemas['AnalysisSettings']
 export type TrialWindow = Schemas['TrialWindow']
 export type TemplateRef = Schemas['TemplateRef']
 export type Calibration = Schemas['Calibration']
+export type Exclusion = Schemas['Exclusion']
+export type CrossingRule = Schemas['CrossingRule']
 export type DetectionPreview = Schemas['DetectionPreviewResponse']
 export type Observation = Schemas['ObservationView']
 
@@ -57,6 +59,9 @@ export type HistoryEntry = Schemas['HistoryEntry']
 export type Results = Schemas['Results']
 export type SummaryRow = Schemas['SummaryRow']
 export type ZoneVisit = Schemas['ZoneVisit']
+export type CrossingResult = Schemas['CrossingResult']
+export type CrossingEvent = Schemas['CrossingEvent']
+export type MatrixCell = Schemas['MatrixCell']
 
 // Jobs, batches, templates, settings, system
 export type Job = Schemas['Job']

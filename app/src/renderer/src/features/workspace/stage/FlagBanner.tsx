@@ -4,6 +4,7 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
+import { Kbd } from '../../../components/Kbd'
 import { Symbol } from '../../../components/Symbol'
 import { TimeText } from '../../../components/TimeText'
 import type { FlagView } from '../../../api/types'
@@ -96,29 +97,32 @@ export function FlagBanner({
         <Button
           title="Accept — tracking was fine · A"
           onClick={onAccept}
-          startIcon={<Symbol name="check" size={16} />}
-          sx={{ height: 28, px: 1.25, border: 1, borderColor: 'surface.lineStrong' }}
+          sx={{ height: 28, px: 1.25, gap: 0.75, border: 1, borderColor: 'surface.lineStrong' }}
         >
+          <Symbol name="check" size={16} />
           Accept
+          <Kbd>A</Kbd>
         </Button>
       ) : (
         <Button
-          title="Reopen — remove this flag's corrections"
+          title="Reopen — remove this flag's corrections · R"
           onClick={onReopen}
-          startIcon={<Symbol name="restart_alt" size={16} />}
-          sx={{ height: 28, px: 1.25, border: 1, borderColor: 'surface.lineStrong' }}
+          sx={{ height: 28, px: 1.25, gap: 0.75, border: 1, borderColor: 'surface.lineStrong' }}
         >
+          <Symbol name="restart_alt" size={16} />
           Reopen
+          <Kbd>R</Kbd>
         </Button>
       )}
       <Button
-        title="Set position · P — then click the mouse"
+        title="Set position — then click the mouse · P"
         onClick={onSetPosition}
         variant="contained"
-        startIcon={<Symbol name="my_location" size={16} />}
-        sx={{ height: 28, px: 1.25, fontWeight: 600 }}
+        sx={{ height: 28, px: 1.25, gap: 0.75, fontWeight: 600 }}
       >
+        <Symbol name="my_location" size={16} />
         {flag.status === 'fixed' ? 'Set position again' : 'Set position'}
+        <Kbd variant="onPrimary">P</Kbd>
       </Button>
     </Box>
   )

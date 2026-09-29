@@ -82,7 +82,9 @@ function targetSelection(target: ShapeTarget): StageSelection {
 }
 
 function replaceTargetShape(base: Setup, target: ShapeTarget, shape: Shape): Setup {
-  return target.kind === 'arena' ? { ...base, arena: shape } : replaceZoneShape(base, target.zone.id, shape)
+  return target.kind === 'arena'
+    ? { ...base, arena: shape }
+    : replaceZoneShape(base, target.zone.id, shape)
 }
 
 export interface ZoneEditingApi {

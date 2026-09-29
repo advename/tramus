@@ -82,24 +82,34 @@ def zone_fractions(
 
 
 def zone_membership(
-    fractions: np.ndarray, outside: np.ndarray, visible: np.ndarray, threshold: float
+    fractions: np.ndarray,
+    outside: np.ndarray,
+    visible: np.ndarray,
+    threshold: float,
+    excluded: np.ndarray | None = None,
 ) -> np.ndarray:
     """Bool `frames x zones` membership, applying the lab's hysteresis rule: the mouse stays in
     a zone until at least `threshold` of the body is in another zone (or clearly on unzoned
-    floor), and re-enters a zone once at least `threshold` of the body is inside it."""
+    floor), and re-enters a zone once at least `threshold` of the body is inside it.
+
+    `excluded` (a frame whose start time falls in an exclusion, §4) is treated like a gap: the
+    frame is in no zone, and the frame after it is treated as the first analysed frame (the
+    "first-frame" rule below), which is how visits split across an exclusion.
+    """
     n, n_zones = fractions.shape
     membership = np.zeros((n, n_zones), dtype=bool)
-    prev_visible = False
+    exclude_mask = excluded if excluded is not None else np.zeros(n, dtype=bool)
+    prev_analysed = False
     prev_in = np.zeros(n_zones, dtype=bool)
 
     for i in range(n):
-        if not visible[i]:
-            prev_visible = False
+        if not visible[i] or exclude_mask[i]:
+            prev_analysed = False
             continue
         f = fractions[i]
         f_none = outside[i]
 
-        if prev_visible:
+        if prev_analysed:
             leaving = prev_in & (f < threshold)
             entering = ~prev_in & (f >= threshold)
             cur = prev_in.copy()
@@ -114,6 +124,6 @@ def zone_membership(
 
         membership[i] = cur
         prev_in = cur
-        prev_visible = True
+        prev_analysed = True
 
     return membership

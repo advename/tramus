@@ -226,6 +226,16 @@ export function polygonFromPoints(points: readonly Point[]): PolygonShape {
   return { kind: 'polygon', points: points.map((p) => [p.x, p.y]) }
 }
 
+/**
+ * Semi-axes of an ellipse with the given area and major:minor aspect ratio (default 2:1, a
+ * mouse-like silhouette) — used for the minimum-size preview on the stage (`DetectionSection`,
+ * `StageOverlay`). `area = π × rx × ry` with `rx = ry × aspect`.
+ */
+export function ellipseAxesForArea(area: number, aspect = 2): { rx: number; ry: number } {
+  const ry = Math.sqrt(area / (Math.PI * aspect))
+  return { rx: ry * aspect, ry }
+}
+
 /** True once a drawn shape is big enough to keep (avoids a zero-size zone from a stray click). */
 export function shapeMeetsMinimumSize(shape: Shape, minPx = 4): boolean {
   if (shape.kind === 'polygon') return shape.points.length >= 3

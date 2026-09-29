@@ -401,7 +401,11 @@ function ResultsInspectorBody({
           clock: null as string | null
         },
         { key: 'End', value: formatVideoTime(results.trial_end_s), clock: null },
-        { key: 'Duration', value: formatDuration(results.trial_duration_s), clock: null }
+        { key: 'Duration', value: formatDuration(results.trial_duration_s), clock: null },
+        ...(results.excluded_duration_s > 0
+          ? [{ key: 'Excluded', value: formatDuration(results.excluded_duration_s), clock: null }]
+          : []),
+        { key: 'Analysed', value: formatDuration(results.analysed_duration_s), clock: null }
       ]
     : []
 

@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
 import type { FlagView } from '../../../api/types'
+import { Kbd } from '../../../components/Kbd'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
 import { formatClockTime, formatVideoTime } from '../../../lib/time'
@@ -133,6 +134,8 @@ export function FlagsPanel({
             </ShortcutTooltip>
           </Box>
         ) : null}
+
+        {flags.length > 0 ? <FlagHotkeyHint /> : null}
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {FILTERS.map((f) => (
@@ -279,6 +282,32 @@ export function FlagsPanel({
           )
         })
       )}
+    </Box>
+  )
+}
+
+/** A subtle reminder of the fast-review hotkeys — accept/set-position (stage banner) and
+ * previous/next (above) — so reviewing a long flag list barely needs the mouse. */
+function FlagHotkeyHint(): React.JSX.Element {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 0.5,
+        fontSize: 11,
+        color: 'text.disabled'
+      }}
+    >
+      <Kbd>A</Kbd>
+      <span>accept</span>
+      <span>·</span>
+      <Kbd>P</Kbd>
+      <span>set position</span>
+      <span>·</span>
+      <Kbd>]</Kbd>
+      <span>next</span>
     </Box>
   )
 }

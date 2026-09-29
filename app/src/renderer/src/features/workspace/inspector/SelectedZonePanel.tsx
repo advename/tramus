@@ -12,6 +12,7 @@ import { shapeBBox } from '../lib/geometry'
 import { shapeKindLabel } from '../lib/shapes'
 import { mmPerPxOf, pxToUnit, roundForUnit, unitToPx, type ZoneUnit } from '../lib/units'
 import { useWorkspaceStore } from '../state/workspaceStore'
+import { UnitToggle } from './UnitToggle'
 
 export interface SelectedZonePanelProps {
   zone: Zone
@@ -195,46 +196,6 @@ export function SelectedZonePanel({
           </Typography>
         </Box>
       ) : null}
-    </Box>
-  )
-}
-
-function UnitToggle({
-  unit,
-  onChange,
-  disabledCm
-}: {
-  unit: ZoneUnit
-  onChange: (unit: ZoneUnit) => void
-  disabledCm: boolean
-}): React.JSX.Element {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        border: 1,
-        borderColor: 'surface.lineStrong',
-        borderRadius: '6px',
-        overflow: 'hidden'
-      }}
-    >
-      {(['px', 'cm'] as const).map((u) => (
-        <ButtonBase
-          key={u}
-          disabled={u === 'cm' && disabledCm}
-          onClick={() => onChange(u)}
-          sx={{
-            width: 28,
-            height: 20,
-            fontSize: 10.5,
-            fontWeight: 500,
-            bgcolor: unit === u ? 'surface.hover' : 'transparent',
-            color: unit === u ? 'text.primary' : 'text.disabled'
-          }}
-        >
-          {u}
-        </ButtonBase>
-      ))}
     </Box>
   )
 }

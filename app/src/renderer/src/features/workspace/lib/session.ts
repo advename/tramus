@@ -1,4 +1,5 @@
 import type { Setup, TrialWindow } from '../../../api/types'
+import { formatDuration } from '../../../lib/time'
 import { videoDuration } from './frames'
 
 /** A setup with neither an arena nor any zones — the design's "no setup yet" state. */
@@ -62,4 +63,22 @@ const ESTIMATED_TRACKING_FPS = 300
 export function estimateTrackingSeconds(trialDurationS: number, nominalFps: number): number {
   const frames = trialDurationS * nominalFps
   return Math.max(1, Math.round(frames / ESTIMATED_TRACKING_FPS))
+}
+
+/**
+ * The Results header/summary line, e.g. `"Trial 5:00.000 · 0:12.000 excluded · 4:48.000
+ * analysed"` — the "excluded" segment is omitted when nothing was excluded (`docs/
+ * architecture.md` §5.5: `analysed_duration_s` = `trial_duration_s` − `excluded_duration_s`).
+ */
+export function trialSummaryText(results: {
+  trial_duration_s: number
+  excluded_duration_s: number
+  analysed_duration_s: number
+}): string {
+  const parts = [`Trial ${formatDuration(results.trial_duration_s)}`]
+  if (results.excluded_duration_s > 0) {
+    parts.push(`${formatDuration(results.excluded_duration_s)} excluded`)
+  }
+  parts.push(`${formatDuration(results.analysed_duration_s)} analysed`)
+  return parts.join(' · ')
 }

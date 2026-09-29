@@ -13,6 +13,7 @@ from pathlib import Path
 from threading import RLock
 
 from ..analysis.corrections import apply_corrections, flag_statuses
+from ..analysis.exclusions import is_interval_fully_excluded
 from ..analysis.history import build_history
 from ..analysis.results import compute_results
 from ..domain import (
@@ -20,6 +21,7 @@ from ..domain import (
     AnalysisSettings,
     Correction,
     EllipseShape,
+    Exclusion,
     Flag,
     FlagStatus,
     HistoryEntry,
@@ -82,7 +84,8 @@ class Session:
             return self._results
 
     def flags_with_status(self) -> list[tuple[Flag, FlagStatus]]:
-        """Flags overlapping the trial window, each paired with its resolution status."""
+        """Flags overlapping the trial window and not lying entirely inside an excluded period,
+        each paired with its resolution status."""
         with self.lock:
             statuses = flag_statuses(self.document.flags, self.document.corrections)
             trial = self.document.setup.trial
@@ -90,6 +93,13 @@ class Session:
             if trial is not None:
                 flags = [
                     f for f in flags if f.t_end_s >= trial.start_s and f.t_start_s <= trial.end_s
+                ]
+            exclusions = self.document.setup.exclusions
+            if exclusions:
+                flags = [
+                    f
+                    for f in flags
+                    if not is_interval_fully_excluded(f.t_start_s, f.t_end_s, exclusions)
                 ]
             return [(f, statuses[f.id]) for f in flags]
 
@@ -140,6 +150,17 @@ class _SetupChangeText:
     detail: str
 
 
+def _format_time_precise(seconds: float) -> str:
+    """`mm:ss.sss`, e.g. `01:02.300` — used for exclusion history text."""
+    minutes = int(seconds // 60)
+    rest = seconds - minutes * 60
+    return f"{minutes:02d}:{rest:06.3f}"
+
+
+def _exclusion_range_text(exclusion: Exclusion) -> str:
+    return f"{_format_time_precise(exclusion.start_s)}–{_format_time_precise(exclusion.end_s)}"
+
+
 def _diff_setup(old: Setup, new: Setup) -> list[_SetupChangeText]:
     """Human-readable setup changes, in the design's wording, for the session history."""
     changes: list[_SetupChangeText] = []
@@ -174,11 +195,30 @@ def _diff_setup(old: Setup, new: Setup) -> list[_SetupChangeText]:
         if zone_id not in new_zones:
             changes.append(_SetupChangeText(f"Deleted zone “{zone.name}”", "Results recalculated"))
 
+    old_exclusions = {excl.id: excl for excl in old.exclusions}
+    new_exclusions = {excl.id: excl for excl in new.exclusions}
+    for excl_id, exclusion in new_exclusions.items():
+        previous = old_exclusions.get(excl_id)
+        if previous is None:
+            title = f"Excluded {_exclusion_range_text(exclusion)}"
+            changes.append(_SetupChangeText(title, "Results recalculated"))
+        elif previous != exclusion:
+            # Title stays stable (no times) so a drag's many updates keep coalescing.
+            title = f"Edited exclusion “{exclusion.note}”" if exclusion.note else "Edited exclusion"
+            changes.append(_SetupChangeText(title, "Results recalculated"))
+    for excl_id, exclusion in old_exclusions.items():
+        if excl_id not in new_exclusions:
+            title = f"Removed exclusion {_exclusion_range_text(exclusion)}"
+            changes.append(_SetupChangeText(title, "Results recalculated"))
+
     if old.analysis.in_zone_threshold != new.analysis.in_zone_threshold:
         old_pct = round(old.analysis.in_zone_threshold * 100)
         new_pct = round(new.analysis.in_zone_threshold * 100)
         title = f"In-zone threshold {old_pct}% → {new_pct}%"
         changes.append(_SetupChangeText(title, "Results recalculated"))
+
+    if old.analysis.crossing_rules != new.analysis.crossing_rules:
+        changes.append(_SetupChangeText("Crossing rules changed", "Results recalculated"))
 
     if old.trial != new.trial:
         changes.append(_SetupChangeText("Trial changed", "Results recalculated"))

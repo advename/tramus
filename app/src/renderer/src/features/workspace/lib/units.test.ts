@@ -4,8 +4,11 @@ import {
   measureUnitToMm,
   mmPerPxOf,
   mmToMeasureUnit,
+  pxAreaToUnit,
   pxToUnit,
+  roundForAreaUnit,
   roundForUnit,
+  unitAreaToPx,
   unitToPx
 } from './units'
 
@@ -76,5 +79,43 @@ describe('roundForUnit', () => {
 
   it('rounds cm to two decimals', () => {
     expect(roundForUnit(1.23456, 'cm')).toBe(1.23)
+  })
+})
+
+describe('pxAreaToUnit / unitAreaToPx', () => {
+  const mmPerPx = 0.5 // 1 px = 0.5 mm, so 1 px² = 0.25 mm² = 0.0025 cm²
+
+  it('passes px² through unchanged', () => {
+    expect(pxAreaToUnit(300, 'px', mmPerPx)).toBe(300)
+    expect(unitAreaToPx(300, 'px', mmPerPx)).toBe(300)
+  })
+
+  it('converts px² to cm² using (mm/px)²', () => {
+    // 400 px² * 0.25 mm²/px² = 100 mm² = 1 cm²
+    expect(pxAreaToUnit(400, 'cm', mmPerPx)).toBe(1)
+  })
+
+  it('converts cm² back to px²', () => {
+    expect(unitAreaToPx(1, 'cm', mmPerPx)).toBe(400)
+  })
+
+  it('is a round trip', () => {
+    const px = 317
+    expect(unitAreaToPx(pxAreaToUnit(px, 'cm', mmPerPx), 'cm', mmPerPx)).toBeCloseTo(px)
+  })
+
+  it('falls back to px² when uncalibrated', () => {
+    expect(pxAreaToUnit(300, 'cm', null)).toBe(300)
+    expect(unitAreaToPx(300, 'cm', null)).toBe(300)
+  })
+})
+
+describe('roundForAreaUnit', () => {
+  it('rounds px² to whole numbers', () => {
+    expect(roundForAreaUnit(299.6, 'px')).toBe(300)
+  })
+
+  it('rounds cm² to two decimals', () => {
+    expect(roundForAreaUnit(0.38456, 'cm')).toBe(0.38)
   })
 })

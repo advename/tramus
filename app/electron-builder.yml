@@ -19,7 +19,9 @@ mac:
       arch:
         - arm64
   category: public.app-category.education
+  icon: build/icon.icns
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:
@@ -28,6 +30,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 linux:
+  icon: build/icon.png
   target:
     - target: AppImage
       arch:

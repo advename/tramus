@@ -2,11 +2,12 @@ import type { RefObject } from 'react'
 
 import type { Setup, TrialWindow } from '../../../api/types'
 import type { SetupEditor } from '../data'
+import { mergeExclusionEdge, moveExclusionEdge } from '../lib/exclusions'
 import { nearestFrame, timeOfFrame, videoDuration } from '../lib/frames'
 import { timeAtClientX } from '../lib/timelineScale'
 import type { FrameRange } from '../state/workspaceStore'
 
-type DragKind = 'playhead' | 'start' | 'end' | 'range'
+type DragKind = 'playhead' | 'start' | 'end' | 'range' | 'exclusion-start' | 'exclusion-end'
 
 function moveTrialStart(trial: TrialWindow, t: number, duration: number): TrialWindow {
   if (trial.locked_duration) {
@@ -38,6 +39,9 @@ export interface UseTimelineDragArgs {
   onSeek: (frame: number) => void
   onPauseForScrub: () => void
   onSetRange: (range: FrameRange | null) => void
+  /** Called once, when an exclusion edge drag ends, with the (possibly merged) id to reselect —
+   * see `mergeExclusionEdge`. */
+  onSelectExclusion: (exclusionId: string) => void
 }
 
 export interface TimelineDragApi {
@@ -46,9 +50,11 @@ export interface TimelineDragApi {
 
 /**
  * The timeline's single pointer-drag state machine: scrubbing the playhead, dragging a trial
- * start/end handle (`data-drag="start"|"end"` on the handle element), or Shift-dragging a Review
- * frame range. Trial edits preview continuously and commit once on release (`useSetupEditor`), so
- * a drag is one request and one undo step.
+ * start/end handle (`data-drag="start"|"end"`), dragging an exclusion's start/end handle
+ * (`data-drag="exclusion-start"|"exclusion-end"`, `data-exclusion-id` on the same element — see
+ * `ExclusionBands`), or Shift-dragging a frame range (Review's Fill/Hide, or any step's Exclude —
+ * see `Timeline`/`RangePopover`). Trial and exclusion edits preview continuously and commit once
+ * on release (`useSetupEditor`), so a drag is one request and one undo step.
  */
 export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
   const {
@@ -60,7 +66,8 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
     setupEditor,
     onSeek,
     onPauseForScrub,
-    onSetRange
+    onSetRange,
+    onSelectExclusion
   } = args
 
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
@@ -68,6 +75,7 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
     if (target.closest('[data-no-drag]')) return
     const handle = target.closest<HTMLElement>('[data-drag]')
     let kind: DragKind = handle ? (handle.dataset.drag as DragKind) : 'playhead'
+    const exclusionId = handle?.dataset.exclusionId
     if (e.shiftKey && rangeEditable) kind = 'range'
 
     const track = trackRef.current
@@ -76,6 +84,9 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
     const rect = track.getBoundingClientRect()
     const setupAtStart = setupEditor.setup
     const t0 = timeAtClientX(e.clientX, rect, durationS)
+
+    const exclusionSide = (k: DragKind): 'start' | 'end' | null =>
+      k === 'exclusion-start' ? 'start' : k === 'exclusion-end' ? 'end' : null
 
     const apply = (t: number): void => {
       if (kind === 'playhead') {
@@ -88,6 +99,21 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
           start: nearestFrame(frameTimes, Math.min(t0, t)),
           end: nearestFrame(frameTimes, Math.max(t0, t))
         })
+        return
+      }
+      const side = exclusionSide(kind)
+      if (side) {
+        if (!setupAtStart || !frameTimes || !exclusionId) return
+        const snapped = timeOfFrame(frameTimes, nearestFrame(frameTimes, t))
+        // No merging while previewing (see `moveExclusionEdge`) — only on release, so the id being
+        // dragged stays stable for the length of the gesture.
+        const nextExclusions = moveExclusionEdge(
+          setupAtStart.exclusions ?? [],
+          exclusionId,
+          side,
+          snapped
+        )
+        setupEditor.preview({ ...setupAtStart, exclusions: nextExclusions } satisfies Setup)
         return
       }
       if (!setupAtStart || !frameTimes) return
@@ -106,6 +132,25 @@ export function useTimelineDrag(args: UseTimelineDragArgs): TimelineDragApi {
     const onUp = (ev: PointerEvent): void => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      const side = exclusionSide(kind)
+      if (side) {
+        if (!setupAtStart || !frameTimes || !exclusionId) return
+        const finalT = timeAtClientX(ev.clientX, rect, durationS)
+        const snapped = timeOfFrame(frameTimes, nearestFrame(frameTimes, finalT))
+        const { exclusions: nextExclusions, id } = mergeExclusionEdge(
+          setupAtStart.exclusions ?? [],
+          exclusionId,
+          side,
+          snapped
+        )
+        void setupEditor.commit(
+          { ...setupAtStart, exclusions: nextExclusions },
+          'Edit exclusion',
+          setupAtStart
+        )
+        onSelectExclusion(id)
+        return
+      }
       if (kind !== 'start' && kind !== 'end') return
       if (!setupAtStart || !frameTimes) return
       const finalT = timeAtClientX(ev.clientX, rect, durationS)

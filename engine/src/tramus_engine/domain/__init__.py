@@ -5,7 +5,15 @@ the API contract — bump `SCHEMA_VERSION` and add a migration when the sidecar 
 from .base import DomainModel, UtcDateTime, new_id, utc_now
 from .document import SCHEMA_VERSION, AnalysisDocument, HistoryEntry, HistoryKind, SetupChange
 from .jobs import Job, JobState
-from .results import Results, SummaryRow, SummaryRowKind, ZoneVisit
+from .results import (
+    CrossingEvent,
+    CrossingResult,
+    MatrixCell,
+    Results,
+    SummaryRow,
+    SummaryRowKind,
+    ZoneVisit,
+)
 from .settings import (
     PLAYBACK_SPEEDS,
     AppSettings,
@@ -17,7 +25,9 @@ from .setup import (
     ZONE_PALETTE_SIZE,
     AnalysisSettings,
     Calibration,
+    CrossingRule,
     DetectionSettings,
+    Exclusion,
     ImageAdjustments,
     Polarity,
     Setup,
@@ -54,9 +64,13 @@ __all__ = [
     "AppSettings",
     "Calibration",
     "Correction",
+    "CrossingEvent",
+    "CrossingResult",
+    "CrossingRule",
     "DetectionSettings",
     "DomainModel",
     "EllipseShape",
+    "Exclusion",
     "Flag",
     "FlagReason",
     "FlagStatus",
@@ -68,6 +82,7 @@ __all__ = [
     "Job",
     "JobState",
     "MarkHidden",
+    "MatrixCell",
     "Polarity",
     "PolygonShape",
     "ProcessingDevice",

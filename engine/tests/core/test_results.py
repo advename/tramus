@@ -10,6 +10,7 @@ from tests.core.conftest import make_document, make_track
 from tramus_engine.analysis import compute_results
 from tramus_engine.domain import (
     AnalysisSettings,
+    Exclusion,
     FrameStatus,
     RectShape,
     Setup,
@@ -41,7 +42,7 @@ def test_summary_sums_equal_trial_duration_for_non_overlapping_zones() -> None:
     assert results is not None
     total = sum(row.time_s for row in results.summary)
     assert total == pytest.approx(results.trial_duration_s, abs=1e-6)
-    assert sum(row.share_of_trial for row in results.summary) == pytest.approx(1.0, abs=1e-4)
+    assert sum(row.share_of_analysed for row in results.summary) == pytest.approx(1.0, abs=1e-4)
 
 
 def test_trial_window_clips_results() -> None:
@@ -120,3 +121,59 @@ def test_no_zone_and_not_visible_rows() -> None:
 def test_compute_results_is_none_without_a_track() -> None:
     doc = make_document(track=None)
     assert compute_results(doc) is None
+
+
+def test_exclusion_reduces_analysed_duration_and_time_sums() -> None:
+    n = 50
+    track = make_track(n=n, dt=0.1, x=[10.0] * n, y=[50.0] * n, semi_major=5.0, semi_minor=3.0)
+    setup = Setup(zones=[_LEFT], exclusions=[Exclusion(id="e1", start_s=2.0, end_s=2.5)])
+    doc = make_document(
+        track=track, setup=setup, width=100, height=100, duration_s=track.t[-1] + 0.1
+    )
+
+    results = compute_results(doc)
+    assert results is not None
+    assert results.excluded_duration_s == pytest.approx(0.5, abs=1e-6)
+    assert results.analysed_duration_s == pytest.approx(results.trial_duration_s - 0.5, abs=1e-6)
+    total = sum(row.time_s for row in results.summary)
+    assert total == pytest.approx(results.analysed_duration_s, abs=1e-6)
+    assert sum(row.share_of_analysed for row in results.summary) == pytest.approx(1.0, abs=1e-4)
+
+
+def test_exclusion_outside_the_trial_does_not_reduce_analysed_duration() -> None:
+    n = 50
+    track = make_track(n=n, dt=0.1, x=[10.0] * n, y=[50.0] * n, semi_major=5.0, semi_minor=3.0)
+    setup = Setup(
+        zones=[_LEFT],
+        trial=TrialWindow(start_s=0.0, end_s=1.0),
+        exclusions=[Exclusion(id="e1", start_s=3.0, end_s=3.5)],
+    )
+    doc = make_document(
+        track=track, setup=setup, width=100, height=100, duration_s=track.t[-1] + 0.1
+    )
+
+    results = compute_results(doc)
+    assert results is not None
+    assert results.excluded_duration_s == 0.0
+    assert results.analysed_duration_s == pytest.approx(results.trial_duration_s)
+
+
+def test_visit_splits_across_an_exclusion() -> None:
+    n = 50
+    track = make_track(n=n, dt=0.1, x=[10.0] * n, y=[50.0] * n, semi_major=5.0, semi_minor=3.0)
+    setup = Setup(zones=[_LEFT], exclusions=[Exclusion(id="e1", start_s=2.0, end_s=2.5)])
+    doc = make_document(
+        track=track, setup=setup, width=100, height=100, duration_s=track.t[-1] + 0.1
+    )
+
+    results = compute_results(doc)
+    assert results is not None
+    assert len(results.visits) == 2
+    first, second = results.visits
+    assert first.zone_name == "Left"
+    assert second.zone_name == "Left"
+    assert first.exit_s == pytest.approx(2.0, abs=1e-6)
+    assert second.enter_s == pytest.approx(2.5, abs=1e-6)
+    # No membership — and so no time counted — during the excluded gap.
+    assert first.index == 1
+    assert second.index == 2

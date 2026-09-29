@@ -16,8 +16,9 @@ import {
   useFlags
 } from '../data'
 import { isVisible } from '../data/trackData'
+import { exclusionAtTime } from '../lib/exclusions'
 import { frameAtTime, timeOfFrame } from '../lib/frames'
-import { flagAtFrame, useReopenFlag } from '../lib/flags'
+import { flagAtFrame, nextUnresolvedFlag, useReopenFlag } from '../lib/flags'
 import { distance } from '../lib/geometry'
 import { formatVideoTime } from '../../../lib/time'
 import { computeStageTransform, computeViewBox, svgPointFromClient } from '../lib/stageTransform'
@@ -84,6 +85,8 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const stepFrames = useWorkspaceStore((s) => s.stepFrames)
   const seek = useWorkspaceStore((s) => s.seek)
   const pause = useWorkspaceStore((s) => s.pause)
+  const selectFlag = useWorkspaceStore((s) => s.selectFlag)
+  const sizePreviewPx = useWorkspaceStore((s) => s.sizePreviewPx)
 
   // Server data.
   const session = useSession(videoId)
@@ -106,6 +109,13 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const image = setup?.image
   const brightness = image?.brightness ?? 0
   const contrast = image?.contrast ?? 0
+  // For the "Excluded from analysis" status-bar badge (§5.5) — the current frame's start time
+  // falls inside a `Setup.exclusion`.
+  const currentlyExcluded = Boolean(
+    setup?.exclusions &&
+    frameTimes &&
+    exclusionAtTime(setup.exclusions, timeOfFrame(frameTimes, currentFrame))
+  )
 
   // Stage transform (shared by the canvas and the SVG overlay).
   const transform = useMemo(
@@ -238,6 +248,26 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     zoneEditing.onBackgroundPointerDown(e)
   }
 
+  /**
+   * Accepts the flag under the playhead, then jumps straight to the next unresolved flag
+   * (wrapping to the first, staying put when none remain) so reviewing a long list of flags is a
+   * single repeated keystroke. Shared by the `A` shortcut and the banner's Accept button.
+   */
+  const handleAcceptFlag = (): void => {
+    if (!currentFlag || currentFlag.status !== 'unresolved') return
+    void correctionsEditor.add({ kind: 'accept_flag', flag_id: currentFlag.id }, 'Accepted flag')
+    const target = nextUnresolvedFlag(flags ?? [], currentFrame, currentFlag.id)
+    if (target) {
+      pause()
+      seek(target.frame_start)
+      selectFlag(target.id)
+    }
+  }
+
+  const handleReopenFlag = (): void => {
+    if (currentFlag && currentFlag.status !== 'unresolved') reopenFlag.request(currentFlag)
+  }
+
   const activeTool = zoneEditing.activeTool
   const cursor =
     panZoom.cursor ??
@@ -276,18 +306,9 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   useShortcut('m', () => toggleOverlay('heatmap'), { enabled: step === 'review' })
   useShortcut('l', () => toggleOverlay('outline'), { enabled: step === 'review' })
   useShortcut('z', () => toggleOverlay('currentZone'), { enabled: step === 'review' })
-  useShortcut(
-    'a',
-    () => {
-      if (currentFlag?.status === 'unresolved') {
-        void correctionsEditor.add(
-          { kind: 'accept_flag', flag_id: currentFlag.id },
-          'Accepted flag'
-        )
-      }
-    },
-    { enabled: step === 'review' }
-  )
+  useShortcut('a', () => handleAcceptFlag(), { enabled: step === 'review' })
+  // 'r' doesn't clash with Setup's rect tool (enabled: step === 'setup' — never both at once).
+  useShortcut('r', () => handleReopenFlag(), { enabled: step === 'review' })
   useShortcut('delete', () => zoneEditing.deleteSelected(), { enabled: zoneEditing.editable })
   useShortcut('backspace', () => zoneEditing.deleteSelected(), {
     enabled: zoneEditing.editable
@@ -368,6 +389,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
             }
             calibration={step === 'setup' ? (setup?.calibration ?? null) : null}
             measureDraft={step === 'setup' ? zoneEditing.measureDraft : null}
+            sizePreviewPx={sizePreviewPx}
             px={1 / transform.scale}
             onBackgroundPointerDown={handleBackgroundPointerDown}
             onCalibrationHandlePointerDown={zoneEditing.onCalibrationHandlePointerDown}
@@ -408,6 +430,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
         videoWidth={video.width}
         videoHeight={video.height}
         nominalFps={videoInfo?.nominal_fps ?? 0}
+        excluded={currentlyExcluded}
       />
 
       {currentFlag && flags && (
@@ -416,14 +439,9 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
           index={flags.findIndex((f) => f.id === currentFlag.id)}
           total={flags.length}
           timeS={currentFlag.t_start_s}
-          onAccept={() =>
-            void correctionsEditor.add(
-              { kind: 'accept_flag', flag_id: currentFlag.id },
-              'Accepted flag'
-            )
-          }
+          onAccept={handleAcceptFlag}
           onSetPosition={() => setReviewTool('position')}
-          onReopen={() => reopenFlag.request(currentFlag)}
+          onReopen={handleReopenFlag}
         />
       )}
 

@@ -1,6 +1,8 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, shell } from 'electron'
 
+import icon from '../../build/icon.png?asset'
+import macIcon from '../../build/icon-macos.png?asset'
 import { EngineProcess, EngineStartupError } from './engine'
 import { registerIpcHandlers } from './ipc'
 
@@ -28,6 +30,8 @@ function createWindow(): void {
     show: false,
     backgroundColor: DARK_BACKGROUND_HEX,
     autoHideMenuBar: true,
+    // macOS takes the window icon from the app bundle (or the Dock icon set below in dev).
+    ...(isMac ? {} : { icon }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
@@ -83,6 +87,8 @@ if (!gotSingleInstanceLock) {
 
   void app.whenReady().then(() => {
     app.setAppUserModelId('org.tramus.app')
+    // Packaged builds get the Dock icon from icon.icns; in dev, Electron's own icon would show.
+    if (isDev && isMac) app.dock?.setIcon(macIcon)
 
     createWindow()
     registerIpcHandlers(() => mainWindow, engine)

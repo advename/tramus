@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from tramus_engine.domain import Calibration, Template
+from tramus_engine.domain import (
+    AnalysisSettings,
+    Calibration,
+    CrossingRule,
+    RectShape,
+    Template,
+    Zone,
+)
 from tramus_engine.services.templates import setup_from_template
 
 
@@ -56,3 +63,29 @@ def test_setup_from_template_without_calibration_stays_none() -> None:
     template = _template()
     setup = setup_from_template(template, width=640, height=480)
     assert setup.calibration is None
+
+
+def test_setup_from_template_has_no_exclusions() -> None:
+    """Exclusions are per video — a fresh setup from a template never carries any."""
+    template = _template()
+    setup = setup_from_template(template, width=640, height=480)
+    assert setup.exclusions == []
+
+
+def test_setup_from_template_preserves_zone_ids_so_crossing_rules_keep_matching() -> None:
+    left_shape = RectShape(x=0, y=0, width=10, height=10)
+    right_shape = RectShape(x=20, y=0, width=10, height=10)
+    left = Zone(id="left-zone", name="Left", color_index=0, shape=left_shape)
+    right = Zone(id="right-zone", name="Right", color_index=1, shape=right_shape)
+    rule = CrossingRule(id="r1", from_zone_id="left-zone", to_zone_id="right-zone")
+    template = _template(zones=[left, right], analysis=AnalysisSettings(crossing_rules=[rule]))
+
+    # Applied to a differently-sized video (2x scale, like a batch run).
+    setup = setup_from_template(template, width=640, height=480)
+
+    assert [zone.id for zone in setup.zones] == ["left-zone", "right-zone"]
+    assert setup.analysis.crossing_rules == [rule]
+    matching_rule = setup.analysis.crossing_rules[0]
+    zone_ids = {zone.id for zone in setup.zones}
+    assert matching_rule.from_zone_id in zone_ids
+    assert matching_rule.to_zone_id in zone_ids

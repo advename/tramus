@@ -4,15 +4,18 @@ from __future__ import annotations
 
 from ..domain import AnalysisDocument, FlagStatus, VideoStatus
 from .corrections import flag_statuses
+from .exclusions import is_interval_fully_excluded
 
 
 def unresolved_flag_count(document: AnalysisDocument) -> int:
-    """Number of `unresolved` flags overlapping the trial window (the whole video if untrimmed)."""
+    """Number of `unresolved` flags overlapping the trial window (the whole video if untrimmed)
+    and not lying entirely inside an excluded period."""
     if document.track is None or not document.flags:
         return 0
     trial = document.setup.trial
     start = trial.start_s if trial else 0.0
     end = trial.end_s if trial else document.video.duration_s
+    exclusions = document.setup.exclusions
 
     statuses = flag_statuses(document.flags, document.corrections)
     return sum(
@@ -21,6 +24,7 @@ def unresolved_flag_count(document: AnalysisDocument) -> int:
         if statuses[flag.id] == FlagStatus.UNRESOLVED
         and flag.t_start_s <= end
         and flag.t_end_s >= start
+        and not is_interval_fully_excluded(flag.t_start_s, flag.t_end_s, exclusions)
     )
 
 

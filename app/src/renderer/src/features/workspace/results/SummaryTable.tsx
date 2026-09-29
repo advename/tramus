@@ -45,7 +45,7 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
       >
         <span>Zone</span>
         <span style={{ textAlign: 'right' }}>Time in zone</span>
-        <span style={{ textAlign: 'right' }}>% of trial</span>
+        <span style={{ textAlign: 'right' }}>% of analysed</span>
       </Box>
       {results.summary.map((row) => (
         <Box
@@ -92,7 +92,7 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
             variant="mono"
             sx={{ textAlign: 'right', fontSize: 12.5, color: 'text.secondary' }}
           >
-            {(row.share_of_trial * 100).toFixed(1)} %
+            {(row.share_of_analysed * 100).toFixed(1)} %
           </Typography>
         </Box>
       ))}
@@ -113,11 +113,11 @@ export function SummaryTable({ results }: SummaryTableProps): React.JSX.Element 
             component="span"
             sx={{ fontWeight: 400, fontSize: 11.5, color: 'text.disabled' }}
           >
-            = trial length
+            = analysed time
           </Typography>
         </Box>
         <Typography variant="mono" sx={{ textAlign: 'right', fontSize: 12.5 }}>
-          {formatDuration(results.trial_duration_s)}
+          {formatDuration(results.analysed_duration_s)}
         </Typography>
         <Typography variant="mono" sx={{ textAlign: 'right', fontSize: 12.5 }}>
           100.0 %

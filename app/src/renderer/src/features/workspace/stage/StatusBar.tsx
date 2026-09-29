@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 
+import { Symbol } from '../../../components/Symbol'
 import { formatFrameCount } from '../../../lib/time'
 import type { Point } from '../lib/geometry'
 import { svgPointFromClient } from '../lib/stageTransform'
@@ -14,6 +15,8 @@ export interface StatusBarProps {
   videoWidth: number
   videoHeight: number
   nominalFps: number
+  /** The current frame falls inside a `Setup.exclusion` (§5.5) — shows a small, subtle badge. */
+  excluded: boolean
 }
 
 /**
@@ -46,7 +49,8 @@ export function StatusBar({
   frameCount,
   videoWidth,
   videoHeight,
-  nominalFps
+  nominalFps,
+  excluded
 }: StatusBarProps): React.JSX.Element {
   const cursorVideoPoint = useCursorVideoPoint(svgRef)
   return (
@@ -73,6 +77,14 @@ export function StatusBar({
         <Typography variant="mono" sx={{ fontSize: 11, color: 'text.disabled' }}>
           x {Math.round(cursorVideoPoint.x)} y {Math.round(cursorVideoPoint.y)} px
         </Typography>
+      )}
+      {excluded && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Symbol name="block" size={12} sx={{ color: 'text.disabled' }} />
+          <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
+            Excluded from analysis
+          </Typography>
+        </Box>
       )}
       <Box sx={{ flex: 1 }} />
       <Typography variant="mono" sx={{ fontSize: 11, color: 'text.disabled' }}>

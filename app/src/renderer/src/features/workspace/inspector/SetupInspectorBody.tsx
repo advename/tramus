@@ -4,6 +4,7 @@ import Divider from '@mui/material/Divider'
 import type { SessionActions, SetupEditor } from '../data'
 import type { StageSelection } from '../state/workspaceStore'
 import { DetectionSection } from './DetectionSection'
+import { ExclusionsSection } from './ExclusionsSection'
 import { ImageAdjustmentsSection } from './ImageAdjustmentsSection'
 import { ScaleSection } from './ScaleSection'
 import { TemplateSection } from './TemplateSection'
@@ -46,6 +47,8 @@ export function SetupInspectorBody({
       />
       <Divider sx={{ mt: 1.5 }} />
       <ScaleSection setup={setup} editor={editor} />
+      <Divider />
+      <ExclusionsSection videoId={videoId} setup={setup} editor={editor} />
       <Divider />
       <ImageAdjustmentsSection setup={setup} editor={editor} />
       <Divider sx={{ mt: 1.75 }} />

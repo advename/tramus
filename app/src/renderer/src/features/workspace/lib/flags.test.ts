@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { correctionsToReopen } from './flags'
+import { correctionsToReopen, nextUnresolvedFlag } from './flags'
 import type { Correction, FlagView } from '../../../api/types'
 
 function makeFlag(overrides: Partial<FlagView> = {}): FlagView {
@@ -82,5 +82,47 @@ describe('correctionsToReopen', () => {
     const plan = correctionsToReopen(flag, corrections)
     expect(plan.correctionIds).toEqual(['c1'])
     expect(plan.extendsBeyondFlag).toBe(true)
+  })
+})
+
+describe('nextUnresolvedFlag', () => {
+  it('finds the next unresolved flag after the current frame, skipping resolved ones', () => {
+    const flags = [
+      makeFlag({ id: 'f1', frame_start: 10, status: 'fixed' }),
+      makeFlag({ id: 'f2', frame_start: 50, status: 'unresolved' }),
+      makeFlag({ id: 'f3', frame_start: 100, status: 'accepted' }),
+      makeFlag({ id: 'f4', frame_start: 150, status: 'unresolved' })
+    ]
+    expect(nextUnresolvedFlag(flags, 20)?.id).toBe('f2')
+    expect(nextUnresolvedFlag(flags, 60)?.id).toBe('f4')
+  })
+
+  it('wraps to the first unresolved flag past the last one', () => {
+    const flags = [
+      makeFlag({ id: 'f1', frame_start: 10, status: 'unresolved' }),
+      makeFlag({ id: 'f2', frame_start: 150, status: 'unresolved' })
+    ]
+    expect(nextUnresolvedFlag(flags, 200)?.id).toBe('f1')
+  })
+
+  it('excludes the flag just accepted, even though its status in `flags` may still be unresolved', () => {
+    const flags = [
+      makeFlag({ id: 'f1', frame_start: 10, status: 'unresolved' }),
+      makeFlag({ id: 'f2', frame_start: 150, status: 'unresolved' })
+    ]
+    expect(nextUnresolvedFlag(flags, 200, 'f2')?.id).toBe('f1')
+  })
+
+  it('returns undefined when the just-accepted flag was the only unresolved one', () => {
+    const flags = [
+      makeFlag({ id: 'f1', frame_start: 10, status: 'unresolved' }),
+      makeFlag({ id: 'f2', frame_start: 150, status: 'fixed' })
+    ]
+    expect(nextUnresolvedFlag(flags, 20, 'f1')).toBeUndefined()
+  })
+
+  it('returns undefined when there are no unresolved flags at all', () => {
+    const flags = [makeFlag({ id: 'f1', frame_start: 10, status: 'fixed' })]
+    expect(nextUnresolvedFlag(flags, 20)).toBeUndefined()
   })
 })

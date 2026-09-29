@@ -82,12 +82,14 @@ The Pydantic models are the single source of truth. Key ones:
 
 | Model | Purpose |
 |---|---|
-| `Setup` | arena `Shape`, `zones`, `ImageAdjustments`, `DetectionSettings`, `AnalysisSettings`, `TrialWindow`, `TemplateRef`, `Calibration` |
+| `Setup` | arena `Shape`, `zones`, `ImageAdjustments`, `DetectionSettings`, `AnalysisSettings`, `TrialWindow`, `TemplateRef`, `Calibration`, `exclusions` |
+| `Exclusion` | `{id, start_s, end_s, note}` — a period subtracted from the trial before analysis. Per video: lives on `Setup`, not `Template` |
+| `CrossingRule` | `{id, from_zone_id, to_zone_id}` — a zone-to-zone transition to count; `None` on either side means "Any zone". Lives on `AnalysisSettings`, so templates carry it |
 | `Track` | raw per-frame body ellipse, column-wise (`t, x, y, semi_major, semi_minor, angle_deg, area_px, status`) |
 | `Flag` | suspicious frame range found after tracking (`not_found`, `sudden_jump`, `unusual_size`) |
 | `Correction` | `set_position`, `mark_hidden`, `interpolate`, `accept_flag` — applied in list order on top of the raw track |
 | `AnalysisDocument` | the sidecar: video info, setup, raw track, flags, corrections, setup changes, results snapshot |
-| `Results` | summary rows (per zone + "No zone" + "Not visible") and zone visits |
+| `Results` | summary rows (per zone + "No zone" + "Not visible"), zone visits, zone crossings (rule counts/events) and the crossing matrix |
 | `Template`, `AppSettings`, `Job` | templates, preferences, background work |
 
 The raw track is never modified; corrections are an ordered, timestamped log. That keeps every
@@ -98,6 +100,22 @@ change traceable and makes undo trivial (drop the last correction).
 It is additive — sidecars without it still load as `calibration: null` — so `SCHEMA_VERSION`
 stays 1. `Template` carries the same field; `setup_from_template` scales its endpoints with the
 shapes (`length_mm` is a physical quantity and is left unchanged).
+
+`Setup.exclusions` (`list[Exclusion]`, default `[]`) is additive, so `SCHEMA_VERSION` stays 1.
+Exclusions are per video: tracking is unchanged, they only affect analysis (§5.5); `Template`
+does not carry them, and `setup_from_template` always produces an empty list. `Results` gained
+`analysed_duration_s`, `excluded_duration_s`, `crossings` and `crossing_matrix`, and
+`SummaryRow.share_of_trial` was renamed to `share_of_analysed` (0–1 of the analysed duration,
+not the trial duration) — all additive/defaulted so older sidecars' `results` snapshot (which is
+always re-derivable, never read back by the engine) still loads.
+
+`AnalysisSettings.crossing_rules` (`list[CrossingRule]`, default `[]`) is additive. Because it
+lives on `AnalysisSettings` rather than `Setup` directly, templates carry it like the other
+analysis settings: `Template.analysis` and `setup_from_template`'s `analysis=template.analysis`
+already round-trip it. Crossing rules reference zones by id, so id stability across a template
+round trip matters — `setup_from_template` copies each template zone's `id` unchanged (only the
+`shape` is scaled), and template creation copies `setup.zones` (with their ids) verbatim — so a
+rule saved against one video's zones still matches after the template is applied to another.
 
 ## 5. Algorithms
 
@@ -167,23 +185,67 @@ frame range overlaps the flag's range; else `unresolved`.
     zone qualifies and `f_none < θ`, assign the zone with the largest `f[z]`.
 * Frames with status `missing`/`hidden` are in no zone and count as **Not visible**.
 * Zones may overlap; membership is independent per zone.
+* **Excluded frames** (`analysis/exclusions.py`): a frame whose start time `t[i]` falls inside a
+  `Setup.exclusion` is in no zone, regardless of visibility or geometry, and is treated like a
+  gap for continuity — the next analysed frame uses the "first frame" rule above. This is what
+  splits a zone visit into two when an exclusion falls in the middle of a stay (§5.5), and what
+  makes a crossing's chain start over after an exclusion (§5.7). `zone_membership` takes this as
+  an optional `excluded` frame mask alongside `visible`.
 
 ### 5.5 Results (`analysis/results.py`)
 
-* Trial = `setup.trial` or the whole video. Each frame contributes the overlap of
-  `[t[i], t[i] + d[i])` with the trial window.
-* Summary rows: one per zone (in setup order) with time and share of trial; then
-  **No zone** (visible, in no zone) and **Not visible**. With non-overlapping zones
-  `Σ zones + No zone + Not visible = trial duration`.
+* Trial = `setup.trial` or the whole video. **Analysed time** = the trial minus the union of
+  `setup.exclusions` (`analysis/exclusions.analysed_intervals`), as a set of sorted,
+  non-overlapping sub-intervals. Each frame contributes the overlap of `[t[i], t[i] + d[i])`
+  with the analysed intervals (the same partial-frame clipping the trial used before exclusions
+  existed) — `analysis/exclusions.frame_interval_overlap`.
+* `Results.analysed_duration_s` = the sum of the analysed intervals' lengths;
+  `Results.excluded_duration_s` = `trial_duration_s − analysed_duration_s` (exclusions clipped
+  to the trial and merged, so overlapping exclusions aren't double-counted).
+* Summary rows: one per zone (in setup order) with time and **share of analysed time**
+  (`share_of_analysed`, renamed from `share_of_trial`); then **No zone** (visible, analysed, in
+  no zone) and **Not visible**. Excluded frames don't count in the zone/No zone/Not visible rows
+  at all — with non-overlapping zones `Σ zones + No zone + Not visible = analysed duration`.
 * Visits: contiguous runs of membership within the trial per zone, numbered chronologically.
-  `enter_s`/`exit_s` are clipped to the trial; `exit_s` = end of the last frame inside.
-  `enter_utc`/`exit_utc` = `recorded_at + seconds` when `recorded_at` is known.
+  `enter_s`/`exit_s` are clipped to the trial; `exit_s` = end of the last frame inside. Because
+  membership is forced to "no zone" for excluded frames (§5.4), a visit that would have spanned
+  an exclusion is split into two — one ending at the exclusion's start, one starting at the next
+  analysed frame. `enter_utc`/`exit_utc` = `recorded_at + seconds` when `recorded_at` is known.
+* Flags entirely inside excluded time are hidden the same way flags outside the trial are:
+  from the flag list (`GET .../session/flags`), `unresolved_flag_count` and `video_status`.
 
 ### 5.6 History (`analysis/history.py`)
 
 Newest first: one entry per correction, one per `setup_changes` item, and "Tracking finished"
 (`track.tracked_at`, detail e.g. `"9 000 frames · 7 flags"`). Titles follow the design:
 "Set position", "Fill in between", "Mouse not visible", "Accepted flag", "Tracking finished".
+
+### 5.7 Zone crossings (`analysis/crossings.py`)
+
+A **stay** is a continuous run of membership in one zone, within one continuity segment (one of
+the analysed intervals from §5.5 — an exclusion is the only thing that breaks a segment; not
+being tracked yet doesn't, since only analysed time is considered at all). Two things are
+transparent when deciding whether a stay is "over":
+
+* **Not-visible gaps are transparent**: consecutive stays of the *same* zone separated only by
+  not-visible frames merge into one stay — no crossing fires at the resumption. A crossing
+  *through* the gap to a *different* zone still counts (`X → not visible → Y` = `X→Y`).
+* **Unzoned floor is transparent for crossings, but doesn't merge stays**: a visible-but-unzoned
+  frame between two stays of the same zone prevents the merge, so `X → no zone → X` is a genuine
+  re-entry crossing; `X → no zone → Y` counts as `X→Y` the same way.
+
+A crossing fires at the moment a stay starts (zone Y entered). Its "from" is the stay — of any
+zone, in the same continuity segment — that most recently *ended* at or before that moment: a
+zone still occupied at entry time is never a "from" (only stays that have actually exited are
+candidates); ties (equal exit time) go to the stay that ended last. The first stay to start in a
+continuity segment (including the first one after an exclusion) has no candidate, so it isn't a
+crossing — this is how exclusions break the crossing chain.
+
+A `CrossingRule {id, from_zone_id, to_zone_id}` matches a crossing when each side equals the
+rule's id, with `None` matching any zone; `Results.crossings` holds one `CrossingResult` per
+rule (its matched `count` and `events`). `Results.crossing_matrix` is the count for *every*
+ordered zone pair, including the diagonal (re-entries), in setup zone order — independent of
+`crossing_rules`.
 
 ## 6. Engine core interfaces (implemented in `video/`, `imaging/`, `tracking/`, `analysis/`)
 
@@ -250,13 +312,29 @@ def flag_statuses(flags: Sequence[Flag], corrections: Sequence[Correction]) -> d
 def zone_fractions(track: Track, zones: Sequence[Zone], width: int, height: int
                    ) -> tuple[np.ndarray, np.ndarray]: ...     # (frames × zones), (frames,) f_none
 def zone_membership(fractions: np.ndarray, outside: np.ndarray, visible: np.ndarray,
-                    threshold: float) -> np.ndarray: ...       # bool (frames × zones)
+                    threshold: float, excluded: np.ndarray | None = None) -> np.ndarray: ...
+                    # bool (frames × zones); `excluded` defaults to "none excluded"
+# analysis/exclusions.py — pure interval arithmetic, shared by results, crossings and flag filtering
+def analysed_intervals(trial_start: float, trial_end: float,
+                       exclusions: Sequence[Exclusion]) -> list[tuple[float, float]]: ...
+def excluded_duration_s(trial_start: float, trial_end: float,
+                        exclusions: Sequence[Exclusion]) -> float: ...
+def frame_is_excluded(frame_start_times: np.ndarray, exclusions: Sequence[Exclusion]) -> np.ndarray: ...
+def frame_interval_overlap(frame_starts: np.ndarray, frame_ends: np.ndarray,
+                           intervals: Sequence[tuple[float, float]]) -> np.ndarray: ...
+def is_interval_fully_excluded(start: float, end: float, exclusions: Sequence[Exclusion]) -> bool: ...
 # analysis/results.py
 def compute_results(document: AnalysisDocument, effective: Track | None = None) -> Results | None: ...
+# analysis/crossings.py
+def compute_crossings(*, t: np.ndarray, frame_end_times: np.ndarray, membership: np.ndarray,
+                      visible: np.ndarray, zones: list[Zone], intervals: list[tuple[float, float]],
+                      rules: list[CrossingRule], recorded_at: datetime | None
+                      ) -> tuple[list[CrossingResult], list[MatrixCell]]: ...
 # analysis/history.py
 def build_history(document: AnalysisDocument) -> list[HistoryEntry]: ...
 # analysis/status.py
-def unresolved_flag_count(document: AnalysisDocument) -> int: ...  # only flags overlapping the trial
+def unresolved_flag_count(document: AnalysisDocument) -> int: ...
+    # unresolved flags overlapping the trial, excluding ones entirely inside an excluded period
 def video_status(document: AnalysisDocument | None) -> VideoStatus: ...
 ```
 
@@ -316,15 +394,25 @@ tracking already running), 500. `detail` is written for the end user.
 ## 9. Export
 
 `.xlsx` (XlsxWriter) — one workbook for one or many videos:
-* **Summary**: video, zone, time (s), share of trial (%), trial start/end, threshold.
+* **Summary**: video, zone, time (s), share of analysed (%), trial start/end, analysed duration
+  (s), excluded duration (s), threshold.
 * **Visits**: video, #, zone, entered/left (video time s), entered/left (UTC ISO) and (local,
   Excel datetime), duration (s).
-* **Track**: per video, frame, t, x, y, status, zones (one 0/1 column per zone).
+* **Track**: per video, frame, t, x, y, status, zones (one 0/1 column per zone; membership
+  already accounts for exclusions, §5.4).
+* **Crossings**: one row per video × rule — from, to (the rule's own labels, "Any zone" for
+  `None`) and count — followed by a table of every crossing event (video, rule, from, to
+  (concrete zones for that event), time (s), time (UTC), time (local)).
+* **Crossing matrix**: one from×to grid per video, zone names as row/column headers, in setup
+  zone order (including the diagonal).
 * **Settings**: app version, tracker + parameters, setup (zones as text, sizes in mm when
-  calibrated), recording time, fingerprint, tracked at, reference length (mm), mm per px,
-  corrections log.
-`.csv`: `<name>_summary.csv` and `<name>_visits.csv` (UTF-8 with BOM, comma separated).
-Exporting sets `exported_at` on the document and saves it.
+  calibrated), exclusions (time range, duration, note), crossing rules (zone names or "Any
+  zone"), recording time, fingerprint, tracked at, reference length (mm), mm per px, corrections
+  log.
+
+`.csv`: `<name>_summary.csv`, `<name>_visits.csv` and `<name>_crossings.csv` (per-rule counts,
+the from×to matrix, then events, as three blocks separated by a blank line) — UTF-8 with BOM,
+comma separated. Exporting sets `exported_at` on the document and saves it.
 
 ## 10. Frontend (app/)
 

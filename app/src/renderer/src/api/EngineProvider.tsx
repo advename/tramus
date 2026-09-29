@@ -2,6 +2,8 @@ import { useEffect, useState, type JSX, type ReactNode } from 'react'
 
 import type { EngineConnection } from '@shared/ipc'
 
+import { TramusLogo } from '../components/TramusLogo'
+
 import { configureApiClient } from './client'
 import { setEngineConnection } from './connection'
 
@@ -16,8 +18,6 @@ type ConnectionState =
 // dependency on engine-provided settings) exists. Matches theme/tokens.ts's `darkTokens`.
 const SPLASH_BG = '#100e0c'
 const SPLASH_FG = '#eeebe4'
-const SPLASH_ACCENT_BG = '#e5d2b0'
-const SPLASH_ACCENT_FG = '#191511'
 
 /**
  * Waits for the local engine process ({@link window.tramus.engine.getConnection}), configures
@@ -71,21 +71,7 @@ export function EngineProvider({ children }: EngineProviderProps): JSX.Element {
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 11,
-            background: SPLASH_ACCENT_BG,
-            color: SPLASH_ACCENT_FG,
-            display: 'grid',
-            placeItems: 'center',
-            fontWeight: 600,
-            fontSize: 22
-          }}
-        >
-          T
-        </div>
+        <TramusLogo size={44} />
         {state.status === 'connecting' ? (
           <span style={{ fontSize: 13, opacity: 0.75 }}>Starting the Tramus engine…</span>
         ) : (

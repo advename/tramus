@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   bboxHandles,
+  ellipseAxesForArea,
   ellipseFromDrag,
   insertPolygonPoint,
   movePolygonPoint,
@@ -168,5 +169,23 @@ describe('shapeMeetsMinimumSize', () => {
       ]
     }
     expect(shapeMeetsMinimumSize(polygon)).toBe(false)
+  })
+})
+
+describe('ellipseAxesForArea', () => {
+  it('produces axes whose area matches the input, at a 2:1 aspect by default', () => {
+    const { rx, ry } = ellipseAxesForArea(100 * Math.PI)
+    expect(rx).toBeCloseTo(ry * 2)
+    expect(Math.PI * rx * ry).toBeCloseTo(100 * Math.PI)
+  })
+
+  it('honours a custom aspect ratio', () => {
+    const { rx, ry } = ellipseAxesForArea(50 * Math.PI, 1)
+    expect(rx).toBeCloseTo(ry)
+    expect(Math.PI * rx * ry).toBeCloseTo(50 * Math.PI)
+  })
+
+  it('is zero for a zero area', () => {
+    expect(ellipseAxesForArea(0)).toEqual({ rx: 0, ry: 0 })
   })
 })

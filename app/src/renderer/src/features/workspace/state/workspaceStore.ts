@@ -26,7 +26,7 @@ const SETUP_DRAWING_TOOLS: ReadonlySet<SetupTool> = new Set([
 export type ReviewTool = 'select' | 'position' | 'hidden' | 'fill' | 'pan'
 export type StageView = 'video' | 'tracker'
 export type InspectorTab = 'flags' | 'zones' | 'history'
-export type ResultsView = 'summary' | 'events'
+export type ResultsView = 'summary' | 'events' | 'crossings'
 export type FlagFilter = 'all' | 'unresolved' | 'fixed' | 'accepted'
 
 /** What is selected on the stage: the arena outline, one zone, or nothing. */
@@ -77,16 +77,26 @@ interface WorkspaceState {
   stagePan: { x: number; y: number }
   overlays: Overlays
   trailLengthS: number
+  /** Video-px² area to preview as a reference ellipse on the stage while the "Minimum mouse size"
+   * slider (`DetectionSection`) is hovered/focused/dragged — `null` the rest of the time. */
+  sizePreviewPx: number | null
 
   // Timeline
   timelineZoom: number
   range: FrameRange | null
+  /** The exclusion band selected on the timeline or the Setup inspector's "Excluded periods" list
+   * — mutually exclusive with `selection` (see `select`/`selectExclusion`) so `Delete` never has
+   * two possible targets at once. */
+  selectedExclusionId: string | null
 
   // Inspector & results
   inspectorTab: InspectorTab
   resultsView: ResultsView
   flagFilter: FlagFilter
   selectedFlagId: string | null
+  /** The crossing rule selected in Results › Crossings — drives the expanded events list there
+   * and the timeline's crossing markers (`timeline/CrossingMarkers.tsx`). */
+  selectedCrossingRuleId: string | null
 
   // Undo / redo of document edits (applied by `useUndoRedo` in ../data)
   undoStack: EditRecord[]
@@ -115,14 +125,17 @@ interface WorkspaceActions {
   resetStageView: () => void
   toggleOverlay: (overlay: keyof Overlays) => void
   setTrailLength: (seconds: number) => void
+  setSizePreviewPx: (px: number | null) => void
 
   setTimelineZoom: (zoom: number) => void
   setRange: (range: FrameRange | null) => void
+  selectExclusion: (exclusionId: string | null) => void
 
   setInspectorTab: (tab: InspectorTab) => void
   setResultsView: (view: ResultsView) => void
   setFlagFilter: (filter: FlagFilter) => void
   selectFlag: (flagId: string | null) => void
+  selectCrossingRule: (ruleId: string | null) => void
 
   pushEdit: (edit: EditRecord) => void
   takeUndo: () => EditRecord | undefined
@@ -147,12 +160,15 @@ const initialState: WorkspaceState = {
   stagePan: { x: 0, y: 0 },
   overlays: { trail: true, heatmap: true, outline: true, currentZone: true },
   trailLengthS: 10,
+  sizePreviewPx: null,
   timelineZoom: 1,
   range: null,
+  selectedExclusionId: null,
   inspectorTab: 'flags',
   resultsView: 'summary',
   flagFilter: 'all',
   selectedFlagId: null,
+  selectedCrossingRuleId: null,
   undoStack: [],
   redoStack: []
 }
@@ -195,7 +211,8 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()((se
       setupHintDismissed: s.setupHintDismissed || SETUP_DRAWING_TOOLS.has(setupTool)
     })),
   setReviewTool: (reviewTool) => set({ reviewTool }),
-  select: (selection) => set({ selection }),
+  select: (selection) =>
+    set((s) => ({ selection, selectedExclusionId: selection ? null : s.selectedExclusionId })),
   setStageView: (stageView) => set({ stageView }),
   toggleStageView: () => set((s) => ({ stageView: s.stageView === 'video' ? 'tracker' : 'video' })),
   setStageZoom: (zoom) => set({ stageZoom: clamp(zoom, STAGE_ZOOM_MIN, STAGE_ZOOM_MAX) }),
@@ -204,6 +221,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()((se
   toggleOverlay: (overlay) =>
     set((s) => ({ overlays: { ...s.overlays, [overlay]: !s.overlays[overlay] } })),
   setTrailLength: (trailLengthS) => set({ trailLengthS: clamp(trailLengthS, 5, 30) }),
+  setSizePreviewPx: (sizePreviewPx) => set({ sizePreviewPx }),
 
   setTimelineZoom: (zoom) =>
     set({ timelineZoom: clamp(zoom, TIMELINE_ZOOM_MIN, TIMELINE_ZOOM_MAX) }),
@@ -214,11 +232,14 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()((se
         end: Math.max(range.start, range.end)
       }
     }),
+  selectExclusion: (selectedExclusionId) =>
+    set((s) => ({ selectedExclusionId, selection: selectedExclusionId ? null : s.selection })),
 
   setInspectorTab: (inspectorTab) => set({ inspectorTab }),
   setResultsView: (resultsView) => set({ resultsView }),
   setFlagFilter: (flagFilter) => set({ flagFilter }),
   selectFlag: (selectedFlagId) => set({ selectedFlagId }),
+  selectCrossingRule: (selectedCrossingRuleId) => set({ selectedCrossingRuleId }),
 
   pushEdit: (edit) =>
     set((s) => ({ undoStack: [...s.undoStack, edit].slice(-MAX_UNDO), redoStack: [] })),

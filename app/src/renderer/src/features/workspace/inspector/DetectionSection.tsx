@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import ButtonBase from '@mui/material/ButtonBase'
 import Slider from '@mui/material/Slider'
@@ -5,6 +6,15 @@ import Typography from '@mui/material/Typography'
 
 import type { SetupEditor } from '../data'
 import type { DetectionSettings, Setup } from '../../../api/types'
+import {
+  mmPerPxOf,
+  pxAreaToUnit,
+  roundForAreaUnit,
+  unitAreaToPx,
+  type ZoneUnit
+} from '../lib/units'
+import { useWorkspaceStore } from '../state/workspaceStore'
+import { UnitToggle } from './UnitToggle'
 
 export interface DetectionSectionProps {
   setup: Setup
@@ -19,11 +29,33 @@ const DEFAULT_DETECTION: DetectionSettings = {
 }
 const DEFAULT_THRESHOLD = 0.5
 
+/** Slider bounds per display unit — independent constants (not a literal px↔cm conversion of one
+ * another) so each unit's range and step feel like round, natural numbers to type/drag. */
+const AREA_SLIDER: Record<ZoneUnit, { min: number; max: number; step: number }> = {
+  px: { min: 20, max: 800, step: 10 },
+  cm: { min: 0.1, max: 8, step: 0.05 }
+}
+
 /** Sensitivity, polarity, minimum size, in-zone threshold (design: `Detection` section). */
 export function DetectionSection({ setup, editor }: DetectionSectionProps): React.JSX.Element {
   const detection = setup.detection ?? DEFAULT_DETECTION
   const thresholdFraction = setup.analysis?.in_zone_threshold ?? DEFAULT_THRESHOLD
   const thresholdPercent = Math.round(thresholdFraction * 100)
+  const mmPerPx = mmPerPxOf(setup.calibration)
+
+  const [storedAreaUnit, setAreaUnit] = useState<ZoneUnit>(mmPerPx != null ? 'cm' : 'px')
+  // Same fallback pattern as `SelectedZonePanel`: derived, not synced, so removing the scale can't
+  // leave a stale 'cm' selection with nothing to convert.
+  const areaUnit: ZoneUnit = mmPerPx == null ? 'px' : storedAreaUnit
+  const areaRange = AREA_SLIDER[areaUnit]
+
+  const setSizePreviewPx = useWorkspaceStore((s) => s.setSizePreviewPx)
+  const [previewActive, setPreviewActive] = useState(false)
+  useEffect(() => {
+    if (!previewActive) return undefined
+    setSizePreviewPx(detection.min_mouse_area_px)
+    return () => setSizePreviewPx(null)
+  }, [previewActive, detection.min_mouse_area_px, setSizePreviewPx])
 
   const setDetection = (
     patch: Partial<DetectionSettings>,
@@ -40,6 +72,15 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
       { ...setup, analysis: { in_zone_threshold: percent / 100 } },
       'Adjust in-zone threshold'
     )
+  }
+
+  const areaDisplayValue = roundForAreaUnit(
+    pxAreaToUnit(detection.min_mouse_area_px, areaUnit, mmPerPx),
+    areaUnit
+  )
+  const setMinArea = (displayValue: number): void => {
+    const px = Math.round(unitAreaToPx(displayValue, areaUnit, mmPerPx))
+    setDetection({ min_mouse_area_px: px }, 'Adjust minimum mouse size')
   }
 
   return (
@@ -99,20 +140,26 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography sx={{ fontSize: 13 }}>Minimum mouse size</Typography>
-            <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary' }}>
-              {detection.min_mouse_area_px} px²
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary' }}>
+                {areaDisplayValue} {areaUnit}²
+              </Typography>
+              <UnitToggle unit={areaUnit} onChange={setAreaUnit} disabledCm={mmPerPx == null} />
+            </Box>
           </Box>
           <Slider
-            min={20}
-            max={800}
-            step={10}
-            value={detection.min_mouse_area_px}
-            onChange={(_, value) =>
-              setDetection({ min_mouse_area_px: value }, 'Adjust minimum mouse size')
-            }
+            min={areaRange.min}
+            max={areaRange.max}
+            step={areaRange.step}
+            value={areaDisplayValue}
+            onChange={(_, value) => setMinArea(value)}
+            onMouseEnter={() => setPreviewActive(true)}
+            onMouseLeave={() => setPreviewActive(false)}
+            onFocus={() => setPreviewActive(true)}
+            onBlur={() => setPreviewActive(false)}
+            onPointerUp={() => setPreviewActive(false)}
           />
         </Box>
 

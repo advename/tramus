@@ -2,8 +2,16 @@ import type { RefObject } from 'react'
 import { alpha, type Theme, useTheme } from '@mui/material/styles'
 
 import type { Calibration, Observation, Setup, Shape } from '../../../api/types'
-import { bboxHandles, distance, shapeBBox, shapePathD, type Point } from '../lib/geometry'
+import {
+  bboxHandles,
+  distance,
+  ellipseAxesForArea,
+  shapeBBox,
+  shapePathD,
+  type Point
+} from '../lib/geometry'
 import type { TrailPoint, TrailSegment } from '../lib/trail'
+import { mmPerPxOf, pxAreaToUnit, roundForAreaUnit } from '../lib/units'
 import type { StageSelection } from '../state/workspaceStore'
 import type {
   CalibrationEndpoint,
@@ -51,6 +59,9 @@ export interface StageOverlayProps {
   calibration: Calibration | null
   /** A Measure line being drawn, live (drag in progress, or waiting for the second click). */
   measureDraft: MeasureDraft | null
+  /** Video-px² area to preview as a reference ellipse, while the "Minimum mouse size" slider
+   * (`DetectionSection`) is hovered/focused/dragged — `null` the rest of the time. */
+  sizePreviewPx: number | null
   /** One screen pixel in video pixels (1 / stage scale): keeps handles and labels a constant on-screen size. */
   px: number
   onBackgroundPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void
@@ -87,6 +98,7 @@ export function StageOverlay({
   detectionBlobAreaLabel,
   calibration,
   measureDraft,
+  sizePreviewPx,
   px,
   onBackgroundPointerDown,
   onCalibrationHandlePointerDown
@@ -96,6 +108,23 @@ export function StageOverlay({
   const arena = setup?.arena
   const isTracker = stageView === 'tracker'
   const { draft } = editing
+
+  // The minimum-size preview: centred on the current detection (tracker view), else the arena,
+  // else the frame — whichever is available first (see `DetectionSection`'s slider).
+  const sizePreview = (() => {
+    if (sizePreviewPx == null) return null
+    const center = detectionObservation
+      ? { x: detectionObservation.x, y: detectionObservation.y }
+      : arena
+        ? (({ x1, y1, x2, y2 }) => ({ x: (x1 + x2) / 2, y: (y1 + y2) / 2 }))(shapeBBox(arena))
+        : { x: video.width / 2, y: video.height / 2 }
+    const mmPerPx = mmPerPxOf(setup?.calibration)
+    const label =
+      mmPerPx != null
+        ? `Min. size · ${sizePreviewPx} px² ≈ ${roundForAreaUnit(pxAreaToUnit(sizePreviewPx, 'cm', mmPerPx), 'cm')} cm²`
+        : `Min. size · ${sizePreviewPx} px²`
+    return { ...center, ...ellipseAxesForArea(sizePreviewPx), label }
+  })()
 
   const labelBg = (highlighted: boolean, color: string): string =>
     highlighted ? color : alpha(theme.palette.background.paper, 0.86)
@@ -369,6 +398,31 @@ export function StageOverlay({
             {positionMarker.label}
           </text>
         </>
+      )}
+
+      {sizePreview && (
+        <g pointerEvents="none">
+          <ellipse
+            cx={sizePreview.x}
+            cy={sizePreview.y}
+            rx={sizePreview.rx}
+            ry={sizePreview.ry}
+            fill={alpha(theme.palette.detection, 0.14)}
+            stroke={theme.palette.detection}
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            vectorEffect="non-scaling-stroke"
+          />
+          <text
+            x={sizePreview.x}
+            y={sizePreview.y - sizePreview.ry - 10 * px}
+            textAnchor="middle"
+            fill={theme.palette.detection}
+            style={{ font: `500 ${11 * px}px "IBM Plex Mono"` }}
+          >
+            {sizePreview.label}
+          </text>
+        </g>
       )}
 
       <DraftPreview draft={draft} theme={theme} />

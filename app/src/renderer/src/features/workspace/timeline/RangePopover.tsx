@@ -8,15 +8,20 @@ import { Symbol } from '../../../components/Symbol'
 export interface RangePopoverProps {
   left: string
   rangeText: string
+  /** Gates "Fill in between"/"Mouse not visible" — Review-only (they edit corrections, which only
+   * make sense once there's a track). "Exclude from analysis" is always enabled: it just edits
+   * `Setup.exclusions`, which applies in every step (§5.5). */
   editable: boolean
   onFill: () => void
   onHide: () => void
+  onExclude: () => void
   onClear: () => void
 }
 
 /**
- * The small toolbar shown under a Shift-dragged Review range: "Fill in between (F)" and
- * "Mouse not visible (N)" — see `docs/architecture.md` §5.3 (`interpolate` / `mark_hidden`).
+ * The small toolbar shown under a Shift-dragged timeline range: Review-only "Fill in between (F)"
+ * and "Mouse not visible (N)" (`docs/architecture.md` §5.3 — `interpolate`/`mark_hidden`), plus
+ * "Exclude from analysis (X)", shown in every step (§5.5 — adds/merges a `Setup.exclusion`).
  */
 export function RangePopover({
   left,
@@ -24,6 +29,7 @@ export function RangePopover({
   editable,
   onFill,
   onHide,
+  onExclude,
   onClear
 }: RangePopoverProps): React.JSX.Element {
   return (
@@ -67,6 +73,14 @@ export function RangePopover({
         sx={{ height: 22, px: 0.875, fontSize: 11.5 }}
       >
         Mouse not visible
+      </Button>
+      <Button
+        title="Exclude from analysis · X"
+        onClick={onExclude}
+        startIcon={<Symbol name="block" size={14} />}
+        sx={{ height: 22, px: 0.875, fontSize: 11.5, color: 'text.secondary' }}
+      >
+        Exclude
       </Button>
       <IconButton
         title="Clear selection · Esc"

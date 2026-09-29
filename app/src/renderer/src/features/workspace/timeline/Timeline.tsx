@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
 
-import type { Correction, FlagView } from '../../../api/types'
+import type { Correction, Exclusion, FlagView } from '../../../api/types'
 import { TERMINAL_JOB_STATES } from '../../../api/queries'
 import { thumbnailUrl } from '../../../api/urls'
 import { useShortcut } from '../../../lib/shortcuts'
@@ -16,6 +16,8 @@ import {
   useSession,
   useSetupEditor
 } from '../data'
+import { resultForRule } from '../lib/crossings'
+import { mergeExclusions, newExclusionId } from '../lib/exclusions'
 import { timeOfFrame, videoDuration } from '../lib/frames'
 import { nextFlag } from '../lib/flags'
 import { effectiveTrial } from '../lib/session'
@@ -75,6 +77,9 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
   const seek = useWorkspaceStore((s) => s.seek)
   const selectedFlagId = useWorkspaceStore((s) => s.selectedFlagId)
   const selectFlag = useWorkspaceStore((s) => s.selectFlag)
+  const selectedExclusionId = useWorkspaceStore((s) => s.selectedExclusionId)
+  const selectExclusion = useWorkspaceStore((s) => s.selectExclusion)
+  const selectedCrossingRuleId = useWorkspaceStore((s) => s.selectedCrossingRuleId)
 
   const session = useSession(videoId)
   const recordedAt = session.data?.document.video.recorded_at ?? null
@@ -93,17 +98,22 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
       ? effectiveTrial(setupEditor.setup, frameTimes)
       : { start_s: 0, end_s: 0, locked_duration: false }
 
-  const rangeEditable = step === 'review'
+  // Shift-drag range selection works in every step but Tracking (setup is locked while it runs);
+  // Review's Fill in between/Mouse not visible stay Review-only (they add corrections, which need
+  // a track) — see `RangePopover`. Exclusion bands share the same "locked while tracking" gate.
+  const rangeSelectable = step !== 'tracking'
+  const reviewActionsEnabled = step === 'review'
   const dragApi = useTimelineDrag({
     trackRef,
     durationS,
     frameTimes,
     trial,
-    rangeEditable,
+    rangeEditable: rangeSelectable,
     setupEditor,
     onSeek: seek,
     onPauseForScrub: pause,
-    onSetRange: setRange
+    onSetRange: setRange,
+    onSelectExclusion: selectExclusion
   })
 
   const zoneLanes: ZoneLaneData[] = useMemo(() => {
@@ -121,6 +131,16 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
       segments: byZone.get(zone.id) ?? []
     }))
   }, [isTracked, setupEditor.setup, results, theme])
+
+  // The selected Results › Crossings rule's matching events, drawn as timeline markers
+  // (`TimelineTracks`' `CrossingMarkers` overlay) — empty until a rule is selected.
+  const crossingEvents = useMemo(
+    () =>
+      selectedCrossingRuleId
+        ? (resultForRule(results?.crossings, selectedCrossingRuleId)?.events ?? [])
+        : [],
+    [results, selectedCrossingRuleId]
+  )
 
   const correctionMarks: CorrectionMark[] = useMemo(() => {
     if (!frameTimes) return []
@@ -163,6 +183,33 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
     )
     setRange(null)
   }
+  const exclusions: Exclusion[] = setupEditor.setup?.exclusions ?? []
+  const handleExcludeRange = (): void => {
+    const base = setupEditor.setup
+    if (!range || !frameTimes || !base) return
+    const addition: Exclusion = {
+      id: newExclusionId(),
+      start_s: timeOfFrame(frameTimes, range.start),
+      end_s: timeOfFrame(frameTimes, range.end),
+      note: null
+    }
+    void setupEditor.commit(
+      { ...base, exclusions: mergeExclusions(exclusions, addition) },
+      'Add exclusion',
+      base
+    )
+    setRange(null)
+  }
+  const handleDeleteExclusion = (exclusionId: string): void => {
+    const base = setupEditor.setup
+    if (!base) return
+    void setupEditor.commit(
+      { ...base, exclusions: exclusions.filter((e) => e.id !== exclusionId) },
+      'Remove exclusion',
+      base
+    )
+    selectExclusion(null)
+  }
   const handleFlagClick = (flag: FlagView): void => {
     pause()
     seek(flag.frame_start)
@@ -204,12 +251,29 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
     },
     { enabled: step === 'review' }
   )
-  useShortcut('n', () => (range ? handleHideRange() : undefined), { enabled: step === 'review' })
-  useShortcut('f', () => (range ? handleFillRange() : undefined), { enabled: step === 'review' })
+  useShortcut('n', () => (range ? handleHideRange() : undefined), {
+    enabled: reviewActionsEnabled
+  })
+  useShortcut('f', () => (range ? handleFillRange() : undefined), {
+    enabled: reviewActionsEnabled
+  })
+  useShortcut('x', () => (range ? handleExcludeRange() : undefined), {
+    enabled: rangeSelectable
+  })
   useShortcut('escape', () => (range ? setRange(null) : undefined), {
-    enabled: step === 'review',
+    enabled: rangeSelectable,
     preventDefault: false
   })
+  useShortcut(
+    'delete',
+    () => (selectedExclusionId ? handleDeleteExclusion(selectedExclusionId) : undefined),
+    { enabled: selectedExclusionId != null }
+  )
+  useShortcut(
+    'backspace',
+    () => (selectedExclusionId ? handleDeleteExclusion(selectedExclusionId) : undefined),
+    { enabled: selectedExclusionId != null }
+  )
 
   // Usable width mirrors `TimelineTracks`' rendered gutter (`percentOfDuration`/`widthOfDuration`)
   // so tick spacing lines up with where ticks actually land.
@@ -298,10 +362,17 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
           }
           range={rangeSeconds}
           rangeText={rangeText}
-          rangeEditable={rangeEditable}
+          rangeEditable={reviewActionsEnabled}
           onFillRange={handleFillRange}
           onHideRange={handleHideRange}
+          onExcludeRange={handleExcludeRange}
           onClearRange={() => setRange(null)}
+          exclusions={exclusions}
+          selectedExclusionId={selectedExclusionId}
+          exclusionsEditable={rangeSelectable}
+          onSelectExclusion={selectExclusion}
+          crossingEvents={crossingEvents}
+          crossingColor={theme.palette.primary.main}
         />
       </Box>
     </Box>

@@ -3,10 +3,12 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
-import type { FlagView, TrialWindow } from '../../../api/types'
+import type { CrossingEvent, Exclusion, FlagView, TrialWindow } from '../../../api/types'
 import { Symbol } from '../../../components/Symbol'
 import { formatVideoTime } from '../../../lib/time'
 import { buildTicks, percentOfDuration, widthOfDuration } from '../lib/timelineScale'
+import { CrossingMarkers } from './CrossingMarkers'
+import { ExclusionBands } from './ExclusionBands'
 import { RangePopover } from './RangePopover'
 
 export interface ZoneLaneData {
@@ -47,6 +49,15 @@ export interface TimelineTracksProps {
   onFillRange: () => void
   onHideRange: () => void
   onClearRange: () => void
+  onExcludeRange: () => void
+  exclusions: readonly Exclusion[]
+  selectedExclusionId: string | null
+  exclusionsEditable: boolean
+  onSelectExclusion: (exclusionId: string) => void
+  /** The selected crossing rule's matching events (Results › Crossings), drawn as an overlay —
+   * empty when no rule is selected. See `CrossingMarkers`. */
+  crossingEvents: readonly CrossingEvent[]
+  crossingColor: string
 }
 
 export const LABEL_COLUMN_WIDTH = 128
@@ -79,7 +90,14 @@ export function TimelineTracks({
   rangeEditable,
   onFillRange,
   onHideRange,
-  onClearRange
+  onClearRange,
+  onExcludeRange,
+  exclusions,
+  selectedExclusionId,
+  exclusionsEditable,
+  onSelectExclusion,
+  crossingEvents,
+  crossingColor
 }: TimelineTracksProps): React.JSX.Element {
   const ticks = buildTicks(durationS, pxPerSecond)
   const pct = (t: number): string => percentOfDuration(t, durationS)
@@ -355,6 +373,16 @@ export function TimelineTracks({
             }}
           />
 
+          {/* Excluded periods — hatched, spanning every lane; distinct from the solid trial
+              dimming above. See `ExclusionBands`. */}
+          <ExclusionBands
+            exclusions={exclusions}
+            durationS={durationS}
+            selectedExclusionId={selectedExclusionId}
+            editable={exclusionsEditable}
+            onSelect={onSelectExclusion}
+          />
+
           {/* Range selection + popover */}
           {range && (
             <>
@@ -378,6 +406,7 @@ export function TimelineTracks({
                 editable={rangeEditable}
                 onFill={onFillRange}
                 onHide={onHideRange}
+                onExclude={onExcludeRange}
                 onClear={onClearRange}
               />
             </>
@@ -386,6 +415,9 @@ export function TimelineTracks({
           {/* Trial handles */}
           <TrialHandle side="start" left={pct(trial.start_s)} />
           <TrialHandle side="end" left={pct(trial.end_s)} />
+
+          {/* Crossing markers for the selected rule (Results › Crossings) */}
+          <CrossingMarkers events={crossingEvents} durationS={durationS} color={crossingColor} />
 
           {/* Playhead */}
           <Box

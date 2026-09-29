@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Logo 1b "Subject dot" from designs/Tramus Logos.dc.html. Colours are the design's
+       oklch(0.87 0.05 82) and oklch(0.2 0.01 70) in sRGB hex so any rasteriser can read them.
+       Keep in sync with src/renderer/src/components/TramusLogo.tsx. -->
+  <rect width="64" height="64" rx="15" fill="#e5d2b0"/>
+  <rect x="16" y="16" width="32" height="6.5" fill="#191511"/>
+  <rect x="28.75" y="16" width="6.5" height="21" fill="#191511"/>
+  <circle cx="32" cy="45" r="4.6" fill="#191511"/>
+</svg>

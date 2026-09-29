@@ -67,6 +67,21 @@ export function nextFlag(
   return before ?? flags[flags.length - 1]
 }
 
+/**
+ * The next unresolved flag after `frame`, wrapping to the first unresolved flag — `excludeId`
+ * drops the flag just accepted (its status hasn't necessarily updated in `flags` yet) so accepting
+ * the only remaining unresolved flag correctly reports none left, rather than wrapping to itself.
+ * Powers the Accept hotkey's "jump to the next thing to review" behaviour (`VideoStage`'s `A`).
+ */
+export function nextUnresolvedFlag(
+  flags: readonly FlagView[],
+  frame: number,
+  excludeId?: string
+): FlagView | undefined {
+  const unresolved = flags.filter((flag) => flag.status === 'unresolved' && flag.id !== excludeId)
+  return nextFlag(unresolved, frame, 1)
+}
+
 /** Background/text colour for a flag's status chip (Flags panel rows and the stage banner). */
 export function statusChipSx(status: FlagStatus): {
   bgcolor: string | ((t: Theme) => string)
