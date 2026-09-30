@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..services.container import Services
 from .auth import make_verify_token, make_verify_ws_token
+from .errors import register_exception_handlers
 from .events import EventHub
 from .routes import batches, export, jobs, library, sessions, settings, system, templates, videos
 from .schemas import HealthResponse
@@ -37,6 +38,8 @@ def create_app(services: Services, token: str) -> FastAPI:
     )
     app.state.services = services
     app.state.hub = hub
+
+    register_exception_handlers(app)
 
     app.add_middleware(
         CORSMiddleware,

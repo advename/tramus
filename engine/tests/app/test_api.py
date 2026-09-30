@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import time
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import SyntheticVideo
@@ -104,6 +107,23 @@ def test_library_open_unknown_folder_is_400(client: TestClient, tmp_path) -> Non
         "/api/library/open", headers=AUTH_HEADERS, json={"path": str(tmp_path / "not-a-folder")}
     )
     assert resp.status_code == 400
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission bits only")
+def test_library_open_permission_denied_is_403(client: TestClient, tmp_path: Path) -> None:
+    """Mirrors macOS's folder-access denial (protected folder + "Don't Allow"): the OS refuses
+    to list the directory, which the app must show as a dedicated access-help state, not a
+    generic error."""
+    folder = tmp_path / "locked"
+    folder.mkdir()
+    (folder / "video.mp4").touch()
+    os.chmod(folder, 0o000)
+    try:
+        resp = client.post("/api/library/open", headers=AUTH_HEADERS, json={"path": str(folder)})
+        assert resp.status_code == 403
+        assert resp.json()["detail"]
+    finally:
+        os.chmod(folder, 0o755)
 
 
 def test_get_video_unknown_id_is_404(client: TestClient) -> None:

@@ -12,6 +12,7 @@ import { Kbd } from '../../components/Kbd'
 import { Symbol } from '../../components/Symbol'
 import { formatRelativeDate } from '../../lib/time'
 import { useShortcut } from '../../lib/shortcuts'
+import { useFolderAccessStore } from '../../stores/folderAccess'
 import { notifyError } from '../../stores/notifications'
 
 function libraryHref(path: string): string {
@@ -160,6 +161,12 @@ interface RecentFolderRowProps {
 
 function RecentFolderRow({ folder }: RecentFolderRowProps): React.JSX.Element {
   const navigate = useNavigate()
+  // Set by `LibraryScreen` the last time this folder was opened and the engine returned 403 —
+  // an OS permission denial (typically macOS's folder-privacy protection). Still clickable: it
+  // takes the user to Library's full access-denied help (choose another folder, retry, open
+  // Privacy Settings) rather than hiding the folder.
+  const accessError = useFolderAccessStore((state) => state.inaccessible[folder.path])
+
   return (
     <Box
       onClick={() => void navigate(libraryHref(folder.path))}
@@ -175,21 +182,40 @@ function RecentFolderRow({ folder }: RecentFolderRowProps): React.JSX.Element {
         '&:hover': { bgcolor: (theme) => alpha(theme.palette.text.primary, 0.06) }
       }}
     >
-      <Symbol name="folder" size={19} sx={{ color: 'text.secondary' }} />
+      <Symbol
+        name={accessError ? 'lock' : 'folder'}
+        size={19}
+        sx={{ color: accessError ? 'warning.main' : 'text.secondary' }}
+      />
       <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Typography sx={{ fontWeight: 500 }}>{folder.name}</Typography>
-        <Typography
-          variant="mono"
-          color="text.disabled"
-          sx={{
-            fontSize: 11.5,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {folder.path}
-        </Typography>
+        {accessError ? (
+          <Typography
+            variant="body2"
+            color="warning.main"
+            sx={{
+              fontSize: 11.5,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Can't access this folder — click to fix
+          </Typography>
+        ) : (
+          <Typography
+            variant="mono"
+            color="text.disabled"
+            sx={{
+              fontSize: 11.5,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {folder.path}
+          </Typography>
+        )}
       </Box>
       <Box
         sx={{

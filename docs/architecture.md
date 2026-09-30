@@ -417,8 +417,11 @@ unresolved flags → `tracked`; no unresolved flags → `reviewed`; `exported_at
 (track replaced by track_summary {tracked_at, frame_count, tracker}), dirty, saved_at,
 loaded_from_disk, file_changed, active_job: Job | null}`.
 
-Errors: JSON `{detail: str}` with 400 (invalid input), 404 (unknown id), 409 (conflict, e.g.
-tracking already running), 500. `detail` is written for the end user.
+Errors: JSON `{detail: str}` with 400 (invalid input), 403 (OS denied a file/folder read —
+typically macOS's per-folder privacy protection after "Don't Allow"; any `PermissionError`
+raised while handling a request is translated centrally by `api/errors.py`, not caught per
+route), 404 (unknown id), 409 (conflict, e.g. tracking already running), 500. `detail` is
+written for the end user.
 
 ## 9. Export
 

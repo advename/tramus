@@ -36,7 +36,11 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       sandbox: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // Chromium's spellchecker downloads Hunspell dictionaries from Google on Windows/Linux
+      // (macOS uses the OS's own, offline). Tramus's privacy stance is "no network access", so
+      // this stays off everywhere rather than only where it would otherwise phone home.
+      spellcheck: false
     }
   })
 
@@ -48,8 +52,10 @@ function createWindow(): void {
     mainWindow = null
   })
 
+  // Never open windows inside the app. Plain https links go to the user's browser; anything else
+  // (file:, custom protocols, …) is dropped.
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url)
+    if (new URL(details.url).protocol === 'https:') void shell.openExternal(details.url)
     return { action: 'deny' }
   })
 

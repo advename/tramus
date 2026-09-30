@@ -12,6 +12,8 @@ import { ShortcutTooltip } from '../components/ShortcutTooltip'
 import { Symbol } from '../components/Symbol'
 import { TramusLogo } from '../components/TramusLogo'
 import { useShortcut } from '../lib/shortcuts'
+import { useFolderAccessStore } from '../stores/folderAccess'
+import { notify } from '../stores/notifications'
 
 interface NavItem {
   path: string
@@ -36,11 +38,20 @@ export function AppShell(): React.JSX.Element {
   useEngineEvents()
 
   // If a folder was opened before (this run or a previous one), Library goes straight back to
-  // the most recently opened one instead of the bare, folder-less route.
+  // the most recently opened one instead of the bare, folder-less route — unless that folder is
+  // known (from this session) to 403, in which case jumping straight back in would just bounce
+  // the user into the same dead end. Go to Start instead, with a notice, so they can pick a
+  // different folder or fix permissions (recent-folder rows mark this inline too).
   const { data: recentFolders } = useRecentFolders()
-  const libraryPath = recentFolders?.[0]
-    ? `/library?folder=${encodeURIComponent(recentFolders[0].path)}`
-    : '/library'
+  const inaccessibleFolders = useFolderAccessStore((state) => state.inaccessible)
+  const topRecentFolder = recentFolders?.[0]
+  const topRecentFolderBlocked = topRecentFolder
+    ? Boolean(inaccessibleFolders[topRecentFolder.path])
+    : false
+  const libraryPath =
+    topRecentFolder && !topRecentFolderBlocked
+      ? `/library?folder=${encodeURIComponent(topRecentFolder.path)}`
+      : '/library'
 
   const navItems: readonly NavItem[] = [
     { path: libraryPath, icon: 'video_library', label: 'Library', shortcut: 'mod+1' },
@@ -48,7 +59,20 @@ export function AppShell(): React.JSX.Element {
     { path: '/batch', icon: 'stacks', label: 'Batch', shortcut: 'mod+3' }
   ]
 
-  useShortcut('mod+1', () => void navigate(libraryPath))
+  const goToLibrary = (): void => {
+    if (topRecentFolder && topRecentFolderBlocked) {
+      notify({
+        severity: 'warning',
+        title: `Can't access "${topRecentFolder.name}"`,
+        message: 'Choose another folder, or allow access in Privacy & Security, then try again.'
+      })
+      void navigate('/')
+      return
+    }
+    void navigate(libraryPath)
+  }
+
+  useShortcut('mod+1', goToLibrary)
   useShortcut('mod+2', () => void navigate('/templates'))
   useShortcut('mod+3', () => void navigate('/batch'))
   useShortcut('mod+,', () => void navigate('/settings'))
@@ -91,7 +115,7 @@ export function AppShell(): React.JSX.Element {
               label={item.label}
               shortcut={item.shortcut}
               active={isActive(item.path)}
-              onClick={() => void navigate(item.path)}
+              onClick={item.path === libraryPath ? goToLibrary : () => void navigate(item.path)}
             />
           ))}
         </List>

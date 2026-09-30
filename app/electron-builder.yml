@@ -20,6 +20,31 @@ mac:
         - arm64
   category: public.app-category.education
   icon: build/icon.icns
+  # macOS attributes the engine's file access to Tramus.app (it's a child process launched by
+  # it), so these are the strings shown on the folder-access prompts. Everything here is
+  # processed locally — see README.md "Privacy" and docs/architecture.md §8 (403 = the user
+  # said "Don't Allow" to one of these).
+  extendInfo:
+    NSDocumentsFolderUsageDescription: >-
+      Tramus reads your videos from this folder and saves its analysis files next to them.
+      Everything is processed locally on this Mac — nothing is uploaded or processed remotely,
+      and Tramus has no tracking or analytics.
+    NSDesktopFolderUsageDescription: >-
+      Tramus reads your videos from this folder and saves its analysis files next to them.
+      Everything is processed locally on this Mac — nothing is uploaded or processed remotely,
+      and Tramus has no tracking or analytics.
+    NSDownloadsFolderUsageDescription: >-
+      Tramus reads your videos from this folder and saves its analysis files next to them.
+      Everything is processed locally on this Mac — nothing is uploaded or processed remotely,
+      and Tramus has no tracking or analytics.
+    NSRemovableVolumesUsageDescription: >-
+      Tramus reads your videos from this removable drive and saves its analysis files next to
+      them. Everything is processed locally on this Mac — nothing is uploaded or processed
+      remotely, and Tramus has no tracking or analytics.
+    NSNetworkVolumesUsageDescription: >-
+      Tramus reads your videos from this network volume and saves its analysis files next to
+      them. Everything is processed locally on this Mac — nothing is uploaded or processed
+      remotely, and Tramus has no tracking or analytics.
 win:
   icon: build/icon.ico
   target:

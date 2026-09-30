@@ -32,6 +32,30 @@ from×to matrix, with every crossing's time.
 
 See [docs/architecture.md](docs/architecture.md) for the design, algorithms and API.
 
+## Privacy
+
+Tramus processes everything locally. Videos are decoded, tracked and analysed on your machine by
+the bundled Python engine (a local-only child process — see `docs/architecture.md` §1); nothing is
+uploaded, and there's no telemetry or analytics. Analysis is written as a `*.tramus.json` file next
+to each video; app settings and templates live in the OS user config dir (e.g.
+`~/Library/Application Support/Tramus` on macOS). There's no auto-updater and no crash reporter —
+updates and support are manual.
+
+### macOS folder permissions
+
+The first time you open a folder under Desktop, Documents, Downloads, or a removable/network
+volume, macOS asks for permission — the usage text explains what it's for and that it stays
+local. If you pick **Don't Allow**, macOS remembers that answer and every later attempt fails
+with "Operation not permitted" (Tramus shows this as a "can't access this folder" screen with a
+shortcut to fix it). To fix it:
+
+* **System Settings → Privacy & Security → Files and Folders** → find Tramus → enable the folder
+  (or the broader location it's under), then try again in Tramus.
+* To make macOS ask again from scratch (e.g. while testing), run
+  `tccutil reset All org.tramus.app` and relaunch.
+* Unsigned builds (no Apple Developer ID) may be asked again after every rebuild/update, because
+  macOS ties the permission to the exact binary — this goes away once the app is signed.
+
 ## Repository
 
 | Path | What |

@@ -16,7 +16,9 @@ const tramusApi: TramusApi = {
   },
   shell: {
     showItemInFolder: (path: string) =>
-      ipcRenderer.invoke(IpcChannel.ShellShowItemInFolder, path) as Promise<void>
+      ipcRenderer.invoke(IpcChannel.ShellShowItemInFolder, path) as Promise<void>,
+    openPrivacySettings: () =>
+      ipcRenderer.invoke(IpcChannel.ShellOpenPrivacySettings) as Promise<void>
   },
   app: {
     getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo) as Promise<AppInfo>

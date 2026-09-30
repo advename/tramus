@@ -53,12 +53,19 @@ node scripts/build.mjs   # (repo root) PyInstaller engine + electron-builder ins
 - Engine subprocesses (tracking pool, manager) must die with the engine: see `exit_with_parent`
   and `JobManager.shutdown`.
 - The preload must be CommonJS (`index.cjs`): sandboxed preloads can't be ES modules.
+- HTTP 403 from the engine means the OS denied a file/folder read (macOS folder-privacy "Don't
+  Allow" is the common case) — see `api/errors.py` and `docs/architecture.md` §8. The app's
+  "no network access" privacy claim depends on staying that way: don't add an auto-updater,
+  crash reporter, remote fonts/analytics or other outbound calls without updating README.md's
+  Privacy section and this file.
 
 ## Data and privacy
-`Sample1.mp4` and `Sample2.mp4` in the repo root are real lab recordings (1280×1024, ~25 fps
-with variable timing, 5:10, three-chamber box). They are gitignored and must never be committed.
-Neither are `*.tramus.json` sidecars written next to them during testing; delete those
-afterwards. Engine settings and templates live in the OS user config dir
+The sample lab recordings (`Sample1.mp4`, `Sample2.mp4`: 1280×1024, ~25 fps with variable
+timing, 5:10, three-chamber box) have been temporarily removed from the project for copyright
+reasons. New sample footage will be provided for future smoke tests. Until then the Sample1
+tracking test skips, and `npm run smoke` needs `--folder <dir with videos>`. Recordings in the repo
+root are gitignored (`/*.mp4` etc.) and must never be committed. Neither are `*.tramus.json`
+sidecars written next to them during testing; delete those afterwards. Engine settings and templates live in the OS user config dir
 (`~/Library/Application Support/Tramus` on macOS); tests use `TRAMUS_CONFIG_DIR`.
 
 ## Design

@@ -5,6 +5,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router'
 
+import { ApiError } from '../../api/client'
 import { useLibrary } from '../../api/queries'
 import { queryKeys } from '../../api/queryKeys'
 import type { VideoSummary } from '../../api/types'
@@ -12,7 +13,9 @@ import { EmptyState } from '../../components/EmptyState'
 import { ExportDialog, useExportDialog } from '../export'
 import { useShortcut } from '../../lib/shortcuts'
 import { useCurrentFolderStore } from '../../stores/currentFolder'
+import { useFolderAccessStore } from '../../stores/folderAccess'
 import { notify } from '../../stores/notifications'
+import { AccessDeniedState } from './AccessDeniedState'
 import { ApplyTemplateDialog } from './ApplyTemplateDialog'
 import { LibraryGrid } from './LibraryGrid'
 import { LibraryHeader, type StatusFilter } from './LibraryHeader'
@@ -34,10 +37,24 @@ export function LibraryScreen(): React.JSX.Element {
   const setCurrentFolder = useCurrentFolderStore((state) => state.setFolder)
 
   const { data, isLoading, isError, error, refetch, isFetching } = useLibrary(folderPath)
+  const markFolderAccessible = useFolderAccessStore((state) => state.markAccessible)
+  const markFolderInaccessible = useFolderAccessStore((state) => state.markInaccessible)
 
   useEffect(() => {
     if (data) setCurrentFolder({ path: data.folder.path, name: data.folder.name })
   }, [data, setCurrentFolder])
+
+  // Track whether the *last opened* folder is one the OS refused to read, so `StartScreen`'s
+  // recent-folder list and `AppShell`'s Library shortcut can steer around it next time instead
+  // of bouncing the user straight back into the same 403.
+  useEffect(() => {
+    if (!folderPath) return
+    if (data) {
+      markFolderAccessible(data.folder.path)
+    } else if (error instanceof ApiError && error.status === 403) {
+      markFolderInaccessible(folderPath, error.message)
+    }
+  }, [folderPath, data, error, markFolderAccessible, markFolderInaccessible])
 
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => loadViewMode())
   const [search, setSearch] = useState('')
@@ -118,14 +135,29 @@ export function LibraryScreen(): React.JSX.Element {
   }
 
   if (isError || !data) {
+    if (error instanceof ApiError && error.status === 403) {
+      return (
+        <AccessDeniedState
+          detail={error.message}
+          isRetrying={isFetching}
+          onRetry={() => void refetch()}
+          onChooseFolder={() => void openFolderDialog((href) => void navigate(href))}
+        />
+      )
+    }
     return (
       <EmptyState
         icon="error"
         title="Couldn't open this folder"
         description={error instanceof Error ? error.message : 'Unexpected error.'}
         action={
-          <Button variant="contained" onClick={() => void refetch()}>
-            Try again
+          <Button
+            variant="contained"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            startIcon={isFetching ? <CircularProgress size={15} color="inherit" /> : undefined}
+          >
+            {isFetching ? 'Trying again…' : 'Try again'}
           </Button>
         }
       />

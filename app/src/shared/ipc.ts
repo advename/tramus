@@ -10,6 +10,7 @@ export const IpcChannel = {
   DialogOpenFolder: 'dialog:openFolder',
   DialogSaveFile: 'dialog:saveFile',
   ShellShowItemInFolder: 'shell:showItemInFolder',
+  ShellOpenPrivacySettings: 'shell:openPrivacySettings',
   AppGetInfo: 'app:getInfo',
   EngineGetConnection: 'engine:getConnection'
 } as const
@@ -55,6 +56,13 @@ export interface TramusApi {
   shell: {
     /** Reveals a file or folder in the OS file manager. */
     showItemInFolder: (path: string) => Promise<void>
+    /**
+     * Opens macOS's Privacy & Security → Files and Folders settings pane, so the user can undo
+     * a folder-access "Don't Allow". The main process allowlists this one `x-apple.systempreferences:`
+     * URL — no arbitrary URL is ever accepted here. A no-op on other platforms; callers should
+     * hide the button there instead of relying on this being a no-op.
+     */
+    openPrivacySettings: () => Promise<void>
   }
   app: {
     getInfo: () => Promise<AppInfo>
