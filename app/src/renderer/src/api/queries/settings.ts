@@ -40,3 +40,12 @@ export function useSystemInfo() {
     staleTime: Infinity
   })
 }
+
+/** The desktop app's build info and platform, from the Electron main process. */
+export function useAppInfo() {
+  return useQuery({
+    queryKey: queryKeys.system.app(),
+    queryFn: () => window.tramus.app.getInfo(),
+    staleTime: Infinity
+  })
+}

@@ -12,6 +12,7 @@ import type { VideoSummary } from '../../api/types'
 import { EmptyState } from '../../components/EmptyState'
 import { ExportDialog, useExportDialog } from '../export'
 import { useShortcut } from '../../lib/shortcuts'
+import { SHORTCUTS } from '../../lib/shortcutRegistry'
 import { useCurrentFolderStore } from '../../stores/currentFolder'
 import { useFolderAccessStore } from '../../stores/folderAccess'
 import { notify } from '../../stores/notifications'
@@ -64,16 +65,19 @@ export function LibraryScreen(): React.JSX.Element {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const exportDialog = useExportDialog()
 
-  useShortcut('mod+f', () => searchInputRef.current?.focus())
-  useShortcut('mod+shift+1', () => changeViewMode('table'))
-  useShortcut('mod+shift+2', () => changeViewMode('grid'))
-  useShortcut('esc', () => setSelectedIds([]), {
+  useShortcut(SHORTCUTS.searchVideos.combo, () => searchInputRef.current?.focus())
+  useShortcut(SHORTCUTS.tableView.combo, () => changeViewMode('table'))
+  useShortcut(SHORTCUTS.gridView.combo, () => changeViewMode('grid'))
+  useShortcut(SHORTCUTS.clearSelection.combo, () => setSelectedIds([]), {
     enabled: selectedIds.length > 0,
     preventDefault: false
   })
-  useShortcut('mod+o', () => void openFolderDialog((href) => void navigate(href)))
   useShortcut(
-    'mod+t',
+    SHORTCUTS.openFolder.combo,
+    () => void openFolderDialog((href) => void navigate(href))
+  )
+  useShortcut(
+    SHORTCUTS.trackSelected.combo,
     () => {
       if (selectedIds.length > 0) void navigate(`/batch?videos=${selectedIds.join(',')}`)
     },

@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import type { Job } from '../../../api/types'
 import { Kbd } from '../../../components/Kbd'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface TrackingProgressCardProps {
   job: Job
@@ -79,7 +80,7 @@ export function TrackingProgressCard({
         <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>
           You can look at the setup, not edit it.
         </Typography>
-        <ShortcutTooltip title="Cancel tracking" shortcut="esc">
+        <ShortcutTooltip title="Cancel tracking" shortcut={SHORTCUTS.cancelTracking.combo}>
           <Box
             component="button"
             onClick={onCancel}

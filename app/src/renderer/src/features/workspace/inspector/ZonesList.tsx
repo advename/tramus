@@ -21,7 +21,9 @@ import { Symbol } from '../../../components/Symbol'
 import { describeShape } from '../lib/shapes'
 import { nextBulkToggle } from '../lib/zones'
 import { SelectedZonePanel } from './SelectedZonePanel'
+import { SectionHeader } from './SectionHeader'
 import { ZoneRow } from './ZoneRow'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface ZonesListProps {
   setup: Setup
@@ -80,20 +82,10 @@ export function ZonesList({
 
       {showArena ? (
         <>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              px: 1.75,
-              pt: 1.75,
-              pb: 0.75
-            }}
-          >
-            <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-              Arena
-            </Typography>
-          </Box>
+          <SectionHeader
+            title="Arena"
+            info="The area the mouse moves in. Anything outside it is ignored, so draw it around the floor of the box."
+          />
           <Box
             onClick={onSelectArena}
             sx={{
@@ -121,7 +113,7 @@ export function ZonesList({
             >
               {setup.arena ? describeShape(setup.arena) : 'Not drawn yet'}
             </Typography>
-            <ShortcutTooltip title="Edit arena outline" shortcut="a">
+            <ShortcutTooltip title="Edit arena outline" shortcut={SHORTCUTS.toolArena.combo}>
               <IconButton
                 onClick={(e) => {
                   e.stopPropagation()
@@ -136,70 +128,62 @@ export function ZonesList({
         </>
       ) : null}
 
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 1.75,
-          pt: 1.75,
-          pb: 0.75
-        }}
-      >
-        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Zones · {zones.length}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-          <IconButton
-            title={nextVisible ? 'Show all zones' : 'Hide all zones'}
-            disabled={zones.length === 0}
-            onClick={() =>
-              commitZones(
-                zones.map((z) => ({ ...z, visible: nextVisible })),
-                nextVisible ? 'Show all zones' : 'Hide all zones'
-              )
-            }
-            sx={{ color: 'text.secondary', width: 24, height: 24 }}
-          >
-            <Symbol name={nextVisible ? 'visibility_off' : 'visibility'} size={16} />
-          </IconButton>
-          <IconButton
-            title={nextLocked ? 'Lock all zones' : 'Unlock all zones'}
-            disabled={zones.length === 0}
-            onClick={() =>
-              commitZones(
-                zones.map((z) => ({ ...z, locked: nextLocked })),
-                nextLocked ? 'Lock all zones' : 'Unlock all zones'
-              )
-            }
-            sx={{ color: 'text.secondary', width: 24, height: 24 }}
-          >
-            <Symbol name={nextLocked ? 'lock_open' : 'lock'} size={16} />
-          </IconButton>
-          {onAddZone ? (
-            <ShortcutTooltip title="Add zone" shortcut="r">
-              <ButtonBase
-                onClick={onAddZone}
-                sx={{
-                  height: 24,
-                  pl: 0.5,
-                  pr: 1,
-                  borderRadius: '5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.25,
-                  fontSize: 12,
-                  color: 'text.secondary',
-                  '&:hover': { bgcolor: 'surface.hover', color: 'text.primary' }
-                }}
-              >
-                <Symbol name="add" size={16} />
-                Add
-              </ButtonBase>
-            </ShortcutTooltip>
-          ) : null}
-        </Box>
-      </Box>
+      <SectionHeader
+        title={`Zones · ${zones.length}`}
+        info="Regions you want to time, such as a chamber. Time in a zone counts when enough of the mouse is inside it."
+        actions={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            <IconButton
+              title={nextVisible ? 'Show all zones' : 'Hide all zones'}
+              disabled={zones.length === 0}
+              onClick={() =>
+                commitZones(
+                  zones.map((z) => ({ ...z, visible: nextVisible })),
+                  nextVisible ? 'Show all zones' : 'Hide all zones'
+                )
+              }
+              sx={{ color: 'text.secondary', width: 24, height: 24 }}
+            >
+              <Symbol name={nextVisible ? 'visibility_off' : 'visibility'} size={16} />
+            </IconButton>
+            <IconButton
+              title={nextLocked ? 'Lock all zones' : 'Unlock all zones'}
+              disabled={zones.length === 0}
+              onClick={() =>
+                commitZones(
+                  zones.map((z) => ({ ...z, locked: nextLocked })),
+                  nextLocked ? 'Lock all zones' : 'Unlock all zones'
+                )
+              }
+              sx={{ color: 'text.secondary', width: 24, height: 24 }}
+            >
+              <Symbol name={nextLocked ? 'lock_open' : 'lock'} size={16} />
+            </IconButton>
+            {onAddZone ? (
+              <ShortcutTooltip title="Add zone" shortcut={SHORTCUTS.toolRect.combo}>
+                <ButtonBase
+                  onClick={onAddZone}
+                  sx={{
+                    height: 24,
+                    pl: 0.5,
+                    pr: 1,
+                    borderRadius: '5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.25,
+                    fontSize: 12,
+                    color: 'text.secondary',
+                    '&:hover': { bgcolor: 'surface.hover', color: 'text.primary' }
+                  }}
+                >
+                  <Symbol name="add" size={16} />
+                  Add
+                </ButtonBase>
+              </ShortcutTooltip>
+            ) : null}
+          </Box>
+        }
+      />
 
       {zones.length === 0 ? (
         <Box

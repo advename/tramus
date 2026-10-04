@@ -210,7 +210,7 @@ export function CheckCard({ draft, arena, zones, onChange }: CheckCardProps): Re
       ) : null}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.25, py: 1.125 }}>
-        <ShortcutTooltip title={playing ? 'Pause' : 'Play from trial start'} shortcut="space">
+        <ShortcutTooltip title={playing ? 'Pause' : 'Play from trial start'}>
           <span>
             <IconButton
               onClick={togglePlay}

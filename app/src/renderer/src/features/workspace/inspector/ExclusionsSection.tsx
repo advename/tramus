@@ -12,6 +12,7 @@ import { exclusionsTotalS } from '../lib/exclusions'
 import { frameAtTime } from '../lib/frames'
 import { useVideoTiming } from '../playback/useVideoTiming'
 import { useWorkspaceStore } from '../state/workspaceStore'
+import { SectionHeader } from './SectionHeader'
 
 export interface ExclusionsSectionProps {
   videoId: string
@@ -52,11 +53,10 @@ export function ExclusionsSection({
 
   return (
     <Box>
-      <Box sx={{ px: 1.75, pt: 1.75, pb: 0.75 }}>
-        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Excluded periods{exclusions.length > 0 ? ` · ${exclusions.length}` : ''}
-        </Typography>
-      </Box>
+      <SectionHeader
+        title={`Excluded periods${exclusions.length > 0 ? ` · ${exclusions.length}` : ''}`}
+        info="Stretches of the trial to leave out, for example when the box was open. They are removed from every result."
+      />
 
       {exclusions.length === 0 ? (
         <Box sx={{ px: 1.75, pb: 1.75 }}>

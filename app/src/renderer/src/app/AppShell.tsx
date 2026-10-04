@@ -12,6 +12,7 @@ import { ShortcutTooltip } from '../components/ShortcutTooltip'
 import { Symbol } from '../components/Symbol'
 import { TramusLogo } from '../components/TramusLogo'
 import { useShortcut } from '../lib/shortcuts'
+import { SHORTCUTS } from '../lib/shortcutRegistry'
 import { useFolderAccessStore } from '../stores/folderAccess'
 import { notify } from '../stores/notifications'
 
@@ -54,9 +55,19 @@ export function AppShell(): React.JSX.Element {
       : '/library'
 
   const navItems: readonly NavItem[] = [
-    { path: libraryPath, icon: 'video_library', label: 'Library', shortcut: 'mod+1' },
-    { path: '/templates', icon: 'bookmarks', label: 'Templates', shortcut: 'mod+2' },
-    { path: '/batch', icon: 'stacks', label: 'Batch', shortcut: 'mod+3' }
+    {
+      path: libraryPath,
+      icon: 'video_library',
+      label: 'Library',
+      shortcut: SHORTCUTS.goToLibrary.combo
+    },
+    {
+      path: '/templates',
+      icon: 'bookmarks',
+      label: 'Templates',
+      shortcut: SHORTCUTS.goToTemplates.combo
+    },
+    { path: '/batch', icon: 'stacks', label: 'Batch', shortcut: SHORTCUTS.goToBatch.combo }
   ]
 
   const goToLibrary = (): void => {
@@ -72,10 +83,10 @@ export function AppShell(): React.JSX.Element {
     void navigate(libraryPath)
   }
 
-  useShortcut('mod+1', goToLibrary)
-  useShortcut('mod+2', () => void navigate('/templates'))
-  useShortcut('mod+3', () => void navigate('/batch'))
-  useShortcut('mod+,', () => void navigate('/settings'))
+  useShortcut(SHORTCUTS.goToLibrary.combo, goToLibrary)
+  useShortcut(SHORTCUTS.goToTemplates.combo, () => void navigate('/templates'))
+  useShortcut(SHORTCUTS.goToBatch.combo, () => void navigate('/batch'))
+  useShortcut(SHORTCUTS.openSettings.combo, () => void navigate('/settings'))
 
   const isActive = (path: string): boolean =>
     location.pathname.startsWith(path.split('?')[0] ?? path)
@@ -126,7 +137,7 @@ export function AppShell(): React.JSX.Element {
           <RailButton
             icon="settings"
             label="Settings"
-            shortcut="mod+,"
+            shortcut={SHORTCUTS.openSettings.combo}
             active={isActive('/settings')}
             onClick={() => void navigate('/settings')}
           />

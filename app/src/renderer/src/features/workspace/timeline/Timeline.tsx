@@ -6,6 +6,7 @@ import type { Correction, Exclusion, FlagView } from '../../../api/types'
 import { TERMINAL_JOB_STATES } from '../../../api/queries'
 import { thumbnailUrl } from '../../../api/urls'
 import { useShortcut } from '../../../lib/shortcuts'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 import { formatClockTime, formatVideoTime } from '../../../lib/time'
 import {
   useActiveJob,
@@ -233,10 +234,10 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
   }
 
   const trialEditable = step !== 'tracking' && step !== 'results'
-  useShortcut('i', () => setTrialHere('start'), { enabled: trialEditable })
-  useShortcut('o', () => setTrialHere('end'), { enabled: trialEditable })
+  useShortcut(SHORTCUTS.trialStart.combo, () => setTrialHere('start'), { enabled: trialEditable })
+  useShortcut(SHORTCUTS.trialEnd.combo, () => setTrialHere('end'), { enabled: trialEditable })
   useShortcut(
-    '[',
+    SHORTCUTS.previousFlag.combo,
     () => {
       const target = nextFlag(flags ?? [], currentFrame, -1)
       if (target) handleFlagClick(target)
@@ -244,33 +245,33 @@ export function Timeline({ videoId, step, height }: TimelineProps): React.JSX.El
     { enabled: step === 'review' }
   )
   useShortcut(
-    ']',
+    SHORTCUTS.nextFlag.combo,
     () => {
       const target = nextFlag(flags ?? [], currentFrame, 1)
       if (target) handleFlagClick(target)
     },
     { enabled: step === 'review' }
   )
-  useShortcut('n', () => (range ? handleHideRange() : undefined), {
+  useShortcut(SHORTCUTS.markNotVisible.combo, () => (range ? handleHideRange() : undefined), {
     enabled: reviewActionsEnabled
   })
-  useShortcut('f', () => (range ? handleFillRange() : undefined), {
+  useShortcut(SHORTCUTS.fillBetween.combo, () => (range ? handleFillRange() : undefined), {
     enabled: reviewActionsEnabled
   })
-  useShortcut('x', () => (range ? handleExcludeRange() : undefined), {
+  useShortcut(SHORTCUTS.excludeRange.combo, () => (range ? handleExcludeRange() : undefined), {
     enabled: rangeSelectable
   })
-  useShortcut('escape', () => (range ? setRange(null) : undefined), {
+  useShortcut(SHORTCUTS.cancel.combo, () => (range ? setRange(null) : undefined), {
     enabled: rangeSelectable,
     preventDefault: false
   })
   useShortcut(
-    'delete',
+    SHORTCUTS.deleteSelection.combo,
     () => (selectedExclusionId ? handleDeleteExclusion(selectedExclusionId) : undefined),
     { enabled: selectedExclusionId != null }
   )
   useShortcut(
-    'backspace',
+    SHORTCUTS.deleteSelection.alias,
     () => (selectedExclusionId ? handleDeleteExclusion(selectedExclusionId) : undefined),
     { enabled: selectedExclusionId != null }
   )

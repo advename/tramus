@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
 import type { SaveLabelInfo } from '../lib/session'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface SaveControlProps {
   info: SaveLabelInfo
@@ -40,7 +41,7 @@ export function SaveControl({ info, onSave, saving }: SaveControlProps): React.J
           {info.label}
         </Typography>
       </Box>
-      <ShortcutTooltip title="Save" shortcut="mod+s">
+      <ShortcutTooltip title="Save" shortcut={SHORTCUTS.save.combo}>
         <Button
           variant="outlined"
           onClick={onSave}

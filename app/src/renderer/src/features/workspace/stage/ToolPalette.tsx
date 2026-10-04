@@ -6,24 +6,66 @@ import { Symbol } from '../../../components/Symbol'
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import type { UndoRedo } from '../data'
 import type { ReviewTool, SetupTool, WorkspaceStep } from '../state/workspaceStore'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
-const SETUP_TOOLS: readonly { tool: SetupTool; icon: string; label: string; key: string }[] = [
-  { tool: 'select', icon: 'arrow_selector_tool', label: 'Select / move', key: 'V' },
-  { tool: 'arena', icon: 'highlight_alt', label: 'Arena outline', key: 'A' },
-  { tool: 'rect', icon: 'rectangle', label: 'Rectangle zone', key: 'R' },
-  { tool: 'ellipse', icon: 'circle', label: 'Ellipse zone', key: 'E' },
-  { tool: 'polygon', icon: 'pentagon', label: 'Polygon zone', key: 'G' },
-  { tool: 'measure', icon: 'straighten', label: 'Measure distance', key: 'M' },
-  { tool: 'pan', icon: 'pan_tool', label: 'Pan', key: 'H' }
+const SETUP_TOOLS: readonly { tool: SetupTool; icon: string; label: string; shortcut: string }[] = [
+  {
+    tool: 'select',
+    icon: 'arrow_selector_tool',
+    label: 'Select / move',
+    shortcut: SHORTCUTS.toolSelect.combo
+  },
+  {
+    tool: 'arena',
+    icon: 'highlight_alt',
+    label: 'Arena outline',
+    shortcut: SHORTCUTS.toolArena.combo
+  },
+  { tool: 'rect', icon: 'rectangle', label: 'Rectangle zone', shortcut: SHORTCUTS.toolRect.combo },
+  { tool: 'ellipse', icon: 'circle', label: 'Ellipse zone', shortcut: SHORTCUTS.toolEllipse.combo },
+  {
+    tool: 'polygon',
+    icon: 'pentagon',
+    label: 'Polygon zone',
+    shortcut: SHORTCUTS.toolPolygon.combo
+  },
+  {
+    tool: 'measure',
+    icon: 'straighten',
+    label: 'Measure distance',
+    shortcut: SHORTCUTS.toolMeasure.combo
+  },
+  { tool: 'pan', icon: 'pan_tool', label: 'Pan', shortcut: SHORTCUTS.toolPan.combo }
 ]
 
-const REVIEW_TOOLS: readonly { tool: ReviewTool; icon: string; label: string; key: string }[] = [
-  { tool: 'select', icon: 'arrow_selector_tool', label: 'Select', key: 'V' },
-  { tool: 'position', icon: 'my_location', label: 'Set position — click the mouse', key: 'P' },
-  { tool: 'hidden', icon: 'visibility_off', label: 'Mouse not visible', key: 'N' },
-  { tool: 'fill', icon: 'linear_scale', label: 'Fill in between', key: 'F' },
-  { tool: 'pan', icon: 'pan_tool', label: 'Pan', key: 'H' }
-]
+const REVIEW_TOOLS: readonly { tool: ReviewTool; icon: string; label: string; shortcut: string }[] =
+  [
+    {
+      tool: 'select',
+      icon: 'arrow_selector_tool',
+      label: 'Select',
+      shortcut: SHORTCUTS.toolSelect.combo
+    },
+    {
+      tool: 'position',
+      icon: 'my_location',
+      label: 'Set position — click the mouse',
+      shortcut: SHORTCUTS.setPosition.combo
+    },
+    {
+      tool: 'hidden',
+      icon: 'visibility_off',
+      label: 'Mouse not visible',
+      shortcut: SHORTCUTS.markNotVisible.combo
+    },
+    {
+      tool: 'fill',
+      icon: 'linear_scale',
+      label: 'Fill in between',
+      shortcut: SHORTCUTS.fillBetween.combo
+    },
+    { tool: 'pan', icon: 'pan_tool', label: 'Pan', shortcut: SHORTCUTS.toolPan.combo }
+  ]
 
 export interface ToolPaletteProps {
   step: WorkspaceStep
@@ -77,7 +119,7 @@ export function ToolPalette({
         <ShortcutTooltip
           key={item.tool}
           title={item.label}
-          shortcut={item.key.toLowerCase()}
+          shortcut={item.shortcut}
           placement="right"
         >
           <span>
@@ -112,7 +154,7 @@ export function ToolPalette({
       {isReview && undoRedo && (
         <>
           <Divider sx={{ my: 0.375, mx: 0.25 }} />
-          <ShortcutTooltip title="Undo" shortcut="mod+z" placement="right">
+          <ShortcutTooltip title="Undo" shortcut={SHORTCUTS.undo.combo} placement="right">
             <span>
               <IconButton
                 disabled={!undoRedo.canUndo}
@@ -128,7 +170,7 @@ export function ToolPalette({
               </IconButton>
             </span>
           </ShortcutTooltip>
-          <ShortcutTooltip title="Redo" shortcut="mod+shift+z" placement="right">
+          <ShortcutTooltip title="Redo" shortcut={SHORTCUTS.redo.combo} placement="right">
             <span>
               <IconButton
                 disabled={!undoRedo.canRedo}
@@ -148,7 +190,7 @@ export function ToolPalette({
       )}
 
       <Divider sx={{ my: 0.375, mx: 0.25 }} />
-      <ShortcutTooltip title="Zoom in" shortcut="mod+=" placement="right">
+      <ShortcutTooltip title="Zoom in" shortcut={SHORTCUTS.zoomIn.combo} placement="right">
         <IconButton
           onClick={onZoomIn}
           sx={{ width: 32, height: 30, borderRadius: 1.5, color: 'text.secondary' }}
@@ -156,7 +198,7 @@ export function ToolPalette({
           <Symbol name="zoom_in" size={19} />
         </IconButton>
       </ShortcutTooltip>
-      <ShortcutTooltip title="Zoom out" shortcut="mod+-" placement="right">
+      <ShortcutTooltip title="Zoom out" shortcut={SHORTCUTS.zoomOut.combo} placement="right">
         <IconButton
           onClick={onZoomOut}
           sx={{ width: 32, height: 30, borderRadius: 1.5, color: 'text.secondary' }}
@@ -164,7 +206,7 @@ export function ToolPalette({
           <Symbol name="zoom_out" size={19} />
         </IconButton>
       </ShortcutTooltip>
-      <ShortcutTooltip title="Fit to window" shortcut="mod+0" placement="right">
+      <ShortcutTooltip title="Fit to window" shortcut={SHORTCUTS.zoomFit.combo} placement="right">
         <IconButton
           onClick={onZoomFit}
           sx={{ width: 32, height: 30, borderRadius: 1.5, color: 'text.secondary' }}

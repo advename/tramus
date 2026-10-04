@@ -10,6 +10,7 @@ import { Symbol } from '../../../components/Symbol'
 import type { SetupEditor } from '../data'
 import { mmPerPxOf } from '../lib/units'
 import { useWorkspaceStore } from '../state/workspaceStore'
+import { SectionHeader } from './SectionHeader'
 
 export interface ScaleSectionProps {
   setup: Setup
@@ -44,9 +45,11 @@ export function ScaleSection({ setup, editor }: ScaleSectionProps): React.JSX.El
 
   return (
     <Box sx={{ px: 1.75, pt: 1.75, pb: 1.5 }}>
-      <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-        Scale
-      </Typography>
+      <SectionHeader
+        title="Scale"
+        info="Tells Tramus how long something in the picture really is, so sizes and distances can be shown in cm instead of pixels."
+        sx={{ px: 0, pt: 0, pb: 0 }}
+      />
 
       {!calibration ? (
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>

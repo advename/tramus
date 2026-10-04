@@ -48,6 +48,7 @@ class TrackerInfo(ApiModel):
 
 class SystemInfo(ApiModel):
     version: str
+    engine_version: str
     platform: str
     cpu_count: int
     gpu: GpuInfo | None

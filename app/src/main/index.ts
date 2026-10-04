@@ -3,6 +3,9 @@ import { app, BrowserWindow, dialog, shell } from 'electron'
 
 import icon from '../../build/icon.png?asset'
 import macIcon from '../../build/icon-macos.png?asset'
+import { formatFullVersion } from '@shared/buildInfo'
+
+import { loadBuildInfo } from './buildInfo'
 import { EngineProcess, EngineStartupError } from './engine'
 import { registerIpcHandlers } from './ipc'
 
@@ -19,7 +22,8 @@ const isDev = !app.isPackaged
 const keepWindowHidden = process.env['TRAMUS_HIDDEN_WINDOW'] === '1'
 
 let mainWindow: BrowserWindow | null = null
-const engine = new EngineProcess()
+const buildInfo = loadBuildInfo()
+const engine = new EngineProcess(formatFullVersion(buildInfo))
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -97,7 +101,7 @@ if (!gotSingleInstanceLock) {
     if (isDev && isMac) app.dock?.setIcon(macIcon)
 
     createWindow()
-    registerIpcHandlers(() => mainWindow, engine)
+    registerIpcHandlers(() => mainWindow, engine, buildInfo)
     void startEngineOrQuit()
 
     app.on('activate', () => {

@@ -79,6 +79,9 @@ export class EngineProcess {
   private stderrTail: string[] = []
   private connectionPromise: Promise<EngineConnection> | null = null
 
+  /** @param appVersion the full version, passed on so the engine records exactly this. */
+  constructor(private readonly appVersion: string) {}
+
   /** Starts the engine (idempotent: repeated calls return the same in-flight/resolved promise). */
   start(): Promise<EngineConnection> {
     if (!this.connectionPromise) {
@@ -102,7 +105,10 @@ export class EngineProcess {
     }
 
     const child = spawn(command, [...args, '--port', '0', '--token', token], {
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, TRAMUS_APP_VERSION: this.appVersion },
+      // The frozen engine is a console program; without this Windows opens a console window
+      windowsHide: true
     })
     this.child = child
 

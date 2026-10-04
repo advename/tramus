@@ -68,6 +68,7 @@ class JobManager:
         video_name: str,
         video_path: Path,
         setup: Setup,
+        frames_total: int,
         requested_device: ProcessingDevice,
         batch_id: str | None = None,
         on_success: OnJobSuccess | None = None,
@@ -79,6 +80,7 @@ class JobManager:
             video_name=video_name,
             batch_id=batch_id,
             state=JobState.QUEUED,
+            frames_total=frames_total,
             created_at=utc_now(),
         )
         cancel_event = self._manager.Event()

@@ -194,3 +194,61 @@ def test_flags_with_status_hides_flags_entirely_inside_an_exclusion(tmp_path: Pa
     )
 
     assert session.flags_with_status() == []
+
+
+def _size_track(areas: list[float]):
+    return make_track(frame_count=len(areas)).model_copy(update={"area_px": areas})
+
+
+def test_changing_flag_rules_recalculates_flags_without_retracking(tmp_path: Path) -> None:
+    from tramus_engine.domain import AcceptFlag, UnusualSizeRule, new_id, utc_now
+    from tramus_engine.tracking.flags import detect_flags
+
+    areas = [300.0] * 20
+    areas[3] = areas[4] = 60.0  # 0.2x
+    areas[10] = areas[11] = 105.0  # 0.35x
+    track = _size_track(areas)
+    manager = _manager()
+    session = Session(
+        video_id="v1",
+        video_path=tmp_path / "mouse.mp4",
+        document=make_document(track=track).model_copy(
+            update={"flags": detect_flags(track, UnusualSizeRule())}
+        ),
+        loaded_from_disk=False,
+    )
+    assert [f.id for f in session.document.flags] == ["unusual_size-3", "unusual_size-10"]
+    accepted = AcceptFlag(id=new_id(), created_at=utc_now(), flag_id="unusual_size-3")
+    manager.put_corrections(session, [accepted])
+
+    setup = session.document.setup
+    rules = UnusualSizeRule(smaller_than=0.25)
+    manager.put_setup(
+        session,
+        setup.model_copy(
+            update={"analysis": setup.analysis.model_copy(update={"unusual_size": rules})}
+        ),
+    )
+
+    assert session.document.track is track
+    assert [f.id for f in session.document.flags] == ["unusual_size-3"]
+    statuses = {f.id: s for f, s in session.flags_with_status()}
+    assert statuses["unusual_size-3"].value == "accepted"
+    assert [(c.title, c.detail) for c in session.document.setup_changes] == [
+        ("Flag rules changed", "Flags recalculated")
+    ]
+    assert not any(c.title == "Detection settings changed" for c in session.document.setup_changes)
+
+
+def test_dragging_flag_rule_edits_coalesce(tmp_path: Path) -> None:
+    from tramus_engine.domain import UnusualSizeRule
+
+    manager = _manager()
+    session = _tracked_session(tmp_path)
+    for value in (0.3, 0.25, 0.2):
+        setup = session.document.setup
+        analysis = setup.analysis.model_copy(
+            update={"unusual_size": UnusualSizeRule(smaller_than=value)}
+        )
+        manager.put_setup(session, setup.model_copy(update={"analysis": analysis}))
+    assert [c.title for c in session.document.setup_changes] == ["Flag rules changed"]

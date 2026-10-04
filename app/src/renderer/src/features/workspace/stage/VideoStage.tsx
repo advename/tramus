@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 
-import type { Setup } from '../../../api/types'
+import type { FlagView, Setup } from '../../../api/types'
 import { frameUrl } from '../../../api/urls'
 import { useShortcut } from '../../../lib/shortcuts'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 import {
   useCorrectionsEditor,
   useDetectionPreview,
@@ -18,7 +19,12 @@ import {
 import { isVisible } from '../data/trackData'
 import { exclusionAtTime } from '../lib/exclusions'
 import { frameAtTime, timeOfFrame } from '../lib/frames'
-import { flagAtFrame, nextUnresolvedFlag, useReopenFlag } from '../lib/flags'
+import {
+  flagAtFrame,
+  nextUnresolvedFlag,
+  previousUnresolvedFlag,
+  useReopenFlag
+} from '../lib/flags'
 import { distance, type Point } from '../lib/geometry'
 import { formatVideoTime } from '../../../lib/time'
 import { computeStageTransform, computeViewBox, svgPointFromClient } from '../lib/stageTransform'
@@ -305,13 +311,18 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
   const handleAcceptFlag = (): void => {
     if (!currentFlag || currentFlag.status !== 'unresolved') return
     void correctionsEditor.add({ kind: 'accept_flag', flag_id: currentFlag.id }, 'Accepted flag')
-    const target = nextUnresolvedFlag(flags ?? [], currentFrame, currentFlag.id)
-    if (target) {
-      pause()
-      seek(target.frame_start)
-      selectFlag(target.id)
-    }
+    goToFlag(nextUnresolvedFlag(flags ?? [], currentFrame, currentFlag.id))
   }
+
+  /** Pauses and lands on the flag's first problem frame, selecting it. No-op without a flag. */
+  const goToFlag = (target: FlagView | undefined): void => {
+    if (!target) return
+    pause()
+    seek(target.frame_start)
+    selectFlag(target.id)
+  }
+
+  const handleNextUnresolved = (): void => goToFlag(nextUnresolvedFlag(flags ?? [], currentFrame))
 
   const handleReopenFlag = (): void => {
     if (currentFlag && currentFlag.status !== 'unresolved') reopenFlag.request(currentFlag)
@@ -326,11 +337,11 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
       : 'default')
 
   // Shortcuts (active only while this step's stage is mounted — see class doc for the full list).
-  useShortcut('space', () => togglePlay())
-  useShortcut('arrowleft', () => stepFrames(-1))
-  useShortcut('arrowright', () => stepFrames(1))
+  useShortcut(SHORTCUTS.playPause.combo, () => togglePlay())
+  useShortcut(SHORTCUTS.previousFrame.combo, () => stepFrames(-1))
+  useShortcut(SHORTCUTS.nextFrame.combo, () => stepFrames(1))
   useShortcut(
-    'shift+arrowleft',
+    SHORTCUTS.back1s.combo,
     () => {
       if (!frameTimes) return
       pause()
@@ -339,7 +350,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     { preventDefault: true }
   )
   useShortcut(
-    'shift+arrowright',
+    SHORTCUTS.forward1s.combo,
     () => {
       if (!frameTimes) return
       pause()
@@ -347,38 +358,84 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
     },
     { preventDefault: true }
   )
-  useShortcut('mod+=', () => panZoom.zoomBy(1.5))
-  useShortcut('mod+-', () => panZoom.zoomBy(1 / 1.5))
-  useShortcut('mod+0', () => panZoom.zoomFit())
-  useShortcut('b', () => toggleStageView(), { enabled: step === 'setup' || step === 'tracking' })
-  useShortcut('t', () => toggleOverlay('trail'), { enabled: step === 'review' })
-  useShortcut('m', () => toggleOverlay('heatmap'), { enabled: step === 'review' })
-  useShortcut('l', () => toggleOverlay('outline'), { enabled: step === 'review' })
-  useShortcut('z', () => toggleOverlay('currentZone'), { enabled: step === 'review' })
-  useShortcut('a', () => handleAcceptFlag(), { enabled: step === 'review' })
+  useShortcut(SHORTCUTS.zoomIn.combo, () => panZoom.zoomBy(1.5))
+  useShortcut(SHORTCUTS.zoomOut.combo, () => panZoom.zoomBy(1 / 1.5))
+  useShortcut(SHORTCUTS.zoomFit.combo, () => panZoom.zoomFit())
+  useShortcut(SHORTCUTS.toggleStageView.combo, () => toggleStageView(), {
+    enabled: step === 'setup' || step === 'tracking'
+  })
+  useShortcut(SHORTCUTS.toggleTrail.combo, () => toggleOverlay('trail'), {
+    enabled: step === 'review'
+  })
+  useShortcut(SHORTCUTS.toggleHeatmap.combo, () => toggleOverlay('heatmap'), {
+    enabled: step === 'review'
+  })
+  useShortcut(SHORTCUTS.toggleOutline.combo, () => toggleOverlay('outline'), {
+    enabled: step === 'review'
+  })
+  useShortcut(SHORTCUTS.toggleCurrentZone.combo, () => toggleOverlay('currentZone'), {
+    enabled: step === 'review'
+  })
+  useShortcut(SHORTCUTS.acceptFlag.combo, () => handleAcceptFlag(), { enabled: step === 'review' })
   // 'r' doesn't clash with Setup's rect tool (enabled: step === 'setup' — never both at once).
-  useShortcut('r', () => handleReopenFlag(), { enabled: step === 'review' })
-  useShortcut('delete', () => zoneEditing.deleteSelected(), { enabled: zoneEditing.editable })
-  useShortcut('backspace', () => zoneEditing.deleteSelected(), {
+  useShortcut(SHORTCUTS.reopenFlag.combo, () => handleReopenFlag(), { enabled: step === 'review' })
+  useShortcut(SHORTCUTS.deleteSelection.combo, () => zoneEditing.deleteSelected(), {
     enabled: zoneEditing.editable
   })
-  useShortcut('escape', () => zoneEditing.cancelDrawing(), {
+  useShortcut(SHORTCUTS.deleteSelection.alias, () => zoneEditing.deleteSelected(), {
+    enabled: zoneEditing.editable
+  })
+  useShortcut(SHORTCUTS.cancel.combo, () => zoneEditing.cancelDrawing(), {
     enabled: step === 'setup' || step === 'review',
     preventDefault: false
   })
-  useShortcut('v', () => (step === 'setup' ? setSetupTool('select') : setReviewTool('select')), {
-    enabled: step === 'setup' || step === 'review'
+  useShortcut(
+    SHORTCUTS.toolSelect.combo,
+    () => (step === 'setup' ? setSetupTool('select') : setReviewTool('select')),
+    {
+      enabled: step === 'setup' || step === 'review'
+    }
+  )
+  useShortcut(SHORTCUTS.toolArena.combo, () => setSetupTool('arena'), { enabled: step === 'setup' })
+  useShortcut(SHORTCUTS.toolRect.combo, () => setSetupTool('rect'), { enabled: step === 'setup' })
+  useShortcut(SHORTCUTS.toolEllipse.combo, () => setSetupTool('ellipse'), {
+    enabled: step === 'setup'
   })
-  useShortcut('a', () => setSetupTool('arena'), { enabled: step === 'setup' })
-  useShortcut('r', () => setSetupTool('rect'), { enabled: step === 'setup' })
-  useShortcut('e', () => setSetupTool('ellipse'), { enabled: step === 'setup' })
-  useShortcut('g', () => setSetupTool('polygon'), { enabled: step === 'setup' })
+  useShortcut(SHORTCUTS.toolPolygon.combo, () => setSetupTool('polygon'), {
+    enabled: step === 'setup'
+  })
   // Setup-only: doesn't clash with Review's 'm' (toggle heatmap, line 241) — they're never both enabled.
-  useShortcut('m', () => setSetupTool('measure'), { enabled: step === 'setup' })
-  useShortcut('h', () => (step === 'setup' ? setSetupTool('pan') : setReviewTool('pan')), {
-    enabled: step === 'setup' || step === 'review'
+  useShortcut(SHORTCUTS.toolMeasure.combo, () => setSetupTool('measure'), {
+    enabled: step === 'setup'
   })
-  useShortcut('p', () => setReviewTool('position'), { enabled: step === 'review' })
+  useShortcut(
+    SHORTCUTS.toolPan.combo,
+    () => (step === 'setup' ? setSetupTool('pan') : setReviewTool('pan')),
+    {
+      enabled: step === 'setup' || step === 'review'
+    }
+  )
+  // ↓/Enter and ↑ walk the unresolved flags only (`[`/`]` in the Timeline visit every flag).
+  // Enter is left alone on a focused button or link so it still activates that control.
+  useShortcut(SHORTCUTS.nextUnresolved.combo, handleNextUnresolved, { enabled: step === 'review' })
+  useShortcut(
+    SHORTCUTS.nextUnresolved.alias,
+    (event) => {
+      if (event.target instanceof Element && event.target.closest('button, a')) return
+      handleNextUnresolved()
+    },
+    { enabled: step === 'review', preventDefault: false }
+  )
+  useShortcut(
+    SHORTCUTS.previousUnresolved.combo,
+    () => goToFlag(previousUnresolvedFlag(flags ?? [], currentFrame)),
+    {
+      enabled: step === 'review'
+    }
+  )
+  useShortcut(SHORTCUTS.setPosition.combo, () => setReviewTool('position'), {
+    enabled: step === 'review'
+  })
 
   return (
     <Box
@@ -494,6 +551,7 @@ export function VideoStage({ videoId, step, children }: VideoStageProps): React.
           onAccept={handleAcceptFlag}
           onSetPosition={() => setReviewTool('position')}
           onReopen={handleReopenFlag}
+          onNext={handleNextUnresolved}
         />
       )}
 

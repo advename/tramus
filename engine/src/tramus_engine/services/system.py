@@ -6,18 +6,20 @@ import os
 import platform
 import subprocess
 from dataclasses import dataclass
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as _package_version
 
 from .. import __version__
 from ..tracking.registry import available_trackers as _available_trackers
 
+APP_VERSION_ENV = "TRAMUS_APP_VERSION"
+
 
 def app_version() -> str:
-    try:
-        return _package_version("tramus-engine")
-    except PackageNotFoundError:  # pragma: no cover - only when not installed
-        return __version__
+    """The full Tramus version, e.g. "1.2.3 (build 45)" or "0.0.0-dev+abc1234.dirty".
+
+    The desktop app passes it in `TRAMUS_APP_VERSION` so analyses, exports and the About screen
+    all show what the app reports. Without it (CLI use) the engine's own version is used.
+    """
+    return os.environ.get(APP_VERSION_ENV) or __version__
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,7 @@ class TrackerInfo:
 @dataclass(frozen=True)
 class SystemInfo:
     version: str
+    engine_version: str
     platform: str
     cpu_count: int
     gpu: GpuInfo | None
@@ -69,6 +72,7 @@ def available_trackers() -> list[TrackerInfo]:
 def get_system_info() -> SystemInfo:
     return SystemInfo(
         version=app_version(),
+        engine_version=__version__,
         platform=platform.platform(),
         cpu_count=os.cpu_count() or 1,
         gpu=detect_gpu(),

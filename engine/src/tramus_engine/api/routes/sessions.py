@@ -175,6 +175,7 @@ def build_router(services: Services, hub: EventHub) -> APIRouter:
             video_name=session.video_path.name,
             video_path=session.video_path,
             setup=session.document.setup,
+            frames_total=session.document.video.frame_count,
             requested_device=requested_device,
             on_success=on_success,
         )

@@ -155,6 +155,7 @@ def submit_batch_job(
         video_name=video_path.name,
         video_path=video_path,
         setup=setup,
+        frames_total=video_info.frame_count,
         requested_device=requested_device,
         batch_id=batch_id,
         on_success=on_success,

@@ -6,8 +6,8 @@ offline, and keeps every analysis in a JSON file next to the video so results ar
 
 **Workflow:** open a folder → pick a video → draw the arena and zones (optionally measure a known
 distance so sizes show in cm), set the trial start/end and exclude disturbed periods → **Track** →
-review at 4× with a movement trail and fix flagged frames (hotkeys: A accept, P set position, ]
-next) → results → export to Excel/CSV. A setup can be saved as a template and applied to a whole
+review at 4× with a movement trail and fix flagged frames (hotkeys: A accept, S set position, ↓
+next unresolved flag) → results → export to Excel/CSV. A setup can be saved as a template and applied to a whole
 batch of videos recorded with the same camera.
 
 **Results:** time per zone (as a share of the analysed time), every zone visit, and **zone
@@ -95,8 +95,35 @@ Headless use: `engine/.venv/bin/tramus-engine track <folder> --template <id>` an
 node scripts/build.mjs                      # engine (PyInstaller) + app (electron-builder)
 ```
 
-Installers must be built on the target OS (PyInstaller can't cross-compile): macOS on a Mac,
-Windows on Windows (or GitHub Actions), Linux on Linux or in Docker. Output lands in `app/release/`.
+Installers must be built on the target OS and CPU (PyInstaller can't cross-compile), so a local
+build only produces the installer for your own machine. Output lands in `app/release/`. Engine
+packages are pinned for builds in `engine/packaging/constraints.txt`.
+
+**Releases** are built by GitHub Actions: Actions → **Release** → *Run workflow*, choosing a
+patch, minor or major bump. The version is the latest published release plus that bump (the
+first release counts from 0.0.0). The workflow stamps it into the build
+(`scripts/set-version.mjs`) together with a **build number**, the Actions run number, so two
+builds of one version can be told apart: `1.2.3 (build 45)`. The build number is also the
+OS-level build version (`CFBundleVersion` on macOS, file version on Windows: `1.2.3.45`). The repo
+itself stays at `0.0.0-dev`. It builds all four installers into a draft release; review it, then
+publish it. The full version shows in Settings → About (with a Copy button for bug reports) and is
+saved in every analysis and export.
+
+**Local builds** (`node scripts/build.mjs`, `npm run dev`) report `0.0.0-dev+<short git sha>`, with
+`.dirty` added when there are uncommitted changes (plain `0.0.0-dev` without git). The build info
+is generated into `app/resources/build-info.json` (gitignored), so building never changes tracked
+files.
+
+| Installer | Built on | Runs on |
+|---|---|---|
+| `Tramus-<version>-mac-arm64.dmg` | `macos-15` | Apple Silicon Macs, macOS 14+ |
+| `Tramus-<version>-mac-x64.dmg` | `macos-15-intel` (GitHub offers it until Aug 2027) | Intel Macs, macOS 14+ |
+| `Tramus-<version>-win-x64.exe` | `windows-2022` | Windows 10/11, 64-bit |
+| `Tramus-<version>-linux-x86_64.AppImage` | `ubuntu-22.04` | Linux with glibc 2.35+ (Ubuntu 22.04+) |
+
+Builds aren't code-signed (macOS is ad-hoc signed), so first launches show a warning; the
+release notes ([.github/release-notes.md](.github/release-notes.md)) explain how to get past it.
+Windows 7/8 can't be supported: current Electron and Python need Windows 10.
 
 ## Extending
 

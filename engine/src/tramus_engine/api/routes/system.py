@@ -17,6 +17,7 @@ def build_router(services: Services) -> APIRouter:
         info = get_system_info()
         return SystemInfo(
             version=info.version,
+            engine_version=info.engine_version,
             platform=info.platform,
             cpu_count=info.cpu_count,
             gpu=GpuInfo(name=info.gpu.name) if info.gpu else None,

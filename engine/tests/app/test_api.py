@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import SyntheticVideo
+from tramus_engine import __version__
 from tramus_engine.domain import (
     BatchItemRecord,
     BatchRecord,
@@ -23,6 +24,7 @@ from tramus_engine.domain import (
 )
 from tramus_engine.services import batch as batch_service
 from tramus_engine.services.container import Services, create_services
+from tramus_engine.services.system import app_version
 from tramus_engine.services.templates import setup_from_template
 from tramus_engine.storage.paths import batches_dir
 
@@ -64,6 +66,20 @@ def test_system_info(client: TestClient) -> None:
     body = resp.json()
     assert body["cpu_count"] >= 1
     assert isinstance(body["trackers"], list)
+    assert body["version"] == body["engine_version"] == __version__
+
+
+def test_app_version_comes_from_the_desktop_app(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TRAMUS_APP_VERSION", "1.2.3 (build 45)")
+    assert app_version() == "1.2.3 (build 45)"
+    body = client.get("/api/system", headers=AUTH_HEADERS).json()
+    assert body["version"] == "1.2.3 (build 45)"
+    assert body["engine_version"] == __version__
+
+    monkeypatch.setenv("TRAMUS_APP_VERSION", "")
+    assert app_version() == __version__
 
 
 def test_settings_round_trip(client: TestClient) -> None:
@@ -363,6 +379,8 @@ def test_create_batch_persists_record(
     batch = resp.json()
     batch_id = batch["id"]
     assert len(batch["jobs"]) == 1
+    # A job reports its size from the moment it is queued, before any progress arrives.
+    assert batch["jobs"][0]["frames_total"] == synthetic_video.frame_count
 
     # Listed, newest first, item summary built from the record.
     resp = client.get("/api/batches", headers=AUTH_HEADERS)

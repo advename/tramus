@@ -9,6 +9,7 @@ import { useBlocker } from 'react-router'
 
 import { Kbd } from '../../../components/Kbd'
 import { useShortcut } from '../../../lib/shortcuts'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface UnsavedChangesDialogProps {
   videoId: string
@@ -52,7 +53,7 @@ export function UnsavedChangesDialog({
     })
   }
 
-  useShortcut('mod+s', () => save(), { enabled: blocked })
+  useShortcut(SHORTCUTS.save.combo, () => save(), { enabled: blocked })
 
   return (
     <Dialog open={blocked} onClose={cancel} maxWidth="xs" fullWidth>

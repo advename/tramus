@@ -13,6 +13,7 @@ import { Symbol } from '../../../components/Symbol'
 import { TimeText } from '../../../components/TimeText'
 import { formatDuration } from '../../../lib/time'
 import { TIMELINE_ZOOM_MAX, TIMELINE_ZOOM_MIN } from '../state/workspaceStore'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16]
 
@@ -70,7 +71,7 @@ export function TransportBar({
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-        <ShortcutTooltip title="Previous frame" shortcut="left">
+        <ShortcutTooltip title="Previous frame" shortcut={SHORTCUTS.previousFrame.combo}>
           <IconButton
             onClick={() => onStepFrame(-1)}
             sx={{ width: 28, height: 28, color: 'text.secondary' }}
@@ -78,7 +79,7 @@ export function TransportBar({
             <Symbol name="navigate_before" size={20} />
           </IconButton>
         </ShortcutTooltip>
-        <ShortcutTooltip title="Play / pause" shortcut="space">
+        <ShortcutTooltip title="Play / pause" shortcut={SHORTCUTS.playPause.combo}>
           <IconButton
             onClick={onTogglePlay}
             sx={{
@@ -93,7 +94,7 @@ export function TransportBar({
             <Symbol name={playing ? 'pause' : 'play_arrow'} fill size={22} />
           </IconButton>
         </ShortcutTooltip>
-        <ShortcutTooltip title="Next frame" shortcut="right">
+        <ShortcutTooltip title="Next frame" shortcut={SHORTCUTS.nextFrame.combo}>
           <IconButton
             onClick={() => onStepFrame(1)}
             sx={{ width: 28, height: 28, color: 'text.secondary' }}

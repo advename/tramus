@@ -18,6 +18,7 @@ export interface FlagBannerProps {
   onAccept: () => void
   onSetPosition: () => void
   onReopen: () => void
+  onNext: () => void
 }
 
 /**
@@ -32,7 +33,8 @@ export function FlagBanner({
   timeS,
   onAccept,
   onSetPosition,
-  onReopen
+  onReopen,
+  onNext
 }: FlagBannerProps): React.JSX.Element {
   const chipSx = statusChipSx(flag.status)
 
@@ -115,14 +117,22 @@ export function FlagBanner({
         </Button>
       )}
       <Button
-        title="Set position — then click the mouse · P"
+        title="Next unresolved flag · ↓"
+        onClick={onNext}
+        sx={{ height: 28, px: 1.25, gap: 0.75, border: 1, borderColor: 'surface.lineStrong' }}
+      >
+        Next
+        <Kbd>↓</Kbd>
+      </Button>
+      <Button
+        title="Set position — then click the mouse · S"
         onClick={onSetPosition}
         variant="contained"
         sx={{ height: 28, px: 1.25, gap: 0.75, fontWeight: 600 }}
       >
         <Symbol name="my_location" size={16} />
         {flag.status === 'fixed' ? 'Set position again' : 'Set position'}
-        <Kbd variant="onPrimary">P</Kbd>
+        <Kbd variant="onPrimary">S</Kbd>
       </Button>
     </Box>
   )

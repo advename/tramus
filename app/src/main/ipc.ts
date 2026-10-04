@@ -1,6 +1,8 @@
-import { app, dialog, ipcMain, shell, type BrowserWindow } from 'electron'
+import { dialog, ipcMain, shell, type BrowserWindow } from 'electron'
 
 import { IpcChannel, type AppInfo, type EngineConnection, type SaveFileOptions } from '@shared/ipc'
+
+import type { BuildInfo } from '@shared/buildInfo'
 
 import type { EngineProcess } from './engine'
 
@@ -15,7 +17,8 @@ const MACOS_PRIVACY_SETTINGS_URL =
 /** Registers all `ipcMain.handle` handlers. Call once, after the main window is created. */
 export function registerIpcHandlers(
   getWindow: () => BrowserWindow | null,
-  engine: EngineProcess
+  engine: EngineProcess,
+  build: BuildInfo
 ): void {
   ipcMain.handle(IpcChannel.DialogOpenFolder, async (): Promise<string | null> => {
     const win = getWindow()
@@ -54,7 +57,7 @@ export function registerIpcHandlers(
     if (platform !== 'darwin' && platform !== 'win32' && platform !== 'linux') {
       throw new Error(`Unsupported platform: ${platform}`)
     }
-    return { version: app.getVersion(), platform, arch: process.arch }
+    return { build, platform, arch: process.arch }
   })
 
   ipcMain.handle(IpcChannel.EngineGetConnection, (): Promise<EngineConnection> => engine.start())

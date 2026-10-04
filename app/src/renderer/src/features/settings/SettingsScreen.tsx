@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
@@ -7,10 +7,15 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
-import { useSettings, useSystemInfo, useUpdateSettings } from '../../api/queries'
-import type { AppSettings } from '../../api/types'
+import { formatFullVersion, type BuildInfo } from '@shared/buildInfo'
+
+import { useAppInfo, useSettings, useSystemInfo, useUpdateSettings } from '../../api/queries'
+import type { AppSettings, SystemInfo } from '../../api/types'
 import { Symbol } from '../../components/Symbol'
-import { notifyError } from '../../stores/notifications'
+import { notify, notifyError } from '../../stores/notifications'
+import { formatAboutReport } from './aboutReport'
+import { KeyboardShortcutsSection } from './KeyboardShortcutsSection'
+import { SettingsGroup, SettingsRow } from './SettingsParts'
 
 const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16]
 const TRAIL_LENGTHS_S = [5, 10, 15, 20, 25, 30]
@@ -20,11 +25,13 @@ const MAX_PARALLEL_JOBS = 16
 
 /**
  * The Settings screen (`designs/Screens.dc.html` §settings): Processing, Defaults for new
- * analyses, Appearance. Every control saves immediately via `useUpdateSettings`.
+ * analyses, Appearance, plus Keyboard shortcuts and About (not in the design). Every control saves immediately via
+ * `useUpdateSettings`.
  */
 export function SettingsScreen(): React.JSX.Element {
   const { data: settings } = useSettings()
   const { data: system } = useSystemInfo()
+  const { data: appInfo } = useAppInfo()
   const updateSettings = useUpdateSettings()
 
   const save = (patch: Partial<AppSettings>): void => {
@@ -177,66 +184,73 @@ export function SettingsScreen(): React.JSX.Element {
               />
             </SettingsRow>
           </SettingsGroup>
+
+          <KeyboardShortcutsSection />
+
+          <SettingsGroup title="About">
+            <SettingsRow
+              label="Version"
+              help="Saved in every analysis and export, so results can be traced to the Tramus version that produced them."
+            >
+              <Typography variant="mono" color="text.secondary">
+                {appInfo ? formatFullVersion(appInfo.build) : '—'}
+              </Typography>
+            </SettingsRow>
+            <SettingsRow
+              label="Build"
+              help="Releases are numbered; a development build shows its commit instead."
+            >
+              <Typography variant="mono" color="text.secondary">
+                {appInfo ? describeBuild(appInfo.build) : '—'}
+              </Typography>
+            </SettingsRow>
+            <SettingsRow label="Engine" help="The tracking engine that runs alongside the app.">
+              <Typography variant="mono" color="text.secondary">
+                {system?.engine_version ?? '—'}
+              </Typography>
+            </SettingsRow>
+            <SettingsRow
+              label="Copy version info"
+              help="Puts the version, build, engine and system on the clipboard, to paste into a bug report."
+            >
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={!appInfo || !system}
+                onClick={() => {
+                  if (appInfo && system) copyReport(appInfo.build, system)
+                }}
+                sx={{ height: 30, fontWeight: 500 }}
+              >
+                Copy
+              </Button>
+            </SettingsRow>
+          </SettingsGroup>
         </Box>
       </Box>
     </Box>
   )
 }
 
-interface SettingsGroupProps {
-  title: string
-  children: ReactNode
+/** `"build 45 · abc1234"` for releases, `"abc1234 · uncommitted changes"` for local builds. */
+function describeBuild(build: BuildInfo): string {
+  const parts = [
+    build.buildNumber === null ? null : `build ${build.buildNumber}`,
+    build.commit,
+    build.dirty ? 'uncommitted changes' : null
+  ]
+  return parts.filter((part) => part !== null).join(' · ') || '—'
 }
 
-function SettingsGroup({ title, children }: SettingsGroupProps): React.JSX.Element {
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Typography variant="overline" color="text.disabled" sx={{ px: 0.25 }}>
-        {title}
-      </Typography>
-      <Box
-        sx={{
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: '10px',
-          bgcolor: 'background.paper'
-        }}
-      >
-        {children}
-      </Box>
-    </Box>
-  )
-}
-
-interface SettingsRowProps {
-  label: string
-  help: string
-  children: ReactNode
-}
-
-function SettingsRow({ label, help, children }: SettingsRowProps): React.JSX.Element {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        px: 2,
-        py: 1.75,
-        borderBottom: 1,
-        borderColor: 'divider',
-        flexWrap: 'wrap',
-        '&:last-of-type': { borderBottom: 0 }
-      }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 220 }}>
-        <Typography sx={{ fontWeight: 500 }}>{label}</Typography>
-        <Typography variant="caption" color="text.disabled" sx={{ textWrap: 'pretty' }}>
-          {help}
-        </Typography>
-      </Box>
-      {children}
-    </Box>
+function copyReport(build: BuildInfo, system: SystemInfo): void {
+  const report = formatAboutReport({
+    build,
+    engineVersion: system.engine_version,
+    platform: system.platform
+  })
+  navigator.clipboard.writeText(report).then(
+    () => notify({ severity: 'success', title: 'Version info copied' }),
+    (error: unknown) => notifyError('Could not copy to the clipboard', error)
   )
 }
 

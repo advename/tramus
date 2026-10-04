@@ -12,6 +12,7 @@ import { Kbd } from '../../components/Kbd'
 import { Symbol } from '../../components/Symbol'
 import { formatRelativeDate } from '../../lib/time'
 import { useShortcut } from '../../lib/shortcuts'
+import { SHORTCUTS } from '../../lib/shortcutRegistry'
 import { useFolderAccessStore } from '../../stores/folderAccess'
 import { notifyError } from '../../stores/notifications'
 
@@ -46,7 +47,7 @@ export function StartScreen(): React.JSX.Element {
     }
   }, [navigate])
 
-  useShortcut('mod+o', () => void openFolder())
+  useShortcut(SHORTCUTS.openFolder.combo, () => void openFolder())
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()

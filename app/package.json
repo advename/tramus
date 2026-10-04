@@ -1,13 +1,15 @@
 {
   "name": "tramus",
-  "version": "0.1.0",
-  "description": "Tramus \u2014 track a mouse in top-down lab videos and measure time spent in zones.",
+  "version": "0.0.0-dev",
+  "description": "Tramus — track a mouse in top-down lab videos and measure time spent in zones.",
   "author": "Tramus",
   "private": true,
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
+    "predev": "node ../scripts/write-build-info.mjs",
     "dev": "electron-vite dev",
+    "prebuild": "node ../scripts/write-build-info.mjs",
     "build": "electron-vite build",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",

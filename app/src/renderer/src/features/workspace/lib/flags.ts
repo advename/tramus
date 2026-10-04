@@ -82,6 +82,18 @@ export function nextUnresolvedFlag(
   return nextFlag(unresolved, frame, 1)
 }
 
+/** The previous unresolved flag before `frame`, wrapping to the last unresolved flag. */
+export function previousUnresolvedFlag(
+  flags: readonly FlagView[],
+  frame: number
+): FlagView | undefined {
+  return nextFlag(
+    flags.filter((flag) => flag.status === 'unresolved'),
+    frame,
+    -1
+  )
+}
+
 /** Background/text colour for a flag's status chip (Flags panel rows and the stage banner). */
 export function statusChipSx(status: FlagStatus): {
   bgcolor: string | ((t: Theme) => string)

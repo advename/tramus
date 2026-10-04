@@ -52,7 +52,7 @@ export function SetupInspectorBody({
       <Divider />
       <ImageAdjustmentsSection setup={setup} editor={editor} />
       <Divider sx={{ mt: 1.75 }} />
-      <DetectionSection setup={setup} editor={editor} />
+      <DetectionSection videoId={videoId} setup={setup} editor={editor} />
       <Divider sx={{ mt: 1.75 }} />
       <TemplateSection videoId={videoId} setup={setup} applyTemplate={applyTemplate} />
     </Box>

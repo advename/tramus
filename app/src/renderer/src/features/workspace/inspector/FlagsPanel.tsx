@@ -21,6 +21,8 @@ import {
   statusChipSx
 } from '../lib/flags'
 import type { FlagFilter } from '../state/workspaceStore'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
+import { formatShortcut } from '../../../lib/shortcuts'
 
 export interface FlagsPanelProps {
   flags: FlagView[]
@@ -92,7 +94,7 @@ export function FlagsPanel({
 
         {flags.length > 0 ? (
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.75 }}>
-            <ShortcutTooltip title="Previous flag" shortcut="[">
+            <ShortcutTooltip title="Previous flag" shortcut={SHORTCUTS.previousFlag.combo}>
               <ButtonBase
                 onClick={() => {
                   const target = nextFlag(flags, currentFrame, -1)
@@ -112,7 +114,7 @@ export function FlagsPanel({
                 Previous
               </ButtonBase>
             </ShortcutTooltip>
-            <ShortcutTooltip title="Next flag" shortcut="]">
+            <ShortcutTooltip title="Next flag" shortcut={SHORTCUTS.nextFlag.combo}>
               <ButtonBase
                 onClick={() => {
                   const target = nextFlag(flags, currentFrame, 1)
@@ -287,7 +289,7 @@ export function FlagsPanel({
 }
 
 /** A subtle reminder of the fast-review hotkeys — accept/set-position (stage banner) and
- * previous/next (above) — so reviewing a long flag list barely needs the mouse. */
+ * next unresolved — so reviewing a long flag list barely needs the mouse. */
 function FlagHotkeyHint(): React.JSX.Element {
   return (
     <Box
@@ -300,13 +302,13 @@ function FlagHotkeyHint(): React.JSX.Element {
         color: 'text.disabled'
       }}
     >
-      <Kbd>A</Kbd>
+      <Kbd>{formatShortcut(SHORTCUTS.acceptFlag.combo)}</Kbd>
       <span>accept</span>
       <span>·</span>
-      <Kbd>P</Kbd>
+      <Kbd>{formatShortcut(SHORTCUTS.setPosition.combo)}</Kbd>
       <span>set position</span>
       <span>·</span>
-      <Kbd>]</Kbd>
+      <Kbd>{formatShortcut(SHORTCUTS.nextUnresolved.combo)}</Kbd>
       <span>next</span>
     </Box>
   )

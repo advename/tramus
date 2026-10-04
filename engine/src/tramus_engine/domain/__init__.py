@@ -35,6 +35,7 @@ from .setup import (
     Setup,
     TemplateRef,
     TrialWindow,
+    UnusualSizeRule,
     Zone,
 )
 from .shapes import EllipseShape, PolygonShape, RectShape, Shape
@@ -105,6 +106,7 @@ __all__ = [
     "ThemePreference",
     "Track",
     "TrialWindow",
+    "UnusualSizeRule",
     "UtcDateTime",
     "VideoInfo",
     "VideoStatus",

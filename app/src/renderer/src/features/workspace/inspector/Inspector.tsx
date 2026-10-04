@@ -18,6 +18,7 @@ import { FlagsPanel } from './FlagsPanel'
 import { HistoryPanel } from './HistoryPanel'
 import { SetupInspectorBody } from './SetupInspectorBody'
 import { ZonesList } from './ZonesList'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface InspectorProps {
   videoId: string
@@ -284,7 +285,7 @@ export function Inspector({
           flexShrink: 0
         }}
       >
-        <ShortcutTooltip title="Track" shortcut="mod+t">
+        <ShortcutTooltip title="Track" shortcut={SHORTCUTS.track.combo}>
           <Button
             variant="contained"
             disabled={trackDisabled}

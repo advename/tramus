@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tramus-engine"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Tracking and zone-analysis engine for Tramus, a mouse-tracking desktop app."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -36,6 +36,9 @@ tramus-engine = "tramus_engine.cli:main"
 # Third-party trackers register themselves here, e.g.
 # [project.entry-points."tramus.trackers"]
 # deeplabcut = "tramus_dlc:DeepLabCutTracker"
+
+[tool.setuptools.dynamic]
+version = { attr = "tramus_engine.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]

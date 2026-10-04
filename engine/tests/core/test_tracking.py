@@ -9,7 +9,7 @@ import pytest
 
 from tests.conftest import SyntheticVideo
 from tests.core.conftest import make_track
-from tramus_engine.domain import FlagReason, FrameStatus, ProcessingDevice, Setup
+from tramus_engine.domain import FlagReason, FrameStatus, ProcessingDevice, Setup, UnusualSizeRule
 from tramus_engine.tracking import (
     TrackingCancelled,
     get_tracker,
@@ -76,7 +76,7 @@ def test_gap_produces_missing_frames_and_not_found_flag(
 
     from tramus_engine.tracking.flags import detect_flags
 
-    flags = detect_flags(outcome_track)
+    flags = detect_flags(outcome_track, UnusualSizeRule())
     not_found = [f for f in flags if f.reason == FlagReason.NOT_FOUND]
     assert len(not_found) == 1
     flag = not_found[0]

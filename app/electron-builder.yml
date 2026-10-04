@@ -1,11 +1,15 @@
 appId: org.tramus.app
 productName: Tramus
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+# No target lists an `arch`, so electron-builder builds for the host's architecture — which must
+# match the PyInstaller engine in resources/engine (PyInstaller can't cross-compile).
 directories:
   buildResources: build
   output: release
 files:
   - out/**/*
   - package.json
+  - resources/build-info.json
 extraResources:
   - from: resources/engine
     to: engine
@@ -14,12 +18,16 @@ extraResources:
 asarUnpack:
   - resources/engine/**
 mac:
-  target:
-    - target: dmg
-      arch:
-        - arm64
+  target: dmg
   category: public.app-category.education
   icon: build/icon.icns
+  # Ad-hoc signature (no Apple Developer ID): without one the bundle's signature is invalid and a
+  # downloaded copy is reported as "damaged". Replace with the Developer ID name (and re-enable
+  # hardened runtime, needed for notarization) once the app is signed properly.
+  identity: '-'
+  hardenedRuntime: false
+  # The engine's numpy/PyAV (arm64) and OpenCV (x86_64) wheels need macOS 14
+  minimumSystemVersion: '14.0'
   # macOS attributes the engine's file access to Tramus.app (it's a child process launched by
   # it), so these are the strings shown on the folder-access prompts. Everything here is
   # processed locally — see README.md "Privacy" and docs/architecture.md §8 (403 = the user
@@ -47,18 +55,12 @@ mac:
       remotely, and Tramus has no tracking or analytics.
 win:
   icon: build/icon.ico
-  target:
-    - target: nsis
-      arch:
-        - x64
+  target: nsis
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 linux:
   icon: build/icon.png
-  target:
-    - target: AppImage
-      arch:
-        - x64
+  target: AppImage
   category: Science
 npmRebuild: false

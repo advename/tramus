@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 
 import { ShortcutTooltip } from '../../../components/ShortcutTooltip'
 import { Symbol } from '../../../components/Symbol'
+import { SHORTCUTS } from '../../../lib/shortcutRegistry'
 
 export interface BatchNavProps {
   /** 0-based index of the current video within the batch, or `null` while it's still loading or
@@ -52,14 +53,14 @@ export function BatchNav({
       >
         {hasPosition ? `Batch · ${index + 1} of ${total}` : 'Batch'}
       </Typography>
-      <ShortcutTooltip title="Previous video in batch" shortcut="mod+[">
+      <ShortcutTooltip title="Previous video in batch" shortcut={SHORTCUTS.previousVideo.combo}>
         <span>
           <IconButton onClick={onPrev} disabled={!canPrev} sx={{ width: 24, height: 24 }}>
             <Symbol name="chevron_left" size={16} />
           </IconButton>
         </span>
       </ShortcutTooltip>
-      <ShortcutTooltip title="Next video in batch" shortcut="mod+]">
+      <ShortcutTooltip title="Next video in batch" shortcut={SHORTCUTS.nextVideo.combo}>
         <span>
           <IconButton onClick={onNext} disabled={!canNext} sx={{ width: 24, height: 24 }}>
             <Symbol name="chevron_right" size={16} />

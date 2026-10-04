@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { correctionsToReopen, nextUnresolvedFlag } from './flags'
+import { correctionsToReopen, nextUnresolvedFlag, previousUnresolvedFlag } from './flags'
 import type { Correction, FlagView } from '../../../api/types'
 
 function makeFlag(overrides: Partial<FlagView> = {}): FlagView {
@@ -124,5 +124,25 @@ describe('nextUnresolvedFlag', () => {
   it('returns undefined when there are no unresolved flags at all', () => {
     const flags = [makeFlag({ id: 'f1', frame_start: 10, status: 'fixed' })]
     expect(nextUnresolvedFlag(flags, 20)).toBeUndefined()
+  })
+})
+
+describe('previousUnresolvedFlag', () => {
+  const flags = [
+    makeFlag({ id: 'f1', frame_start: 10, status: 'unresolved' }),
+    makeFlag({ id: 'f2', frame_start: 100, status: 'fixed' }),
+    makeFlag({ id: 'f3', frame_start: 150, status: 'unresolved' })
+  ]
+
+  it('skips resolved flags', () => {
+    expect(previousUnresolvedFlag(flags, 120)?.id).toBe('f1')
+  })
+
+  it('wraps to the last unresolved flag before the first one', () => {
+    expect(previousUnresolvedFlag(flags, 5)?.id).toBe('f3')
+  })
+
+  it('returns undefined when nothing is unresolved', () => {
+    expect(previousUnresolvedFlag([makeFlag({ status: 'accepted' })], 5)).toBeUndefined()
   })
 })

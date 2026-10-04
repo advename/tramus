@@ -570,6 +570,7 @@ export interface components {
             in_zone_threshold: number;
             /** Crossing Rules */
             crossing_rules?: components["schemas"]["CrossingRule"][];
+            unusual_size?: components["schemas"]["UnusualSizeRule"];
         };
         /** AppSettings */
         "AppSettings-Input": {
@@ -1501,6 +1502,8 @@ export interface components {
         SystemInfo: {
             /** Version */
             version: string;
+            /** Engine Version */
+            engine_version: string;
             /** Platform */
             platform: string;
             /** Cpu Count */
@@ -1673,6 +1676,36 @@ export interface components {
              * @default false
              */
             locked_duration: boolean;
+        };
+        /**
+         * UnusualSizeRule
+         * @description When a run of frames counts as an "unusual size" flag (§5.2). Sizes are compared with the
+         *     video's median mouse area; changing the rule re-derives flags without re-tracking.
+         */
+        UnusualSizeRule: {
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Smaller Than
+             * @description Flag frames whose area is below this × the median.
+             * @default 0.4
+             */
+            smaller_than: number;
+            /**
+             * Larger Than
+             * @description Flag frames whose area is above this × the median.
+             * @default 2.5
+             */
+            larger_than: number;
+            /**
+             * Min Duration S
+             * @description Only flag runs lasting at least this long, in seconds.
+             * @default 0
+             */
+            min_duration_s: number;
         };
         /** ValidationError */
         ValidationError: {

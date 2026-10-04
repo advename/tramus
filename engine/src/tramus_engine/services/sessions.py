@@ -38,6 +38,7 @@ from ..domain import (
     utc_now,
 )
 from ..storage.sidecar import load_sidecar, save_sidecar, sidecar_path
+from ..tracking.flags import detect_flags
 from .templates import setup_from_template
 
 COALESCE_WINDOW_S = 60.0
@@ -217,6 +218,9 @@ def _diff_setup(old: Setup, new: Setup) -> list[_SetupChangeText]:
         title = f"In-zone threshold {old_pct}% → {new_pct}%"
         changes.append(_SetupChangeText(title, "Results recalculated"))
 
+    if old.analysis.unusual_size != new.analysis.unusual_size:
+        changes.append(_SetupChangeText("Flag rules changed", "Flags recalculated"))
+
     if old.analysis.crossing_rules != new.analysis.crossing_rules:
         changes.append(_SetupChangeText("Crossing rules changed", "Results recalculated"))
 
@@ -315,7 +319,12 @@ class SessionManager:
             now = utc_now()
             old_setup = session.document.setup
             document = session.document.model_copy(update={"setup": setup, "updated_at": now})
-            if session.document.track is not None:
+            track = session.document.track
+            if track is not None:
+                if old_setup.analysis.unusual_size != setup.analysis.unusual_size:
+                    # Flags derive from the raw track + rules, so no re-tracking is needed.
+                    flags = detect_flags(track, setup.analysis.unusual_size)
+                    document = document.model_copy(update={"flags": flags})
                 changes = _diff_setup(old_setup, setup)
                 if changes:
                     document = _append_setup_changes(document, changes, now)

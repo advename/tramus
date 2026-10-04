@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
 
 import type { Setup } from '../../../api/types'
 import { Symbol } from '../../../components/Symbol'
 import type { SessionActions } from '../data'
 import { LoadTemplateMenu } from './LoadTemplateMenu'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
+import { SectionHeader } from './SectionHeader'
 
 export interface TemplateSectionProps {
   videoId: string
@@ -26,11 +26,11 @@ export function TemplateSection({
 
   return (
     <Box sx={{ px: 1.75, pb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Box sx={{ pt: 1.75, pb: 0.25 }}>
-        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Template
-        </Typography>
-      </Box>
+      <SectionHeader
+        title="Template"
+        info="A saved setup (arena, zones, scale and settings) that you can reuse on other videos."
+        sx={{ px: 0, pb: 0.25 }}
+      />
       <Box
         sx={{
           display: 'flex',

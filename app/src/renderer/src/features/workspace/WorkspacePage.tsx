@@ -7,6 +7,7 @@ import { useBatch, useFrameTimes, useSettings } from '../../api/queries'
 import { EmptyState } from '../../components/EmptyState'
 import { formatDate } from '../../lib/time'
 import { useShortcut } from '../../lib/shortcuts'
+import { SHORTCUTS } from '../../lib/shortcutRegistry'
 import { notify } from '../../stores/notifications'
 import { FileChangedCard } from './dialogs/FileChangedCard'
 import { NoSetupCard } from './dialogs/NoSetupCard'
@@ -248,12 +249,12 @@ function OpenWorkspace({
     }
   }
 
-  useShortcut('mod+s', () => void onSave())
-  useShortcut('mod+z', () => undoRedo.undo())
-  useShortcut('mod+shift+z', () => undoRedo.redo())
-  useShortcut('mod+t', () => void onTrack())
+  useShortcut(SHORTCUTS.save.combo, () => void onSave())
+  useShortcut(SHORTCUTS.undo.combo, () => undoRedo.undo())
+  useShortcut(SHORTCUTS.redo.combo, () => undoRedo.redo())
+  useShortcut(SHORTCUTS.track.combo, () => void onTrack())
   useShortcut(
-    'esc',
+    SHORTCUTS.cancelTracking.combo,
     () => {
       if (activeJob && !TERMINAL_JOB_STATES.has(activeJob.state)) {
         void sessionActions.cancelTracking(activeJob.id)
@@ -272,8 +273,10 @@ function OpenWorkspace({
     if (!nextItem) return
     void navigate(`/videos/${nextItem.video_id}/review?batch=${batchId}`)
   }
-  useShortcut('mod+[', () => goToBatchOffset(-1), { enabled: Boolean(batchId) })
-  useShortcut('mod+]', () => goToBatchOffset(1), { enabled: Boolean(batchId) })
+  useShortcut(SHORTCUTS.previousVideo.combo, () => goToBatchOffset(-1), {
+    enabled: Boolean(batchId)
+  })
+  useShortcut(SHORTCUTS.nextVideo.combo, () => goToBatchOffset(1), { enabled: Boolean(batchId) })
 
   if (session.isError) {
     return (

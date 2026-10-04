@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import type { BatchItemView, Job } from '../../api/types'
-import { batchIsRunning, batchRowStatus, indexAtTime } from './lib'
+import {
+  batchIsRunning,
+  batchProgress,
+  batchRemainingSeconds,
+  batchRowStatus,
+  indexAtTime,
+  smoothThroughput
+} from './lib'
 
 function makeJob(overrides: Partial<Job> = {}): Job {
   return {
@@ -132,5 +139,55 @@ describe('batchIsRunning', () => {
 
   it('is false for an empty batch', () => {
     expect(batchIsRunning([])).toBe(false)
+  })
+})
+
+describe('batchProgress', () => {
+  it('counts succeeded jobs as done and sums running progress', () => {
+    const progress = batchProgress([
+      makeJob({ id: 'a', state: 'succeeded', frames_done: 100, frames_total: 100 }),
+      makeJob({ id: 'b', state: 'running', frames_done: 50, frames_total: 100, fps: 40 }),
+      makeJob({ id: 'c', state: 'queued', frames_done: 0, frames_total: 200, fps: null }),
+      makeJob({ id: 'd', state: 'running', frames_done: 10, frames_total: 100, fps: 60 })
+    ])
+    expect(progress.fraction).toBeCloseTo(160 / 500)
+    expect(progress.remainingFrames).toBe(340)
+    expect(progress.fps).toBe(100)
+  })
+
+  it('excludes failed and cancelled jobs from both sums', () => {
+    const progress = batchProgress([
+      makeJob({ id: 'a', state: 'succeeded', frames_done: 100, frames_total: 100 }),
+      makeJob({ id: 'b', state: 'failed', frames_done: 20, frames_total: 100 }),
+      makeJob({ id: 'c', state: 'cancelled', frames_done: 0, frames_total: 100, fps: null })
+    ])
+    expect(progress.fraction).toBe(1)
+    expect(progress.remainingFrames).toBe(0)
+  })
+
+  it('is zero for an empty batch', () => {
+    expect(batchProgress([])).toEqual({ fraction: 0, remainingFrames: 0, fps: 0 })
+  })
+})
+
+describe('smoothThroughput', () => {
+  it('starts at the first sample and then moves a fraction toward each new one', () => {
+    expect(smoothThroughput(null, 100)).toBe(100)
+    expect(smoothThroughput(100, 200)).toBeCloseTo(120)
+  })
+})
+
+describe('batchRemainingSeconds', () => {
+  it('divides remaining frames by throughput', () => {
+    expect(batchRemainingSeconds(500, 100)).toBe(5)
+  })
+
+  it('is null (estimating) without a throughput yet', () => {
+    expect(batchRemainingSeconds(500, null)).toBeNull()
+    expect(batchRemainingSeconds(500, 0)).toBeNull()
+  })
+
+  it('is zero when nothing remains', () => {
+    expect(batchRemainingSeconds(0, null)).toBe(0)
   })
 })

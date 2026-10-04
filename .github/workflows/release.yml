@@ -1,0 +1,143 @@
+# Builds the Tramus installers and attaches them to a draft GitHub Release.
+#
+# Run it from GitHub → Actions → Release → Run workflow: pick the branch and how much to bump the
+# version. The new version is the latest published release plus that bump (patch 1.2.3 → 1.2.4,
+# minor → 1.3.0, major → 2.0.0; the first release starts from 0.0.0). It is stamped into the
+# build only (scripts/set-version.mjs) — the repo stays at 0.0.0-dev and nothing is committed.
+# Every build also gets a build number, the Actions run number, shown as "1.2.3 (build 45)".
+# Running again before publishing replaces the draft's installers. Publishing the draft creates
+# the git tag, and the next run counts from it.
+#
+# Installers must be built on their own OS/CPU (PyInstaller can't cross-compile), hence one
+# runner per target. Private repo: macOS minutes count 10× and Windows 2× against the free
+# Actions minutes (~280 per run).
+name: Release
+run-name: Release (${{ inputs.bump }} bump)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump from the latest published release
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  # Keep in step with the local engine/.venv (the pins in engine/packaging/constraints.txt are
+  # checked against this version).
+  PYTHON_VERSION: '3.14'
+  NODE_VERSION: '24'
+
+jobs:
+  draft:
+    name: Draft release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Work out the next version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ inputs.bump }}
+        run: |
+          latest=$(gh release view --json tagName --jq .tagName 2>/dev/null || echo v0.0.0)
+          if [[ ! "$latest" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Latest release tag '$latest' isn't vMAJOR.MINOR.PATCH."
+            exit 1
+          fi
+          major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]} patch=${BASH_REMATCH[3]}
+          case "$BUMP" in
+            major) version="$((major + 1)).0.0" ;;
+            minor) version="$major.$((minor + 1)).0" ;;
+            patch) version="$major.$minor.$((patch + 1))" ;;
+          esac
+          echo "Latest published release: $latest → v$version ($BUMP)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create the draft, or reuse an unpublished one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if is_draft=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$is_draft" != "true" ]; then
+              echo "::error::$TAG is already published but isn't the latest release."
+              exit 1
+            fi
+            echo "Reusing draft $TAG; its installers will be replaced."
+            gh release edit "$TAG" --target "$GITHUB_SHA"
+          else
+            gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "Tramus ${TAG#v}" \
+              --notes-file .github/release-notes.md
+          fi
+
+  build:
+    name: ${{ matrix.name }}
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS (Apple Silicon)
+            runner: macos-15
+            installer: app/release/Tramus-*.dmg
+          # GitHub's last Intel Mac runner; available until August 2027
+          - name: macOS (Intel)
+            runner: macos-15-intel
+            installer: app/release/Tramus-*.dmg
+          - name: Windows
+            runner: windows-2022
+            installer: app/release/Tramus-*.exe
+          # Oldest supported Ubuntu: the bundled Python needs this glibc (2.35) or newer
+          - name: Linux
+            runner: ubuntu-22.04
+            installer: app/release/Tramus-*.AppImage
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Create the engine venv
+        run: python -m venv engine/.venv
+
+      - name: Install app dependencies
+        working-directory: app
+        run: npm ci
+
+      # The build number is the Actions run number: the same for all four installers of a run, and
+      # different for every run, so two builds of one version can be told apart.
+      - name: Stamp the version and build number
+        run: node scripts/set-version.mjs "${{ needs.draft.outputs.version }}" "${{ github.run_number }}"
+
+      - name: Build the installer
+        run: node scripts/build.mjs
+
+      - name: Attach it to the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.draft.outputs.tag }}" ${{ matrix.installer }} --clobber

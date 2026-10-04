@@ -88,6 +88,7 @@ The Pydantic models are the single source of truth. Key ones:
 | `Exclusion` | `{id, start_s, end_s, note}` — a period subtracted from the trial before analysis. Per video: lives on `Setup`, not `Template` |
 | `CrossingRule` | `{id, from_zone_id, to_zone_id}` — a zone-to-zone transition to count; `None` on either side means "Any zone". Lives on `AnalysisSettings`, so templates carry it |
 | `Track` | raw per-frame body ellipse, column-wise (`t, x, y, semi_major, semi_minor, angle_deg, area_px, status`) |
+| `UnusualSizeRule` | `{enabled, smaller_than, larger_than, min_duration_s}` — when a size run becomes a flag (defaults 0.4×, 2.5×, 0 s; ranges 0.1–0.9, 1.1–5.0, 0–2). Lives on `AnalysisSettings`, so templates carry it |
 | `Flag` | suspicious frame range found after tracking (`not_found`, `sudden_jump`, `unusual_size`) |
 | `Correction` | `set_position`, `mark_hidden`, `interpolate`, `accept_flag` — applied in list order on top of the raw track |
 | `AnalysisDocument` | the sidecar: video info, setup, raw track, flags, corrections, setup changes, results snapshot |
@@ -159,9 +160,16 @@ Validated on the sample footage (0 % missed frames on Sample1, ~450 fps incl. de
 * `sudden_jump`: consecutive visible frames whose centre distance exceeds
   `1.5 × median body length` (`2 × median semi_major`) scaled by `d / median d`.
   Detail `"41 px in 1 frame"`, metric = pixels.
-* `unusual_size`: detected frames with `area < 0.4×` or `> 2.5×` the median area.
+* `unusual_size` (rule: `setup.analysis.unusual_size`, off when `enabled` is false): visible
+  frames with `area < smaller_than ×` or `> larger_than ×` the median area; merged runs shorter
+  than `min_duration_s` (frame timestamps, to the next frame's time) are dropped.
   Detail `"2.4× typical body size"`, metric = ratio (the most extreme in the run).
 * Consecutive flagged frames of the same reason within 3 frames are merged into one flag.
+* Flag ids are `reason-frame_start`. Flags are a pure function of the raw track and the rule, so
+  `document.flags` is a stored snapshot: set at tracking time (worker, batch and CLI all pass
+  `setup.analysis.unusual_size`) and re-derived by `SessionManager.put_setup` whenever the rule
+  changes — no re-tracking. Ids don't change, so `accept_flag` corrections still match flags
+  that survive. History logs "Flag rules changed · Flags recalculated" (coalesced).
 
 ### 5.3 Corrections (`analysis/corrections.py`)
 
@@ -316,7 +324,7 @@ class Tracker(Protocol):
 def get_tracker(tracker_id: str) -> Tracker: ...
 def available_trackers() -> list[Tracker]: ...
 # tracking/flags.py
-def detect_flags(track: Track) -> list[Flag]: ...
+def detect_flags(track: Track, unusual_size: UnusualSizeRule) -> list[Flag]: ...
 # tracking/runner.py — what a worker process runs
 @dataclass
 class TrackingOutcome: track: Track; flags: list[Flag]
@@ -382,7 +390,7 @@ unresolved flags → `tracked`; no unresolved flags → `reviewed`; `exported_at
 | Method & path | Body → Response |
 |---|---|
 | `GET /health` | → `{status, version}` |
-| `GET /system` | → `{version, platform, cpu_count, gpu: {name}|null, trackers: [{id, name, supports_gpu}]}` |
+| `GET /system` | → `{version, platform, cpu_count, gpu: {name}|null, trackers: [{id, name, supports_gpu}]}`. `version` is the full app version the desktop app passes in `TRAMUS_APP_VERSION` (`1.2.3 (build 45)` for releases, `0.0.0-dev+<sha>[.dirty]` for local builds; the engine's own `engine_version` when run without the app, e.g. the CLI), the same value saved as `app_version` in analyses and exports; Settings → About shows both |
 | `GET /settings` · `PUT /settings` | `AppSettings` |
 | `POST /library/open` | `{path}` → `Library {folder: {path, name, video_count}, videos: VideoSummary[]}` |
 | `GET /library/recent` | → `RecentFolder[]` |
@@ -510,6 +518,17 @@ saves it, regardless of layout.
   * Pointer maths: shapes live in video pixels. Handles and labels keep a constant screen size
     via the `px` (= 1 / stage scale) factor, and timeline positions go through
     `lib/timelineScale.ts` (it has a 14 px gutter at each end).
+* **Build info and versions**: `scripts/build-info.mjs` generates `app/resources/build-info.json`
+  (version, build number, commit, dirty, date; gitignored, bundled via electron-builder `files`).
+  Local builds write it from `npm run dev` / `npm run build` (`0.0.0-dev+<sha>[.dirty]`); the
+  Release workflow writes it through `scripts/set-version.mjs <version> <run number>`, and
+  `scripts/build.mjs` sets electron-builder's `buildVersion` (`<version>.<run number>`). Electron
+  main reads the file (`main/buildInfo.ts`), exposes it through `app.getInfo()` and starts the
+  engine with `TRAMUS_APP_VERSION=<full version>`.
+* **Keyboard shortcuts**: one registry, `renderer/src/lib/shortcutRegistry.ts` (id, combo, label,
+  group, screens/steps where active). Call sites pass `SHORTCUTS.<id>.combo` to `useShortcut` /
+  `<ShortcutTooltip>`; Settings → Keyboard shortcuts renders the same table. A key may be reused
+  only where the contexts never overlap (tested).
 * **Folders**:
   `renderer/src/{app (shell, routes, providers), theme, api (client, generated schema,
   `types.ts` aliases, shared `queries/`, events), components (shared UI), features/<feature>

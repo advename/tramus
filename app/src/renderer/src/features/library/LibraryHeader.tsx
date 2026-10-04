@@ -14,6 +14,8 @@ import { ShortcutTooltip } from '../../components/ShortcutTooltip'
 import { Symbol } from '../../components/Symbol'
 import { STATUS_LABEL } from './statusLabel'
 import type { LibraryViewMode } from './lib'
+import { SHORTCUTS } from '../../lib/shortcutRegistry'
+import { formatShortcut } from '../../lib/shortcuts'
 
 export type StatusFilter = VideoStatus | 'all'
 
@@ -104,7 +106,7 @@ export function LibraryHeader({
           onChange={(event) => onSearchChange(event.target.value)}
           sx={{ fontSize: 12.5, flex: 1, color: 'text.primary' }}
         />
-        <Kbd>Ctrl+F</Kbd>
+        <Kbd>{formatShortcut(SHORTCUTS.searchVideos.combo)}</Kbd>
       </Box>
 
       <Button
@@ -151,7 +153,7 @@ export function LibraryHeader({
         }}
         sx={{ p: '3px', border: 1, borderColor: 'divider', borderRadius: '8px' }}
       >
-        <ShortcutTooltip title="Table" shortcut="mod+shift+1">
+        <ShortcutTooltip title="Table" shortcut={SHORTCUTS.tableView.combo}>
           <ToggleButton
             value="table"
             sx={{ width: 30, height: 24, border: 'none', borderRadius: '5px !important', p: 0 }}
@@ -159,7 +161,7 @@ export function LibraryHeader({
             <Symbol name="table_rows" size={17} />
           </ToggleButton>
         </ShortcutTooltip>
-        <ShortcutTooltip title="Grid" shortcut="mod+shift+2">
+        <ShortcutTooltip title="Grid" shortcut={SHORTCUTS.gridView.combo}>
           <ToggleButton
             value="grid"
             sx={{ width: 30, height: 24, border: 'none', borderRadius: '5px !important', p: 0 }}
@@ -169,7 +171,7 @@ export function LibraryHeader({
         </ShortcutTooltip>
       </ToggleButtonGroup>
 
-      <ShortcutTooltip title="Open folder" shortcut="mod+o">
+      <ShortcutTooltip title="Open folder" shortcut={SHORTCUTS.openFolder.combo}>
         <Button
           variant="outlined"
           onClick={onOpenFolder}

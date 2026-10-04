@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import ButtonBase from '@mui/material/ButtonBase'
+import Divider from '@mui/material/Divider'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 
@@ -14,9 +15,12 @@ import {
   type ZoneUnit
 } from '../lib/units'
 import { useWorkspaceStore } from '../state/workspaceStore'
+import { ReviewFlagsSection } from './ReviewFlagsSection'
+import { InfoTip, SectionHeader } from './SectionHeader'
 import { UnitToggle } from './UnitToggle'
 
 export interface DetectionSectionProps {
+  videoId: string
   setup: Setup
   editor: SetupEditor
 }
@@ -37,7 +41,11 @@ const AREA_SLIDER: Record<ZoneUnit, { min: number; max: number; step: number }> 
 }
 
 /** Sensitivity, polarity, minimum size, in-zone threshold (design: `Detection` section). */
-export function DetectionSection({ setup, editor }: DetectionSectionProps): React.JSX.Element {
+export function DetectionSection({
+  videoId,
+  setup,
+  editor
+}: DetectionSectionProps): React.JSX.Element {
   const detection = setup.detection ?? DEFAULT_DETECTION
   const thresholdFraction = setup.analysis?.in_zone_threshold ?? DEFAULT_THRESHOLD
   const thresholdPercent = Math.round(thresholdFraction * 100)
@@ -69,7 +77,7 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
 
   const setThreshold = (percent: number): void => {
     editor.commitDebounced(
-      { ...setup, analysis: { in_zone_threshold: percent / 100 } },
+      { ...setup, analysis: { ...setup.analysis, in_zone_threshold: percent / 100 } },
       'Adjust in-zone threshold'
     )
   }
@@ -85,15 +93,21 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
 
   return (
     <Box>
-      <Box sx={{ px: 1.75, pt: 1.75, pb: 1 }}>
-        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Detection
-        </Typography>
-      </Box>
+      <SectionHeader
+        title="Detection"
+        info="How Tramus finds the mouse in each frame. Changes apply the next time you track."
+        sx={{ pb: 1 }}
+      />
       <Box sx={{ px: 1.75, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography sx={{ fontSize: 13 }}>Sensitivity</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: 13 }}>Sensitivity</Typography>
+              <InfoTip
+                label="Sensitivity"
+                text="How readily Tramus calls something the mouse. Raise it if the mouse is missed; lower it if shadows or reflections are picked up."
+              />
+            </Box>
             <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary' }}>
               {detection.sensitivity}
             </Typography>
@@ -107,7 +121,13 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.625 }}>
-          <Typography sx={{ fontSize: 13 }}>Mouse is</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography sx={{ fontSize: 13 }}>Mouse is</Typography>
+            <InfoTip
+              label="Mouse is"
+              text="Whether the mouse is darker or lighter than the floor. Pick the one that matches your video."
+            />
+          </Box>
           <Box
             sx={{
               display: 'grid',
@@ -141,7 +161,13 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography sx={{ fontSize: 13 }}>Minimum mouse size</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: 13 }}>Minimum mouse size</Typography>
+              <InfoTip
+                label="Minimum mouse size"
+                text="Shapes smaller than this are ignored. Raise it to skip specks and droppings; keep it below the mouse's own size."
+              />
+            </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary' }}>
                 {areaDisplayValue} {areaUnit}²
@@ -165,7 +191,13 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography sx={{ fontSize: 13 }}>In-zone threshold</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: 13 }}>In-zone threshold</Typography>
+              <InfoTip
+                label="In-zone threshold"
+                text="How much of the mouse's body must be inside a zone to count as in it. 50% means at least half the body."
+              />
+            </Box>
             <Typography variant="mono" sx={{ fontSize: 12, color: 'text.secondary' }}>
               {thresholdPercent}%
             </Typography>
@@ -177,11 +209,10 @@ export function DetectionSection({ setup, editor }: DetectionSectionProps): Reac
             value={thresholdPercent}
             onChange={(_, value) => setThreshold(value)}
           />
-          <Typography sx={{ fontSize: 11.5, color: 'text.disabled' }}>
-            Share of the body that must be inside a zone before the mouse counts as in it.
-          </Typography>
         </Box>
       </Box>
+      <Divider sx={{ mt: 1.75 }} />
+      <ReviewFlagsSection videoId={videoId} setup={setup} editor={editor} />
     </Box>
   )
 }

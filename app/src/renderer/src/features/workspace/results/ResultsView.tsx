@@ -128,7 +128,7 @@ export function ResultsView({ videoId }: ResultsViewProps): React.JSX.Element {
             Next video
           </Button>
         ) : null}
-        <ShortcutTooltip title="Export" shortcut="mod+e">
+        <ShortcutTooltip title="Export">
           <Button
             variant="contained"
             onClick={() =>

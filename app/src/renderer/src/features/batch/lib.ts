@@ -124,21 +124,48 @@ export function allTerminal(jobs: Job[]): boolean {
   return jobs.length > 0 && jobs.every((job) => TERMINAL_JOB_STATES.has(job.state))
 }
 
-/** Average progress across all jobs in the batch, 0–1. */
-export function overallProgress(jobs: Job[]): number {
-  if (jobs.length === 0) return 0
-  const sum = jobs.reduce(
-    (total, job) => total + (TERMINAL_JOB_STATES.has(job.state) ? 1 : job.progress),
-    0
-  )
-  return sum / jobs.length
+export interface BatchProgress {
+  /** Σ frames_done / Σ frames_total over succeeded, queued and running jobs, 0–1. */
+  fraction: number
+  /** Frames still to track across those jobs. */
+  remainingFrames: number
+  /** Combined current throughput of the running jobs (Σ fps), frames per second. */
+  fps: number
 }
 
-/** Sum of `remaining_s` across running jobs, or `null` if none report one yet. */
-export function remainingSeconds(jobs: Job[]): number | null {
-  const running = jobs.filter((job) => job.state === 'running' && job.remaining_s != null)
-  if (running.length === 0) return null
-  return running.reduce((total, job) => total + (job.remaining_s ?? 0), 0)
+/**
+ * Whole-batch progress. A succeeded job counts as fully done; failed and cancelled jobs are left
+ * out of both sums, since they will never contribute more frames.
+ */
+export function batchProgress(jobs: readonly Job[]): BatchProgress {
+  let done = 0
+  let total = 0
+  let fps = 0
+  for (const job of jobs) {
+    if (job.state === 'failed' || job.state === 'cancelled') continue
+    total += job.frames_total
+    done +=
+      job.state === 'succeeded' ? job.frames_total : Math.min(job.frames_done, job.frames_total)
+    if (job.state === 'running') fps += job.fps ?? 0
+  }
+  return { fraction: total > 0 ? done / total : 0, remainingFrames: total - done, fps }
+}
+
+/** Weight of the newest throughput sample in `smoothThroughput`. */
+const THROUGHPUT_SMOOTHING = 0.2
+
+/** Exponential moving average of the batch throughput; `previous` is `null` before the first
+ * sample. Smoothing the rate (not the resulting ETA) keeps the countdown from jumping when a
+ * job starts or finishes. */
+export function smoothThroughput(previous: number | null, sample: number): number {
+  return previous == null ? sample : previous + THROUGHPUT_SMOOTHING * (sample - previous)
+}
+
+/** Seconds until the batch finishes at `fps` frames per second, or `null` while there is no
+ * throughput estimate yet ("Estimating…"). */
+export function batchRemainingSeconds(remainingFrames: number, fps: number | null): number | null {
+  if (remainingFrames <= 0) return 0
+  return fps != null && fps > 0 ? remainingFrames / fps : null
 }
 
 /** `"GPU · NVIDIA RTX A2000"` / `"GPU"` / `"CPU"` for the Run step's device line. */

@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 
 import type { SetupEditor } from '../data'
 import type { Setup } from '../../../api/types'
+import { SectionHeader } from './SectionHeader'
 
 export interface ImageAdjustmentsSectionProps {
   setup: Setup
@@ -26,33 +27,26 @@ export function ImageAdjustmentsSection({
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 1.75,
-          pt: 1.75,
-          pb: 1
-        }}
-      >
-        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Image
-        </Typography>
-        <ButtonBase
-          onClick={() => void editor.commit({ ...setup, image: DEFAULT_IMAGE }, 'Reset image')}
-          sx={{
-            height: 22,
-            px: 0.75,
-            borderRadius: '5px',
-            fontSize: 12,
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'surface.hover' }
-          }}
-        >
-          Reset
-        </ButtonBase>
-      </Box>
+      <SectionHeader
+        title="Image"
+        info="Brightness and contrast for what Tramus sees. Change them if the mouse is hard to tell apart from the floor."
+        sx={{ pb: 1 }}
+        actions={
+          <ButtonBase
+            onClick={() => void editor.commit({ ...setup, image: DEFAULT_IMAGE }, 'Reset image')}
+            sx={{
+              height: 22,
+              px: 0.75,
+              borderRadius: '5px',
+              fontSize: 12,
+              color: 'text.secondary',
+              '&:hover': { bgcolor: 'surface.hover' }
+            }}
+          >
+            Reset
+          </ButtonBase>
+        }
+      />
       <Box sx={{ px: 1.75, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

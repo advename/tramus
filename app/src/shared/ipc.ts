@@ -5,6 +5,8 @@
  * every side at compile time instead of failing silently at runtime.
  */
 
+import type { BuildInfo } from './buildInfo'
+
 /** Channel names used with `ipcMain.handle` / `ipcRenderer.invoke`. */
 export const IpcChannel = {
   DialogOpenFolder: 'dialog:openFolder',
@@ -29,8 +31,7 @@ export interface SaveFileOptions {
 }
 
 export interface AppInfo {
-  /** package.json version. */
-  version: string
+  build: BuildInfo
   platform: 'darwin' | 'win32' | 'linux'
   arch: string
 }

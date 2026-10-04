@@ -49,11 +49,28 @@ class CrossingRule(DomainModel):
     to_zone_id: str | None = None
 
 
+class UnusualSizeRule(DomainModel):
+    """When a run of frames counts as an "unusual size" flag (§5.2). Sizes are compared with the
+    video's median mouse area; changing the rule re-derives flags without re-tracking."""
+
+    enabled: bool = True
+    smaller_than: float = Field(
+        0.4, ge=0.1, le=0.9, description="Flag frames whose area is below this × the median."
+    )
+    larger_than: float = Field(
+        2.5, ge=1.1, le=5.0, description="Flag frames whose area is above this × the median."
+    )
+    min_duration_s: float = Field(
+        0.0, ge=0, le=2, description="Only flag runs lasting at least this long, in seconds."
+    )
+
+
 class AnalysisSettings(DomainModel):
     in_zone_threshold: float = Field(
         0.5, ge=0.05, le=0.95, description="Share of the body that must be inside a zone."
     )
     crossing_rules: list[CrossingRule] = Field(default_factory=list)
+    unusual_size: UnusualSizeRule = Field(default_factory=UnusualSizeRule)
 
 
 class TrialWindow(DomainModel):

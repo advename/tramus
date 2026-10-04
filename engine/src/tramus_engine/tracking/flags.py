@@ -10,16 +10,17 @@ import math
 
 import numpy as np
 
-from ..domain import VISIBLE_STATUSES, Flag, FlagReason, FrameStatus, Track
+from ..domain import VISIBLE_STATUSES, Flag, FlagReason, FrameStatus, Track, UnusualSizeRule
 
 _MERGE_GAP = 3
 
 
-def detect_flags(track: Track) -> list[Flag]:
+def detect_flags(track: Track, unusual_size: UnusualSizeRule) -> list[Flag]:
+    """All flags for a raw track. Pure: the session re-runs it whenever `unusual_size` changes."""
     flags = [
         *_not_found_flags(track),
         *_sudden_jump_flags(track),
-        *_unusual_size_flags(track),
+        *_unusual_size_flags(track, unusual_size),
     ]
     flags.sort(key=lambda flag: flag.frame_start)
     return flags
@@ -100,7 +101,9 @@ def _sudden_jump_flags(track: Track) -> list[Flag]:
     return flags
 
 
-def _unusual_size_flags(track: Track) -> list[Flag]:
+def _unusual_size_flags(track: Track, rule: UnusualSizeRule) -> list[Flag]:
+    if not rule.enabled:
+        return []
     n = track.frame_count
     t, area, status = track.t, track.area_px, track.status
     areas = [value for value in area if value is not None]
@@ -115,11 +118,15 @@ def _unusual_size_flags(track: Track) -> list[Flag]:
         if status[i] == FrameStatus.MISSING or area[i] is None:
             continue
         ratio = area[i] / median_area
-        if ratio < 0.4 or ratio > 2.5:
+        if ratio < rule.smaller_than or ratio > rule.larger_than:
             ratios[i] = ratio
 
+    median_dt = float(np.median(np.diff(t))) if n > 1 else 0.0
     flags = []
     for start, end in _merge_runs(sorted(ratios)):
+        end_time = t[end + 1] if end + 1 < n else t[end] + median_dt
+        if end_time - t[start] < rule.min_duration_s:
+            continue
         run = {i: ratios[i] for i in range(start, end + 1) if i in ratios}
         extreme = max(run, key=lambda i: abs(math.log(run[i])))
         ratio = run[extreme]

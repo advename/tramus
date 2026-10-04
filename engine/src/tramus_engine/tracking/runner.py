@@ -27,5 +27,5 @@ def run_tracking(
 ) -> TrackingOutcome:
     tracker = get_tracker(setup.detection.tracker)
     track = tracker.track(video_path, setup, device=device, progress=progress, cancel=cancel)
-    flags = detect_flags(track)
+    flags = detect_flags(track, setup.analysis.unusual_size)
     return TrackingOutcome(track=track, flags=flags)

@@ -35,6 +35,7 @@ export type Shape = RectShape | EllipseShape | PolygonShape
 export type ImageAdjustments = Schemas['ImageAdjustments']
 export type DetectionSettings = Schemas['DetectionSettings']
 export type AnalysisSettings = Schemas['AnalysisSettings']
+export type UnusualSizeRule = Schemas['UnusualSizeRule']
 export type TrialWindow = Schemas['TrialWindow']
 export type TemplateRef = Schemas['TemplateRef']
 export type Calibration = Schemas['Calibration']

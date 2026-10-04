@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography'
 
 import { ShortcutTooltip } from '../../components/ShortcutTooltip'
 import { Symbol } from '../../components/Symbol'
+import { SHORTCUTS } from '../../lib/shortcutRegistry'
 
 export interface SelectionBarProps {
   count: number
@@ -47,7 +48,7 @@ export function SelectionBar({
       >
         Apply template…
       </Button>
-      <ShortcutTooltip title="Track" shortcut="mod+t">
+      <ShortcutTooltip title="Track" shortcut={SHORTCUTS.trackSelected.combo}>
         <Button
           variant="contained"
           onClick={onTrack}
@@ -67,7 +68,7 @@ export function SelectionBar({
         Export results
       </Button>
       <Box sx={{ flex: 1 }} />
-      <ShortcutTooltip title="Clear selection" shortcut="esc">
+      <ShortcutTooltip title="Clear selection" shortcut={SHORTCUTS.clearSelection.combo}>
         <Button
           onClick={onClear}
           sx={{ height: 28, px: 1.25, fontSize: 12.5, fontWeight: 400, color: 'text.secondary' }}

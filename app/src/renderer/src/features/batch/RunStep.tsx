@@ -8,7 +8,8 @@ import type { Job } from '../../api/types'
 import { thumbnailUrl } from '../../api/urls'
 import { Symbol } from '../../components/Symbol'
 import { formatSecondsCompact } from '../../lib/time'
-import { overallProgress, remainingSeconds, summarizeJobs } from './lib'
+import { batchProgress, batchRemainingSeconds, summarizeJobs } from './lib'
+import { useSmoothedThroughput } from './useSmoothedThroughput'
 
 export interface RunStepProps {
   jobs: Job[]
@@ -27,8 +28,10 @@ export function RunStep({
   onCancelJob
 }: RunStepProps): React.JSX.Element {
   const counts = summarizeJobs(jobs)
-  const progress = Math.round(overallProgress(jobs) * 100)
-  const remaining = remainingSeconds(jobs)
+  const overall = batchProgress(jobs)
+  const progress = Math.round(overall.fraction * 100)
+  const throughput = useSmoothedThroughput(overall.fps)
+  const remaining = batchRemainingSeconds(overall.remainingFrames, throughput)
   const canCancelAny = counts.running + counts.waiting > 0
 
   return (
@@ -60,8 +63,14 @@ export function RunStep({
             Tracking {counts.total} videos · {parallelJobs} at a time
           </Typography>
           <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-            {counts.done} done · {counts.running} running · {counts.waiting} waiting
-            {remaining != null ? ` · about ${formatSecondsCompact(remaining)} left` : ''}
+            {counts.done} of {counts.total} done · {counts.running} running · {counts.waiting}{' '}
+            waiting
+            {counts.failed > 0 ? ` · ${counts.failed} failed` : ''}
+            {canCancelAny
+              ? remaining != null
+                ? ` · about ${formatSecondsCompact(remaining)} left`
+                : ' · Estimating…'
+              : ''}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <Typography variant="mono" sx={{ fontSize: 15 }}>

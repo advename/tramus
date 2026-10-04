@@ -6,7 +6,8 @@
 export const queryKeys = {
   system: {
     health: () => ['system', 'health'] as const,
-    info: () => ['system', 'info'] as const
+    info: () => ['system', 'info'] as const,
+    app: () => ['system', 'app'] as const
   },
   settings: {
     all: () => ['settings'] as const
