@@ -122,3 +122,42 @@ def test_serve_smoke(config_dir: Path) -> None:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_serve_exits_with_the_app(config_dir: Path) -> None:
+    """The engine quits when the app goes: stdin EOF, or on Windows the `--parent-pid` exiting
+    (it must not read stdin there — that hangs its tracking workers)."""
+    env = {**os.environ, "TRAMUS_CONFIG_DIR": str(config_dir)}
+    app = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    engine = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "tramus_engine",
+            "serve",
+            "--port",
+            "0",
+            "--token",
+            "exit-token",
+            "--parent-pid",
+            str(app.pid),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        env=env,
+    )
+    try:
+        assert json.loads(engine.stdout.readline())["event"] == "ready"
+        if sys.platform == "win32":
+            app.kill()
+        else:
+            engine.stdin.close()
+        assert engine.wait(timeout=20) == 0
+    finally:
+        for proc in (engine, app):
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()

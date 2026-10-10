@@ -72,7 +72,8 @@ function resolveCommand(): { command: string; args: string[] } {
  * line on stdout, and exposes the base URL + token every API/WebSocket call must use.
  *
  * The engine's stdin is left piped (never closed) and closed explicitly on quit, so the engine
- * sees EOF on stdin and exits on its own if Electron is killed uncleanly.
+ * sees EOF on stdin and exits on its own if Electron is killed uncleanly. On Windows the engine
+ * can't read stdin (it would hang its tracking workers), so it watches `--parent-pid` instead.
  */
 export class EngineProcess {
   private child: ChildProcessWithoutNullStreams | null = null
@@ -104,7 +105,8 @@ export class EngineProcess {
       )
     }
 
-    const child = spawn(command, [...args, '--port', '0', '--token', token], {
+    const engineArgs = [...args, '--port', '0', '--token', token, '--parent-pid', `${process.pid}`]
+    const child = spawn(command, engineArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, TRAMUS_APP_VERSION: this.appVersion },
       // The frozen engine is a console program; without this Windows opens a console window

@@ -54,6 +54,32 @@ def _watch_stdin(on_eof: Callable[[], None]) -> None:
         os._exit(0)
 
 
+_ERROR_INVALID_PARAMETER = 87  # what OpenProcess fails with when no such process exists
+
+
+def _watch_parent(pid: int, on_exit: Callable[[], None]) -> None:
+    """Windows: exits the process the moment the app process `pid` ends.
+
+    Replaces `_watch_stdin` there. Windows hands the engine's stdin pipe to every child process
+    it starts, and while a read on that (synchronous) pipe is pending, the child's startup check
+    of the handle waits behind it — so tracking workers would hang before running any code.
+    """
+    import _winapi
+
+    try:
+        handle = _winapi.OpenProcess(_winapi.SYNCHRONIZE, False, pid)
+    except OSError as exc:
+        if exc.winerror != _ERROR_INVALID_PARAMETER:  # anything but "the app is already gone"
+            logger.warning("Can't watch app process %s, engine won't exit with it: %s", pid, exc)
+            return
+    else:
+        _winapi.WaitForSingleObject(handle, _winapi.INFINITE)
+    try:
+        on_exit()  # stop tracking workers before leaving
+    finally:
+        os._exit(0)
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -74,7 +100,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
     sys.stdout.write(json.dumps({"event": "ready", "port": port}) + "\n")
     sys.stdout.flush()
 
-    if not args.no_stdin_watch:
+    if sys.platform == "win32":
+        # Never block reading stdin on Windows (see `_watch_parent`).
+        if args.parent_pid is not None:
+            threading.Thread(
+                target=_watch_parent, args=(args.parent_pid, services.shutdown), daemon=True
+            ).start()
+    elif not args.no_stdin_watch:
         threading.Thread(target=_watch_stdin, args=(services.shutdown,), daemon=True).start()
 
     config = uvicorn.Config(app, log_config=_LOG_CONFIG, log_level="info")
@@ -267,6 +299,12 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--port", type=int, default=0)
     serve_parser.add_argument("--token", required=True)
     serve_parser.add_argument("--no-stdin-watch", action="store_true")
+    serve_parser.add_argument(
+        "--parent-pid",
+        type=int,
+        default=None,
+        help="Windows: exit when this process (the app) ends. Elsewhere stdin EOF does that.",
+    )
     serve_parser.set_defaults(func=cmd_serve)
 
     track_parser = subparsers.add_parser("track", help="Track one or more videos headlessly.")

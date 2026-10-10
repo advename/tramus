@@ -55,6 +55,9 @@ node scripts/build.mjs   # (repo root) PyInstaller engine + electron-builder ins
   full-resolution video pixels.
 - Engine subprocesses (tracking pool, manager) must die with the engine: see `exit_with_parent`
   and `JobManager.shutdown`.
+- Never block reading the engine's stdin on Windows: every child process (tracking workers,
+  `nvidia-smi`) gets that pipe and hangs at startup while the read is pending, so tracking sat
+  at 0% forever. The engine watches `--parent-pid` there instead (`cli._watch_parent`).
 - The preload must be CommonJS (`index.cjs`): sandboxed preloads can't be ES modules.
 - Installers ship the engine packages pinned in `engine/packaging/constraints.txt`, built with
   Python 3.14 (the release workflow). Before bumping a pin, check it has wheels for macOS arm64

@@ -26,10 +26,12 @@ changing a boundary (domain models, module interfaces, API, sidecar format).
 * The engine holds one in-memory **session** per open video (the draft `AnalysisDocument`).
   Edits go to the session; **Save** writes the sidecar. Batch runs save directly.
 * The engine is also a **CLI** (`tramus-engine track …`) so batches can run headless.
-* Handshake: Electron starts `tramus-engine serve --port 0 --token <random>`. The engine prints
-  one JSON line to stdout: `{"event": "ready", "port": 53124}`. Every request carries the token
+* Handshake: Electron starts `tramus-engine serve --port 0 --token <random> --parent-pid <pid>`.
+  The engine prints one JSON line to stdout: `{"event": "ready", "port": 53124}`. Every request carries the token
   (`X-Tramus-Token` header, or `?token=` for `<img src>` / WebSocket URLs). The engine exits
   when its stdin closes (app quit or Electron died), terminating its tracking workers first.
+  On Windows it never reads stdin (a pending read on the pipe hangs every child process at
+  startup, tracking workers included); it waits on the app process given by `--parent-pid`.
   Workers and the job manager's helper process also exit on their own when the engine process
   disappears (even after a hard kill), so no orphan processes are left behind.
 
