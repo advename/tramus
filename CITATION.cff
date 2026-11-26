@@ -1,0 +1,20 @@
+# Powers GitHub's "Cite this repository" button. Releases are versioned at build time only (the repo
+# stays at 0.0.0-dev), so no version is stored here: cite the version shown in your export.
+cff-version: 1.2.0
+message: "If you use Tramus in your research, please cite it as below and state the exact version you used (Settings → About, or any export)."
+type: software
+title: Tramus
+abstract: "Tramus tracks a single mouse in top-down lab videos and measures time in user-drawn zones. Free, open source, runs offline on Windows, macOS and Linux."
+authors:
+  - name: "The Tramus contributors"
+repository-code: "https://github.com/advename/tramus"
+url: "https://advename.github.io/tramus/"
+license: MIT
+keywords:
+  - behavioral neuroscience
+  - mouse tracking
+  - animal behavior
+  - time in zone
+  - three-chamber test
+  - open field
+  - computer vision

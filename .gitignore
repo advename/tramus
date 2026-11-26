@@ -37,3 +37,6 @@ app/resources/build-info.json
 
 # Logs
 *.log
+
+# Website build output (scripts/build-site.mjs)
+/_site/

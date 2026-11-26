@@ -1,0 +1,81 @@
+# Builds the website (site/) and deploys it to GitHub Pages.
+#
+# Runs when site/ changes on main, when a release is published (so the download buttons switch to
+# the new installers), or by hand from Actions → Website → Run workflow. scripts/build-site.mjs
+# stamps the latest published release's version and installer links into the page; the build
+# fails rather than deploy broken download links.
+#
+# One-time setup: Settings → Pages → Source: GitHub Actions.
+
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - scripts/build-site.mjs
+      - .github/workflows/pages.yml
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # A release event runs on the tag, and the github-pages environment only accepts deployments
+  # from the default branch, so re-run this workflow on main instead.
+  redispatch:
+    name: Rebuild for the new release
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+  build:
+    name: Build
+    if: github.event_name != 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Build the site with the latest release
+        run: node scripts/build-site.mjs _site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

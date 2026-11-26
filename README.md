@@ -4,6 +4,8 @@ Tramus tracks a single mouse in top-down lab videos and measures how long it spe
 draw — e.g. the three chambers of a sociability box. It runs on Windows, macOS and Linux, works
 offline, and keeps every analysis in a JSON file next to the video so results are reproducible.
 
+**Website and downloads:** <https://advename.github.io/tramus/>
+
 **Workflow:** open a folder → pick a video → draw the arena and zones (optionally measure a known
 distance so sizes show in cm), set the trial start/end and exclude disturbed periods → **Track** →
 review at 4× with a movement trail and fix flagged frames (hotkeys: A accept, S set position, ↓
@@ -63,7 +65,8 @@ shortcut to fix it). To fix it:
 | `engine/` | Python engine: decoding (PyAV), tracking (OpenCV), analysis, sidecar files, export, local HTTP API (FastAPI), CLI |
 | `app/` | Desktop app: Electron + React + MUI |
 | `docs/` | Architecture and contracts |
-| `designs/` | UI design source (Claude Design): the visual baseline; later features follow its style |
+| `designs/` | UI and website design source (Claude Design): the visual baseline; later features follow its style |
+| `site/` | Website (static HTML, deployed to GitHub Pages by `.github/workflows/pages.yml`) |
 | `scripts/` | Build helpers |
 
 ## Development

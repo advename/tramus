@@ -77,6 +77,21 @@ node scripts/build.mjs   # (repo root) PyInstaller engine + electron-builder ins
   use `SHORTCUTS.<id>.combo`, never a literal key, and Settings lists the same table. New
   shortcut = new registry entry (its test rejects a key bound twice in one screen or step).
 
+## Website (`site/`)
+Static page from the Claude Design source `designs/Website.dc.html`, deployed to
+<https://advename.github.io/tramus/> by `.github/workflows/pages.yml`. It deploys on changes to `site/`
+and again whenever a release is published. `scripts/build-site.mjs` copies `site/` to `_site/` and fills
+in the `__TOKENS__` from the latest published release: version, installer URLs and names, citation.
+It fails if an installer is missing.
+- Preview: `node scripts/build-site.mjs && python3 -m http.server -d _site`.
+- Plain HTML with inline styles (as in the design) plus vanilla `main.js`. Hover styles are classes
+  with `!important`, because inline styles win otherwise.
+- No outside requests: fonts are self-hosted IBM Plex subsets (`site/fonts/`, OFL) and a CSP meta
+  tag forbids anything else. The footer promises "no cookies, analytics or trackers", so keep it
+  that way.
+- Feature claims on the page must match the app. Check shortcuts against `shortcutRegistry.ts`
+  and flag names against the engine when either changes.
+
 ## Data and privacy
 The sample lab recordings (`Sample1.mp4`, `Sample2.mp4`: 1280×1024, ~25 fps with variable
 timing, 5:10, three-chamber box) are kept locally in the repo root for testing but can't be
